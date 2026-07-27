@@ -343,7 +343,7 @@ export async function processManualCollectionStep(
 
   if (collection.status === 'awaiting_model') {
     const model = capitalize(r);
-    const result = await validateFreeText('vehicleModel', model);
+    const result = await validateFreeText('vehicleModel', model, collection.make);
 
     if (!result.valid) {
       const attempts = await incrementValidationAttempts(phone, 'vehicleModel');
@@ -375,8 +375,16 @@ export async function processManualCollectionStep(
   }
 
   if (collection.status === 'awaiting_engine_number') {
-    const rLower = r.toLowerCase();
-    const skipped = rLower === 'não sei' || rLower === 'nao sei' || rLower === 'n' || rLower === 'skip' || rLower === 'não';
+    // Strip straight/curly apostrophes so "don't know" and "dont know" both
+    // match — the en prompt itself tells the customer to type "don't know",
+    // which the old pt-only skip-phrase list never recognized, so it fell
+    // through to engine-number validation and got rejected as invalid.
+    const normalized = r.toLowerCase().replace(/['’]/g, '').trim();
+    const SKIP_PHRASES = new Set([
+      'não sei', 'nao sei', 'não', 'nao', 'n', 'skip',
+      'dont know', 'do not know', 'idk', 'unknown', 'not sure',
+    ]);
+    const skipped = SKIP_PHRASES.has(normalized);
 
     let engineNumber: string | null = null;
     if (!skipped) {

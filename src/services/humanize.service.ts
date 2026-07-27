@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { config } from '../config/config.js';
 import { logger } from '../config/logger.js';
 import { buildHumanizePrompt } from '../i18n/persona.js';
-import { detectMessageLocale } from '../utils/greeting.js';
+import { PT_SIGNAL_WORDS, EN_SIGNAL_WORDS } from '../utils/greeting.js';
 import { getHumanized, saveHumanized, getLastMessage, getCustomerName } from './session.service.js';
 
 
@@ -42,6 +42,64 @@ function quotedLiterals(text: string): string[] {
   return (text.match(/"([^"\n]{1,20})"/g) ?? []).map((q) => q.slice(1, -1).trim()).filter(Boolean);
 }
 
+// Common function words that show up in almost any full sentence. The
+// customer-message locale detector (greeting.ts) deliberately keeps its word
+// list narrow/topic-focused, since a tie there means "don't guess, leave the
+// locale alone" — a reasonable default for that use case. This safety check
+// has the opposite job: it must actually catch a genuine language mismatch in
+// AI-generated prose, so staying silent on an ordinary sentence (a false tie)
+// defeats the point. Kept local to this file rather than widening the shared
+// detector, so the customer-facing detection behavior documented in
+// CLAUDE.md is untouched.
+const PT_PROSE_WORDS = new Set([
+  'tá', 'tô', 'na', 'no', 'nos', 'nas', 'pra', 'pro', 'do', 'da', 'dos', 'das',
+  'ao', 'aos', 'à', 'às', 'que', 'se', 'mas', 'ou', 'é', 'foi', 'ser', 'ter',
+  'vai', 'vou', 'ele', 'ela', 'eles', 'elas', 'os', 'as', 'um', 'uma', 'seu',
+  'sua', 'teu', 'tua', 'nosso', 'nossa', 'só', 'todo', 'toda', 'todos', 'todas',
+  'já', 'mesmo', 'assim', 'pois', 'pelo', 'pela',
+]);
+
+const EN_PROSE_WORDS = new Set([
+  'the', 'is', 'was', 'are', 'were', 'to', 'of', 'in', 'on', 'at', 'and',
+  'but', 'be', 'been', 'this', 'these', 'those', 'from', 'by', 'as', 'it',
+  'its', 'we', 'us', 'your', 'our', 'so', 'just', 'let', 'do', 'does', 'did',
+  'if', 'not', 'all', 'any', 'get', 'got', 'go', 'going',
+]);
+
+/**
+ * Strips *bold*-wrapped spans (product/vehicle/order names, which are
+ * legitimately language-neutral proper nouns baked into either-language
+ * templates) and standalone digit runs before language scoring, so an
+ * embedded English product name can't skew detection of the surrounding
+ * sentence's actual language — this was the root cause of a real miss: "Front
+ * Brake Pads" scored as English signal words inside an otherwise fully
+ * Portuguese rewrite, letting it pass a locale=en check.
+ */
+function stripNeutralSegments(text: string): string {
+  return text.replace(/\*[^*]*\*/g, ' ').replace(/\d+/g, ' ');
+}
+
+/**
+ * Detects whether a full AI-generated message reads as Portuguese or English,
+ * for this safety check specifically — see the word-list comment above for
+ * why it's broader than (and kept separate from) the customer-message
+ * locale detector.
+ */
+function detectProseLocale(text: string): 'pt' | 'en' | null {
+  const words = stripNeutralSegments(text).toLowerCase().match(/\p{L}+/gu) || [];
+  if (!words.length) return null;
+
+  let ptScore = 0;
+  let enScore = 0;
+  for (const word of words) {
+    if (PT_SIGNAL_WORDS.has(word) || PT_PROSE_WORDS.has(word)) ptScore++;
+    if (EN_SIGNAL_WORDS.has(word) || EN_PROSE_WORDS.has(word)) enScore++;
+  }
+
+  if (ptScore === enScore) return null;
+  return ptScore > enScore ? 'pt' : 'en';
+}
+
 /**
  * Builds a deterministic Redis cache key for a humanized rewrite, hashing
  * the original text and its context so the same input reuses a previous rewrite.
@@ -73,7 +131,7 @@ function validate(original: string, candidate: string, opts: HumanizeOptions): V
 
   if (!out) return { ok: false, reason: 'empty' };
 
-  const detectedLocale = detectMessageLocale(out);
+  const detectedLocale = detectProseLocale(out);
   if (detectedLocale && detectedLocale !== opts.locale) {
     return { ok: false, reason: `wrong-language (detected ${detectedLocale}, expected ${opts.locale})` };
   }

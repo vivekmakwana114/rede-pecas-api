@@ -18,7 +18,7 @@ import {
 } from './session.service.js';
 import { capitalize } from '../utils/helpers.js';
 import { getMessages, DEFAULT_LOCALE } from '../i18n/messages.js';
-import { validateFreeText, isPlausibleNif, flagForReview, MAX_VALIDATION_ATTEMPTS } from './validation.service.js';
+import { validateFreeText, isPlausibleName, isPlausibleNif, flagForReview, MAX_VALIDATION_ATTEMPTS } from './validation.service.js';
 
 export type { Customer };
 
@@ -67,15 +67,14 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_name') {
     const name = capitalize(r);
-    const result = await validateFreeText('name', name);
 
-    if (!result.valid) {
+    if (!isPlausibleName(name)) {
       const attempts = await incrementValidationAttempts(phone, 'name');
       if (attempts < MAX_VALIDATION_ATTEMPTS) {
         await sendReply(phone, messages.validation.invalidName());
         return true;
       }
-      await flagForReview('customer', phone, 'name', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${name}"`);
+      await flagForReview('customer', phone, 'name', `Failed format check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${name}"`);
     } else {
       await clearValidationAttempts(phone, 'name');
     }
@@ -87,7 +86,10 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_nif') {
     const rLower = r.toLowerCase();
-    const noNif = rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌') || rLower.includes('nao obrigado') || r === '2';
+    // \b-bounded "no" avoids false substring matches on words like "not" or
+    // "know" — plain .includes('no') would wrongly treat those as declining.
+    const noNif = rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌')
+      || /\bno\b/.test(rLower) || rLower.includes('nope') || rLower === 'n' || r === '2';
 
     if (noNif) {
       await updateCustomer(phone, { nif: null, registration_status: 'awaiting_address' });

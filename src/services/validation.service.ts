@@ -10,38 +10,48 @@ const VALIDATION_MODEL = "claude-haiku-4-5-20251001";
 
 export const MAX_VALIDATION_ATTEMPTS = 3;
 
-export type FreeTextFieldKind = 'name' | 'address' | 'vehicleMake' | 'vehicleModel';
+export type FreeTextFieldKind = 'address' | 'vehicleMake' | 'vehicleModel';
 
 export interface PlausibilityResult {
   valid: boolean;
   reason?: string;
 }
 
-const FIELD_PROMPTS: Record<FreeTextFieldKind, string> = {
-  name: `Is "{value}" a plausible person's full name? Reject single letters, digits-only text, ` +
-    `keyboard mashing, or obvious placeholder/joke answers (e.g. "teste", "asdf", "n/a"). Accept ` +
-    `short or unusual-but-real-looking names, including Angolan/Portuguese names.`,
-  address: `Is "{value}" a plausible Angolan street/neighbourhood address (e.g. mentioning a rua, ` +
-    `bairro, município, or a city/province in Angola)? Reject single characters, digits-only text, ` +
-    `keyboard mashing, or obvious placeholder/joke answers (e.g. "asdf", "n/a", "não sei"). It does ` +
-    `NOT need a postal code — Angolan addresses are informal, street + neighbourhood + city is enough.`,
-  vehicleMake: `Is "{value}" a plausible vehicle manufacturer (make) name (e.g. Toyota, Mercedes-Benz, ` +
-    `Hyundai, Isuzu)? Reject single letters, digits-only text, keyboard mashing, or obvious nonsense.`,
-  vehicleModel: `Is "{value}" a plausible vehicle model name (e.g. Hilux, Actros, Corolla, FH16)? ` +
-    `Reject single letters, digits-only text, keyboard mashing, or obvious nonsense.`,
+const FIELD_PROMPTS: Record<FreeTextFieldKind, (value: string, context?: string) => string> = {
+  address: (value) =>
+    `Is "${value}" a plausible real-world address — anywhere in the world (any country), not just ` +
+    `Angola? It should read like a genuine street/neighbourhood/city/region reference. Reject single ` +
+    `characters, digits-only text, keyboard mashing, or obvious placeholder/joke answers (e.g. "asdf", ` +
+    `"n/a", "don't know"). It does NOT need a postal code or a specific country to be named.`,
+  vehicleMake: (value) =>
+    `Is "${value}" a REAL, existing vehicle manufacturer (make) — using your actual knowledge of car ` +
+    `brands, not just whether it sounds plausible? Reject anything that isn't a genuine manufacturer, ` +
+    `including misspellings that don't correspond to a real brand, single letters, digits-only text, ` +
+    `keyboard mashing, or made-up names.`,
+  vehicleModel: (value, make) =>
+    `Is "${value}" a REAL model actually manufactured by "${make ?? 'the given manufacturer'}"? Use ` +
+    `your actual knowledge of ${make ?? 'that manufacturer'}'s real model lineup — reject a model name ` +
+    `that isn't genuinely one of their models, even if it looks like a plausible alphanumeric car-model ` +
+    `pattern (e.g. an invented combination like "M3200i" that resembles real model-naming conventions ` +
+    `but isn't an actual model this manufacturer makes), plus single letters, digits-only text, or ` +
+    `keyboard mashing.`,
 };
 
 /**
- * Judges whether a customer-typed free-text reply (name, address, vehicle
+ * Judges whether a customer-typed free-text reply (address, vehicle
  * make/model) is plausible, via a single Claude Haiku text-only call — the
  * one architectural exception to this codebase's "no conversational AI"
  * rule (see CLAUDE.md), since these fields have no fixed format a regex
- * could check. Fails OPEN (treats the input as valid) on any network/API
- * error so an Anthropic outage never blocks onboarding — only the model's
- * own judgment, or a malformed JSON response, causes a rejection.
+ * could check and benefit from Claude's real-world knowledge (e.g. whether a
+ * model actually belongs to a given make). Fails OPEN (treats the input as
+ * valid) on any network/API error so an Anthropic outage never blocks
+ * onboarding — only the model's own judgment, or a malformed JSON response,
+ * causes a rejection. `context` is used by 'vehicleModel' to pass the
+ * already-collected make, so the model is checked against that specific
+ * manufacturer's real lineup instead of validated in isolation.
  */
-export async function validateFreeText(kind: FreeTextFieldKind, value: string): Promise<PlausibilityResult> {
-  const prompt = FIELD_PROMPTS[kind].replace('{value}', value);
+export async function validateFreeText(kind: FreeTextFieldKind, value: string, context?: string): Promise<PlausibilityResult> {
+  const prompt = FIELD_PROMPTS[kind](value, context);
 
   try {
     const response = await anthropic.messages.create({
@@ -70,28 +80,41 @@ export async function validateFreeText(kind: FreeTextFieldKind, value: string): 
 }
 
 /**
- * Best-effort Angola NIF shape check — no canonical spec is codified anywhere
- * in this codebase today (the admin-side Joi schema accepts any string), so
- * this is intentionally lenient: strips whitespace, requires 9-14
- * alphanumeric characters, and majority-digit content.
+ * Deterministic person-name plausibility check — no AI call, since a name's
+ * shape (letters/spaces only, sane length, not a repeated character) is a
+ * pattern a regex can check just as well, without the latency/cost of a
+ * Claude round-trip.
+ */
+export function isPlausibleName(value: string): boolean {
+  const clean = value.trim();
+  if (clean.length < 3 || clean.length > 60) return false;
+  if (!/^[\p{L}\s'.-]+$/u.test(clean)) return false;
+  return !/^(.)\1*$/.test(clean.replace(/[\s'.-]/g, ''));
+}
+
+/**
+ * Angola NIF format check — for individuals this mirrors the Bilhete de
+ * Identidade (BI) number: 9 digits + a 2-letter province code + 3 digits
+ * (e.g. "005123456LA042"). Collective/company NIFs are typically a plain
+ * 9-10 digit number instead, so both shapes are accepted.
  */
 export function isPlausibleNif(value: string): boolean {
-  const clean = value.replace(/\s/g, '');
-  if (clean.length < 9 || clean.length > 14) return false;
-  if (!/^[A-Za-z0-9]+$/.test(clean)) return false;
-  const digitCount = (clean.match(/\d/g) || []).length;
-  return digitCount >= clean.length / 2;
+  const clean = value.replace(/\s/g, '').toUpperCase();
+  return /^\d{9}[A-Z]{2}\d{3}$/.test(clean) || /^\d{9,10}$/.test(clean);
 }
 
 /**
  * Lenient engine-number shape check — arbitrary alphanumeric codes have no
  * semantic content an AI could judge, so this stays a simple format check:
- * length 4-20, alphanumeric (dashes allowed), not a single repeated character.
+ * length 4-20, alphanumeric (dashes allowed), at least one digit (real engine
+ * numbers virtually always include one — this rejects plain-word guesses
+ * like "Whfa"), and not a single repeated character.
  */
 export function isPlausibleEngineNumber(value: string): boolean {
   const clean = value.trim();
   if (clean.length < 4 || clean.length > 20) return false;
   if (!/^[A-Za-z0-9-]+$/.test(clean)) return false;
+  if (!/\d/.test(clean)) return false;
   return !/^(.)\1*$/.test(clean.replace(/-/g, ''));
 }
 
@@ -112,13 +135,14 @@ export function isPlausibleLicensePlate(value: string): boolean {
 /**
  * Year-plausibility check shared by the manual vehicle-entry wizard and the
  * vision-extracted-year check — extracted from what was previously an
- * inline check only in the manual-entry path.
+ * inline check only in the manual-entry path. Range is strictly 1980 through
+ * the current calendar year (no next-year allowance).
  */
 export function isPlausibleYear(value: string): boolean {
   const yearClean = value.replace(/\D/g, '');
   const yearInt = parseInt(yearClean, 10);
   const currentYear = new Date().getFullYear();
-  return !!yearClean && yearClean.length === 4 && yearInt >= 1980 && yearInt <= currentYear + 1;
+  return !!yearClean && yearClean.length === 4 && yearInt >= 1980 && yearInt <= currentYear;
 }
 
 const VIN_TRANSLITERATION: Record<string, number> = {

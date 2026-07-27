@@ -282,7 +282,7 @@ const pt: Messages = {
       `✅ *${make} ${model}*\n\nQual é o *ano* do veículo?\n\n` +
       `Exemplo: _2015, 2018, 2020..._`,
     invalidYear: () =>
-      `⚠️ Ano inválido. Por favor indica o ano com 4 dígitos.\n\nExemplo: _2018_`,
+      `⚠️ Ano inválido. Indica um ano entre *1980* e *${new Date().getFullYear()}*.\n\nExemplo: _2018_`,
     askEngineNumber: (make, model, year) =>
       `✅ *${make} ${model} ${year}*\n\n` +
       `Qual é o *número do motor*? _(opcional)_\n\n` +
@@ -748,7 +748,7 @@ const en: Messages = {
       `✅ *${make} ${model}*\n\nWhat *year* is the vehicle?\n\n` +
       `Example: _2015, 2018, 2020..._`,
     invalidYear: () =>
-      `⚠️ Invalid year. Please enter the year with 4 digits.\n\nExample: _2018_`,
+      `⚠️ Invalid year. Please enter a year between *1980* and *${new Date().getFullYear()}*.\n\nExample: _2018_`,
     askEngineNumber: (make, model, year) =>
       `✅ *${make} ${model} ${year}*\n\n` +
       `What's the *engine number*? _(optional)_\n\n` +
