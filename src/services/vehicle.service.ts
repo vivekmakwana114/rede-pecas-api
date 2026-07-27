@@ -35,7 +35,18 @@ import {
   getVinDecodeFailedVin,
   clearVinDecodeFailedChoice,
   saveActivePromptId,
+  incrementValidationAttempts,
+  clearValidationAttempts,
 } from './session.service.js';
+import {
+  validateFreeText,
+  isPlausibleYear,
+  isPlausibleEngineNumber,
+  isPlausibleLicensePlate,
+  isValidVinChecksum,
+  flagForReview,
+  MAX_VALIDATION_ATTEMPTS,
+} from './validation.service.js';
 
 export { getActiveManualCollection, startManualCollection };
 
@@ -312,6 +323,19 @@ export async function processManualCollectionStep(
 
   if (collection.status === 'awaiting_make') {
     const make = capitalize(r);
+    const result = await validateFreeText('vehicleMake', make);
+
+    if (!result.valid) {
+      const attempts = await incrementValidationAttempts(phone, 'vehicleMake');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidMake());
+        return true;
+      }
+      await flagForReview('vehicle', collection.id, 'make', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${make}"`);
+    } else {
+      await clearValidationAttempts(phone, 'vehicleMake');
+    }
+
     await updateManualCollection(collection.id, { make, status: 'awaiting_model' });
     await sendReply(phone, messages.manual.askModel(make));
     return true;
@@ -319,6 +343,19 @@ export async function processManualCollectionStep(
 
   if (collection.status === 'awaiting_model') {
     const model = capitalize(r);
+    const result = await validateFreeText('vehicleModel', model, collection.make);
+
+    if (!result.valid) {
+      const attempts = await incrementValidationAttempts(phone, 'vehicleModel');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidModel());
+        return true;
+      }
+      await flagForReview('vehicle', collection.id, 'model', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${model}"`);
+    } else {
+      await clearValidationAttempts(phone, 'vehicleModel');
+    }
+
     await updateManualCollection(collection.id, { model, status: 'awaiting_year' });
     await sendReply(phone, messages.manual.askYear(collection.make, model));
     return true;
@@ -326,10 +363,8 @@ export async function processManualCollectionStep(
 
   if (collection.status === 'awaiting_year') {
     const yearClean = r.replace(/\D/g, '');
-    const yearInt = parseInt(yearClean, 10);
-    const currentYear = new Date().getFullYear();
 
-    if (!yearClean || yearClean.length !== 4 || yearInt < 1980 || yearInt > currentYear + 1) {
+    if (!isPlausibleYear(yearClean)) {
       await sendReply(phone, messages.manual.invalidYear());
       return true;
     }
@@ -340,10 +375,33 @@ export async function processManualCollectionStep(
   }
 
   if (collection.status === 'awaiting_engine_number') {
-    const rLower = r.toLowerCase();
-    const engineNumber = (rLower === 'não sei' || rLower === 'nao sei' || rLower === 'n' || rLower === 'skip' || rLower === 'não')
-      ? null
-      : r.toUpperCase();
+    // Strip straight/curly apostrophes so "don't know" and "dont know" both
+    // match — the en prompt itself tells the customer to type "don't know",
+    // which the old pt-only skip-phrase list never recognized, so it fell
+    // through to engine-number validation and got rejected as invalid.
+    const normalized = r.toLowerCase().replace(/['’]/g, '').trim();
+    const SKIP_PHRASES = new Set([
+      'não sei', 'nao sei', 'não', 'nao', 'n', 'skip',
+      'dont know', 'do not know', 'idk', 'unknown', 'not sure',
+    ]);
+    const skipped = SKIP_PHRASES.has(normalized);
+
+    let engineNumber: string | null = null;
+    if (!skipped) {
+      const candidate = r.toUpperCase();
+      if (!isPlausibleEngineNumber(candidate)) {
+        const attempts = await incrementValidationAttempts(phone, 'engineNumber');
+        if (attempts < MAX_VALIDATION_ATTEMPTS) {
+          await sendReply(phone, messages.validation.invalidEngineNumber());
+          return true;
+        }
+        await flagForReview('vehicle', collection.id, 'engine_number', `Failed format check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${candidate}"`);
+        engineNumber = candidate;
+      } else {
+        await clearValidationAttempts(phone, 'engineNumber');
+        engineNumber = candidate;
+      }
+    }
 
     await saveVehicleSession(phone, {
       make: collection.make,
@@ -412,6 +470,16 @@ export async function processVIN(phone: string, vin: string): Promise<void> {
     fuel_type: vehicle.fuel_type,
     engine_size: vehicle.engine,
   });
+
+  if (!isValidVinChecksum(vinClean)) {
+    // NHTSA still resolved this VIN, so we don't block the customer — the
+    // check digit isn't reliably populated on non-US-market VINs — but we
+    // flag it so staff can double-check for a transcription error.
+    const saved = await getMostRecentVehicle(phone);
+    if (saved) {
+      await flagForReview('vehicle', saved.id, 'vin', `NHTSA decoded this VIN, but it failed the ISO 3779 check-digit verification: "${vinClean}"`);
+    }
+  }
 
   const description = [
     vehicle.model
@@ -505,8 +573,10 @@ export async function processVehicleDocument(phone: string, mediaId: string): Pr
   let fuelType = extracted.fuel_type || null;
   let engineSize = extracted.engine_size || null;
   let nhtsaConfirmed = false;
+  let chassisChecksumValid: boolean | null = null;
 
   if (extracted.chassis_number && isVIN(extracted.chassis_number)) {
+    chassisChecksumValid = isValidVinChecksum(extracted.chassis_number);
     const decoded = await decodeVIN(extracted.chassis_number.toUpperCase());
     if (decoded) {
       make = decoded.make;
@@ -529,6 +599,26 @@ export async function processVehicleDocument(phone: string, mediaId: string): Pr
     return;
   }
 
+  // Non-essential extracted fields are discarded (not retried) when
+  // implausible, same treatment as a missing field — there's no
+  // photo-retry loop for a single bad field once make/model are in hand.
+  if (year && !isPlausibleYear(year)) {
+    logger.info(`[VISION] Implausible year extracted for ${phone}, discarding: "${year}"`);
+    year = null;
+  }
+
+  let engineNumber = extracted.engine_number || null;
+  if (engineNumber && !isPlausibleEngineNumber(engineNumber)) {
+    logger.info(`[VISION] Implausible engine number extracted for ${phone}, discarding: "${engineNumber}"`);
+    engineNumber = null;
+  }
+
+  let licensePlate = extracted.license_plate || null;
+  if (licensePlate && !isPlausibleLicensePlate(licensePlate)) {
+    logger.info(`[VISION] Implausible license plate extracted for ${phone}, discarding: "${licensePlate}"`);
+    licensePlate = null;
+  }
+
   await saveVehicleSession(phone, {
     vin: extracted.chassis_number || null,
     make,
@@ -536,15 +626,24 @@ export async function processVehicleDocument(phone: string, mediaId: string): Pr
     year: year || null,
     fuel_type: fuelType,
     engine_size: engineSize,
-    engine_number: extracted.engine_number || null,
-    license_plate: extracted.license_plate || null,
+    engine_number: engineNumber,
+    license_plate: licensePlate,
   });
+
+  if (nhtsaConfirmed && chassisChecksumValid === false) {
+    // Same non-blocking treatment as the VIN-entry path — NHTSA already
+    // confirmed this vehicle, so we flag rather than reject.
+    const saved = await getMostRecentVehicle(phone);
+    if (saved) {
+      await flagForReview('vehicle', saved.id, 'vin', `NHTSA decoded this chassis number, but it failed the ISO 3779 check-digit verification: "${extracted.chassis_number}"`);
+    }
+  }
 
   const description = [
     `${make} ${model}${year ? ` ${year}` : ''}`,
     engineSize || null,
     fuelType || null,
-    extracted.license_plate ? messages.document.licensePlateLabel(extracted.license_plate) : null,
+    licensePlate ? messages.document.licensePlateLabel(licensePlate) : null,
     extracted.chassis_number ? messages.document.chassisLabel(extracted.chassis_number.toUpperCase()) : null,
   ].filter(Boolean).join(' · ');
 

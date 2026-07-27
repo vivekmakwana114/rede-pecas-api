@@ -13,7 +13,7 @@ export function detectGreetingLocale(text: string): 'en' | 'pt' | null {
   return null;
 }
 
-const PT_SIGNAL_WORDS = new Set([
+export const PT_SIGNAL_WORDS = new Set([
   'oi', 'ola', 'olá', 'bom', 'boa', 'dia', 'tarde', 'noite', 'sim', 'nao', 'não',
   'obrigado', 'obrigada', 'favor', 'preciso', 'precisava', 'quero', 'queria', 'gostaria',
   'para', 'meu', 'minha', 'meus', 'minhas', 'carro', 'carros', 'peca', 'peça', 'pecas', 'peças',
@@ -27,7 +27,7 @@ const PT_SIGNAL_WORDS = new Set([
   'desculpe', 'vamos', 'essa', 'esse', 'aquele', 'aquela',
 ]);
 
-const EN_SIGNAL_WORDS = new Set([
+export const EN_SIGNAL_WORDS = new Set([
   'hi', 'hello', 'hey', 'good', 'morning', 'afternoon', 'evening', 'yes', 'please', 'thanks',
   'thank', 'you', 'need', 'needed', 'want', 'wanted', 'would', 'like', 'for', 'my', 'car', 'cars',
   'part', 'parts', 'still', 'today', 'tomorrow', 'then', 'have', 'has', 'with', 'without', 'where',

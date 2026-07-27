@@ -97,6 +97,11 @@ async function processMessageFlow(
     await sessionService.saveLastMessage(phone, customerText);
   }
 
+  const chatLogText = customerText || (mediaId ? `[${mediaType}]` : null);
+  if (chatLogText) {
+    await sessionService.appendChatMessage(phone, 'in', chatLogText);
+  }
+
   const customer = await customerService.getOrCreateCustomer(phone);
   if (!customer) return;
 

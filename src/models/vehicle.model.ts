@@ -14,6 +14,8 @@ export interface VehicleSession {
   source: string | null;
   status: string | null;
   attempted_vin: string | null;
+  needs_review: boolean;
+  needs_review_reason: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -27,6 +29,8 @@ export interface ManualCollection {
   model: string | null;
   year: string | null;
   engine_number: string | null;
+  needs_review: boolean;
+  needs_review_reason: string | null;
   created_at: Date;
 }
 

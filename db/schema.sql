@@ -545,7 +545,9 @@ CREATE TABLE IF NOT EXISTS customers (
   last_contact_at      TIMESTAMPTZ DEFAULT NOW(),
   registered_at        TIMESTAMPTZ,
   contact_count        INT DEFAULT 1,
-  active               BOOLEAN DEFAULT true
+  active               BOOLEAN DEFAULT true,
+  needs_review         BOOLEAN DEFAULT false,   -- set when a profile field was accepted after exhausting validation retries
+  needs_review_reason  TEXT                     -- which field(s) failed validation and why, for admin follow-up
 );
 
 -- Conversation locale used to be stamped here once from the customer's first
@@ -554,6 +556,13 @@ CREATE TABLE IF NOT EXISTS customers (
 -- saveLocale/getLocale), so a customer switching language mid-conversation
 -- gets answered in whatever they just typed instead of a frozen locale.
 ALTER TABLE customers DROP COLUMN IF EXISTS locale;
+
+-- Added 2026-07-27 — flags a profile field that was accepted with a
+-- needs_review reason after exhausting validation retries (see validation.service.ts).
+-- CREATE TABLE IF NOT EXISTS is a no-op on an already-existing table, so these
+-- also need an explicit ALTER for installs that predate this change.
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS needs_review BOOLEAN DEFAULT false;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS needs_review_reason TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_customers_status ON customers (registration_status);
 CREATE INDEX IF NOT EXISTS idx_customers_last_contact ON customers (last_contact_at);
@@ -585,9 +594,15 @@ CREATE TABLE IF NOT EXISTS vehicles (
   source          TEXT,               -- 'vin' | 'manual' | 'document'
   status          TEXT,               -- NULL/'complete' = confirmed vehicle; other = in-progress manual wizard step
   attempted_vin   CHAR(17),           -- VIN that failed NHTSA decode before falling back to manual entry
+  needs_review    BOOLEAN DEFAULT false, -- set when a vehicle field was accepted after exhausting validation retries
+  needs_review_reason TEXT,           -- which field(s) failed validation and why, for admin follow-up
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Added 2026-07-27 — see the matching customers.needs_review ALTER above for why.
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS needs_review BOOLEAN DEFAULT false;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS needs_review_reason TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_vehicles_phone ON vehicles (phone);
 CREATE INDEX IF NOT EXISTS idx_vehicles_updated_at ON vehicles (updated_at);

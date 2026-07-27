@@ -12,10 +12,13 @@ import {
   markPartPromptSent,
   markVehicleIdChoiceShown,
   getLocale,
-  saveCustomerName
+  saveCustomerName,
+  incrementValidationAttempts,
+  clearValidationAttempts
 } from './session.service.js';
 import { capitalize } from '../utils/helpers.js';
 import { getMessages, DEFAULT_LOCALE } from '../i18n/messages.js';
+import { validateFreeText, isPlausibleName, isPlausibleNif, flagForReview, MAX_VALIDATION_ATTEMPTS } from './validation.service.js';
 
 export type { Customer };
 
@@ -64,6 +67,18 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_name') {
     const name = capitalize(r);
+
+    if (!isPlausibleName(name)) {
+      const attempts = await incrementValidationAttempts(phone, 'name');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidName());
+        return true;
+      }
+      await flagForReview('customer', phone, 'name', `Failed format check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${name}"`);
+    } else {
+      await clearValidationAttempts(phone, 'name');
+    }
+
     await updateCustomer(phone, { name, registration_status: 'awaiting_nif' });
     await sendReplyButtons(phone, messages.onboarding.askNifBody(name), messages.onboarding.askNifButtons);
     return true;
@@ -71,7 +86,10 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_nif') {
     const rLower = r.toLowerCase();
-    const noNif = rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌') || rLower.includes('nao obrigado') || r === '2';
+    // \b-bounded "no" avoids false substring matches on words like "not" or
+    // "know" — plain .includes('no') would wrongly treat those as declining.
+    const noNif = rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌')
+      || /\bno\b/.test(rLower) || rLower.includes('nope') || rLower === 'n' || r === '2';
 
     if (noNif) {
       await updateCustomer(phone, { nif: null, registration_status: 'awaiting_address' });
@@ -85,6 +103,18 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_nif_number') {
     const nif = r.replace(/\s/g, '').toUpperCase();
+
+    if (!isPlausibleNif(nif)) {
+      const attempts = await incrementValidationAttempts(phone, 'nif');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidNif());
+        return true;
+      }
+      await flagForReview('customer', phone, 'nif', `Failed format check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${nif}"`);
+    } else {
+      await clearValidationAttempts(phone, 'nif');
+    }
+
     await updateCustomer(phone, { nif, registration_status: 'awaiting_address' });
     await sendReply(phone, messages.onboarding.askAddress(firstName));
     return true;
@@ -92,7 +122,23 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_address') {
     const rLower = r.toLowerCase();
-    const address = (rLower === 'saltar' || rLower === 'skip') ? null : r;
+    const skipped = rLower === 'saltar' || rLower === 'skip';
+
+    if (!skipped) {
+      const result = await validateFreeText('address', r);
+      if (!result.valid) {
+        const attempts = await incrementValidationAttempts(phone, 'address');
+        if (attempts < MAX_VALIDATION_ATTEMPTS) {
+          await sendReply(phone, messages.validation.invalidAddress());
+          return true;
+        }
+        await flagForReview('customer', phone, 'address', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${r}"`);
+      } else {
+        await clearValidationAttempts(phone, 'address');
+      }
+    }
+
+    const address = skipped ? null : r;
 
     await updateCustomer(phone, {
       address,

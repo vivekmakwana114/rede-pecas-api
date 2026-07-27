@@ -988,6 +988,71 @@ export async function getActivePromptId(phone: string): Promise<string | null> {
   return getString(`activePrompt:${phone}`);
 }
 
+const validationAttemptSessions = new Map<string, { count: number; expiresAt: number }>();
+
+/**
+ * Retrieves how many consecutive times a customer's reply has failed
+ * validation for a given field this session (0 if none yet).
+ */
+export async function getValidationAttempts(phone: string, field: string): Promise<number> {
+  const key = `valattempts:${field}:${phone}`;
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    const entry = validationAttemptSessions.get(key);
+    return entry && entry.expiresAt >= Date.now() ? entry.count : 0;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? parseInt(data, 10) : 0;
+  } catch (err) {
+    logger.error('Error fetching validation attempts from Redis', err);
+    const entry = validationAttemptSessions.get(key);
+    return entry && entry.expiresAt >= Date.now() ? entry.count : 0;
+  }
+}
+
+/**
+ * Increments and returns the consecutive-failed-validation count for a
+ * phone/field, used to cap retries before accepting the value with a
+ * needs_review flag instead of re-asking forever.
+ */
+export async function incrementValidationAttempts(phone: string, field: string): Promise<number> {
+  const key = `valattempts:${field}:${phone}`;
+  const next = (await getValidationAttempts(phone, field)) + 1;
+  validationAttemptSessions.set(key, { count: next, expiresAt: Date.now() + SESSION_TTL * 1000 });
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return next;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, String(next));
+  } catch (err) {
+    logger.error('Error saving validation attempts to Redis', err);
+  }
+  return next;
+}
+
+/**
+ * Resets the consecutive-failed-validation count for a phone/field, called
+ * once a reply passes validation or the field is accepted with a flag.
+ */
+export async function clearValidationAttempts(phone: string, field: string): Promise<void> {
+  const key = `valattempts:${field}:${phone}`;
+  validationAttemptSessions.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing validation attempts in Redis', err);
+  }
+}
+
 const HUMANIZE_CACHE_TTL = 60 * 60 * 24;
 const humanizeCache = new Map<string, { value: string; expiresAt: number }>();
 
@@ -1078,6 +1143,85 @@ export async function isTokenRevoked(token: string): Promise<boolean> {
     logger.error('Error checking token revocation in Redis', err);
     const expiresAt = revokedTokens.get(key);
     return !!expiresAt && expiresAt >= Date.now();
+  }
+}
+
+export interface ChatLogEntry {
+  direction: 'in' | 'out';
+  text: string;
+  at: string;
+}
+
+const CHAT_LOG_TTL = 60 * 60 * 24;
+const chatLogSessions = new Map<string, { messages: ChatLogEntry[]; expiresAt: number }>();
+
+/**
+ * Appends a message (inbound customer text or outbound bot reply) to the
+ * phone's chat transcript. The 24h TTL is a fixed window from the FIRST
+ * message that started it, not a sliding one — later messages in the same
+ * window are appended without touching the expiry, so the whole log expires
+ * exactly 24h after it started regardless of how active the conversation
+ * stays. Once it expires, the next message starts a brand-new 24h window.
+ */
+export async function appendChatMessage(phone: string, direction: 'in' | 'out', text: string): Promise<void> {
+  const key = `chatlog:${phone}`;
+  const entry: ChatLogEntry = { direction, text, at: new Date().toISOString() };
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    const cached = chatLogSessions.get(key);
+    const isFirstMessage = !cached || cached.expiresAt < Date.now();
+    const messages = isFirstMessage ? [] : cached!.messages;
+    messages.push(entry);
+    chatLogSessions.set(key, {
+      messages,
+      expiresAt: isFirstMessage ? Date.now() + CHAT_LOG_TTL * 1000 : cached!.expiresAt,
+    });
+    return;
+  }
+
+  try {
+    const ttl = await redisClient.ttl(key);
+    const isFirstMessage = ttl < 0; // -2 = key missing, -1 = no TTL (shouldn't happen, treat as first)
+    const data = isFirstMessage ? null : await redisClient.get(key);
+    const messages: ChatLogEntry[] = data ? JSON.parse(data) : [];
+    messages.push(entry);
+
+    chatLogSessions.set(key, {
+      messages,
+      expiresAt: Date.now() + (isFirstMessage ? CHAT_LOG_TTL : Math.max(ttl, 0)) * 1000,
+    });
+
+    if (isFirstMessage) {
+      await redisClient.setEx(key, CHAT_LOG_TTL, JSON.stringify(messages));
+    } else {
+      await redisClient.set(key, JSON.stringify(messages), { KEEPTTL: true });
+    }
+  } catch (err) {
+    logger.error('Error saving chat log to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the phone's rolling 24h chat transcript, oldest first, or an
+ * empty array if there's none yet or it's expired.
+ */
+export async function getChatLog(phone: string): Promise<ChatLogEntry[]> {
+  const key = `chatlog:${phone}`;
+  const readMemory = (): ChatLogEntry[] => {
+    const cached = chatLogSessions.get(key);
+    return cached && cached.expiresAt >= Date.now() ? cached.messages : [];
+  };
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return readMemory();
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : [];
+  } catch (err) {
+    logger.error('Error fetching chat log from Redis', err);
+    return readMemory();
   }
 }
 
