@@ -82,11 +82,11 @@ export interface SearchVehicle {
 export async function searchProductsInInventory({
   part,
   vehicle,
-  excludeProductId,
+  excludeProductIds,
 }: {
   part: string;
   vehicle?: SearchVehicle | null;
-  excludeProductId?: number;
+  excludeProductIds?: number[];
 }): Promise<Product[]> {
   const { rows } = await db.query(
     `
@@ -110,13 +110,13 @@ export async function searchProductsInInventory({
       p.quantity > 0
       AND p.active = true
       AND p.search_vector @@ ${OR_TSQUERY}
-      AND ($2::int IS NULL OR p.id != $2)
+      AND ($2::int[] IS NULL OR NOT (p.id = ANY($2::int[])))
     ORDER BY
       p.price ASC,
       s.rating DESC
     LIMIT ${SEARCH_CANDIDATE_LIMIT}
     `,
-    [part, excludeProductId ?? null]
+    [part, excludeProductIds?.length ? excludeProductIds : null]
   );
 
   const compatible = vehicle

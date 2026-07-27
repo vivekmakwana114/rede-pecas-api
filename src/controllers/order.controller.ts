@@ -15,7 +15,12 @@ import {
   hideApprovedOrder,
 } from '../models/order.model.js';
 import { approveOrder } from '../services/payment.service.js';
-import { confirmStockAndFinalizeOrder, markStockUnavailableAndOfferAlternative } from '../services/product.service.js';
+import {
+  confirmStockAndFinalizeOrder,
+  markStockUnavailableAndOfferAlternative,
+  finalizeMultiItemOrderIfComplete,
+} from '../services/product.service.js';
+import { setOrderItemAvailability } from '../models/order.model.js';
 import { resolveMessages } from '../services/customer.service.js';
 import { downloadWhatsAppMedia } from '../services/whatsapp.service.js';
 import { sendReply } from '../services/reply.service.js';
@@ -43,12 +48,33 @@ export const getOrders = catchAsync(async (req: Request, res: Response) => {
 });
 
 /**
- * Backs `POST /v1/admin/orders/:number/confirm/stock` — either finalizes the
- * order when stock is confirmed available, or marks it stock-unavailable and offers the customer an alternative.
+ * Backs `POST /v1/admin/orders/:number/confirm/stock` — for a legacy
+ * single-product order (body `{ available }`), either finalizes it or marks
+ * it stock-unavailable exactly as before. For a multi-item "basket" order
+ * (body `{ items: [{ itemId, available }] }`), applies each item's
+ * availability and finalizes the order once every item has an answer — the
+ * admin-panel REST equivalent of the per-item WhatsApp Confirm/Unavailable
+ * buttons (`processAdminItemStockReply` in product.service.ts).
  */
 export const confirmOrderStockHandler = catchAsync(async (req: Request, res: Response) => {
   const { number } = req.params;
-  const { available } = req.body;
+  const { available, items } = req.body as { available?: boolean; items?: { itemId: number; available: boolean }[] };
+
+  if (items) {
+    for (const item of items) {
+      await setOrderItemAvailability(number, item.itemId, item.available);
+    }
+    await finalizeMultiItemOrderIfComplete(number);
+
+    res.status(200).json({
+      success: true,
+      message: `Stock availability recorded for ${items.length} item(s) on order ${number}.`,
+      code: 200,
+      data: null,
+      meta: { timestamp: new Date().toISOString() },
+    });
+    return;
+  }
 
   if (available) {
     await confirmStockAndFinalizeOrder(number);

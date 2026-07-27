@@ -406,6 +406,18 @@ CREATE TABLE IF NOT EXISTS orders (
   -- sending any notification. The real order is untouched and still exists;
   -- this never gets set back to false from the UI today (no "restore" action).
   admin_hidden            BOOLEAN DEFAULT false,
+  -- Multi-product "basket" orders (2026-07-27): when a customer names several
+  -- distinct parts in one message, all of them land on ONE order instead of
+  -- one order per product. product_id/unit_price/service_name/service_price
+  -- above stay NULL for these orders; `items` holds the array instead, one
+  -- entry per product: { itemId (1-based, stable for the order's lifetime —
+  -- used in admin WhatsApp button ids), productId, productName, reference,
+  -- supplierId, supplierName, quantity, unitPrice, serviceName, servicePrice,
+  -- availabilityStatus ('pending' | 'available' | 'unavailable') }. NULL for
+  -- every single-product order (the overwhelming majority) — an order is
+  -- "multi-item" precisely when items IS NOT NULL, the only signal the code
+  -- needs anywhere to pick between the legacy single-product path and this one.
+  items                   JSONB,
   created_at              TIMESTAMPTZ DEFAULT NOW(),
   updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
@@ -417,6 +429,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS service_price NUMERIC(12,2);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_hidden BOOLEAN DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_confirmation_courtesy_sent BOOLEAN DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_confirmation_admin_reminder_sent BOOLEAN DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders (customer_phone);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);

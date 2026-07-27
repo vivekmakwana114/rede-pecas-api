@@ -92,6 +92,266 @@ export async function clearPendingOptions(phone: string): Promise<void> {
   }
 }
 
+export interface BasketItemDraft {
+  product: Product;
+  service: { name: string; price: number } | null;
+}
+
+export interface PendingBasket {
+  queue: string[];           // product-name phrases not yet searched/resolved
+  items: BasketItemDraft[];  // resolved so far
+}
+
+const basketCache = new Map<string, PendingBasket>();
+
+/**
+ * Stores the in-progress multi-product "basket" for a phone — the remaining
+ * product-name phrases still to be searched/resolved, plus the items already
+ * picked — while the customer works through a multi-product search one item at a time.
+ */
+export async function savePendingBasket(phone: string, basket: PendingBasket): Promise<void> {
+  const key = `basket:${phone}`;
+  basketCache.set(key, basket);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(basket));
+  } catch (err) {
+    logger.error('Error saving pending basket to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the in-progress multi-product basket for a phone, if one is
+ * still being built.
+ */
+export async function getPendingBasket(phone: string): Promise<PendingBasket | null> {
+  const key = `basket:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return basketCache.get(key) || null;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    logger.error('Error fetching pending basket from Redis', err);
+    return basketCache.get(key) || null;
+  }
+}
+
+/**
+ * Removes the in-progress multi-product basket for a phone once it's been
+ * confirmed or cancelled.
+ */
+export async function clearPendingBasket(phone: string): Promise<void> {
+  const key = `basket:${phone}`;
+  basketCache.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error deleting pending basket from Redis', err);
+  }
+}
+
+const basketConfirmSessions = new Map<string, number>();
+
+/**
+ * Marks that the basket summary + Sim/Não confirmation buttons were just
+ * shown to this phone, gating the confirm-reply matcher.
+ */
+export async function markBasketConfirmShown(phone: string): Promise<void> {
+  const key = `basketConfirm:${phone}`;
+  basketConfirmSessions.set(key, Date.now() + VEHICLE_ID_CHOICE_TTL * 1000);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, VEHICLE_ID_CHOICE_TTL, '1');
+  } catch (err) {
+    logger.error('Error marking basket-confirm choice shown in Redis', err);
+  }
+}
+
+/**
+ * Reports whether the basket summary + Sim/Não confirmation buttons were
+ * shown to this phone within the current session.
+ */
+export async function wasBasketConfirmShown(phone: string): Promise<boolean> {
+  const key = `basketConfirm:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    const expiresAt = basketConfirmSessions.get(key);
+    return !!expiresAt && expiresAt >= Date.now();
+  }
+
+  try {
+    const exists = await redisClient.exists(key);
+    return exists === 1;
+  } catch (err) {
+    logger.error('Error checking basket-confirm choice state in Redis', err);
+    const expiresAt = basketConfirmSessions.get(key);
+    return !!expiresAt && expiresAt >= Date.now();
+  }
+}
+
+/**
+ * Clears the basket-confirm buttons' shown flag for this phone.
+ */
+export async function clearBasketConfirmShown(phone: string): Promise<void> {
+  const key = `basketConfirm:${phone}`;
+  basketConfirmSessions.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing basket-confirm choice in Redis', err);
+  }
+}
+
+export interface PendingAlternativeOffer {
+  orderNumber: string;
+  itemId: number;
+}
+
+const alternativeOfferCache = new Map<string, PendingAlternativeOffer>();
+
+/**
+ * Stores which order/item an alternative-products list currently on screen
+ * belongs to, so the customer's list-tap/typed-digit reply resolves back to
+ * the right unavailable line item on an existing multi-item order.
+ */
+export async function savePendingAlternativeOffer(phone: string, offer: PendingAlternativeOffer): Promise<void> {
+  const key = `altOffer:${phone}`;
+  alternativeOfferCache.set(key, offer);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(offer));
+  } catch (err) {
+    logger.error('Error saving pending alternative offer to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the pending alternative-products offer for a phone, if one is
+ * still awaiting a reply.
+ */
+export async function getPendingAlternativeOffer(phone: string): Promise<PendingAlternativeOffer | null> {
+  const key = `altOffer:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return alternativeOfferCache.get(key) || null;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    logger.error('Error fetching pending alternative offer from Redis', err);
+    return alternativeOfferCache.get(key) || null;
+  }
+}
+
+/**
+ * Removes the pending alternative-products offer for a phone once it's
+ * been resolved.
+ */
+export async function clearPendingAlternativeOffer(phone: string): Promise<void> {
+  const key = `altOffer:${phone}`;
+  alternativeOfferCache.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error deleting pending alternative offer from Redis', err);
+  }
+}
+
+export interface PendingAlternativeResolution {
+  orderNumber: string;
+  queue: number[]; // itemIds still needing an alternative offered
+}
+
+const alternativeResolutionCache = new Map<string, PendingAlternativeResolution>();
+
+/**
+ * Stores the queue of an existing multi-item order's rejected line items
+ * still waiting to be offered alternatives, one at a time, after admin
+ * marks some items unavailable.
+ */
+export async function savePendingAlternativeResolution(phone: string, resolution: PendingAlternativeResolution): Promise<void> {
+  const key = `altResolution:${phone}`;
+  alternativeResolutionCache.set(key, resolution);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(resolution));
+  } catch (err) {
+    logger.error('Error saving pending alternative resolution to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the in-progress alternative-resolution queue for a phone, if
+ * one is still active.
+ */
+export async function getPendingAlternativeResolution(phone: string): Promise<PendingAlternativeResolution | null> {
+  const key = `altResolution:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return alternativeResolutionCache.get(key) || null;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    logger.error('Error fetching pending alternative resolution from Redis', err);
+    return alternativeResolutionCache.get(key) || null;
+  }
+}
+
+/**
+ * Removes the alternative-resolution queue for a phone once every rejected
+ * item has been offered an alternative (picked or skipped).
+ */
+export async function clearPendingAlternativeResolution(phone: string): Promise<void> {
+  const key = `altResolution:${phone}`;
+  alternativeResolutionCache.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing pending alternative resolution in Redis', err);
+  }
+}
+
 const activeSessions = new Map<string, number>();
 
 /**
@@ -464,7 +724,10 @@ export async function clearPendingRestockOrderOffer(phone: string): Promise<void
 }
 
 export interface PendingServiceOffer {
-  orderNumber: string;
+  // Absent while building a multi-product basket (no order exists yet) —
+  // processServiceSelection branches on this to append to the basket instead
+  // of attaching the service directly to an order.
+  orderNumber?: string;
   product: Product;
   services: Service[];
 }

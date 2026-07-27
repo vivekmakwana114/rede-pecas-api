@@ -133,6 +133,7 @@ Table orders {
   stock_confirmation_courtesy_sent boolean [default: false, note: '20-min "still confirming" courtesy message sent once']
   stock_confirmation_admin_reminder_sent boolean [default: false, note: '15-min admin-reminder WhatsApp nudge sent once']
   admin_hidden boolean [default: false, note: 'admin-grid-only soft delete, approved orders only (DELETE /admin/orders/:number) — never touches the real order/customer, no notification sent']
+  items jsonb [note: 'multi-product "basket" orders only (2026-07-27) — NULL for legacy single-product orders. Array of {itemId, productId, productName, reference, supplierId, supplierName, quantity, unitPrice, serviceName, servicePrice, availabilityStatus}, one entry per product; product_id/unit_price/service_name/service_price above stay NULL when this is set']
   created_at timestamptz [default: `NOW()`]
   updated_at timestamptz [default: `NOW()`]
 

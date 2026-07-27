@@ -19,10 +19,17 @@ import {
 } from '../models/supplier.model.js';
 import {
   createOrder,
+  createMultiItemOrder,
   addServiceToOrder,
   generateOrderNumber,
   updateOrderStatus,
   getOrderByNumber,
+  getOrderRaw,
+  getOrderAmount,
+  setOrderItemAvailability,
+  replaceOrderItemWithAlternative,
+  declineOrderItem,
+  OrderItemEntry,
   getOrdersAwaitingCourtesyMessage,
   markCourtesyMessageSent,
   getOrdersAwaitingAdminReminder,
@@ -48,8 +55,21 @@ import {
   savePendingRestockOrderOffer,
   clearPendingRestockOrderOffer,
   getChosenVehicle,
+  savePendingBasket,
+  getPendingBasket,
+  clearPendingBasket,
+  markBasketConfirmShown,
+  clearBasketConfirmShown,
+  savePendingAlternativeOffer,
+  getPendingAlternativeOffer,
+  clearPendingAlternativeOffer,
+  savePendingAlternativeResolution,
+  getPendingAlternativeResolution,
+  clearPendingAlternativeResolution,
   PendingServiceOffer,
-  PendingStockUnavailableOffer
+  PendingStockUnavailableOffer,
+  PendingBasket,
+  PendingAlternativeOffer
 } from './session.service.js';
 import { formatPrice } from '../utils/helpers.js';
 import { t, getMessages } from '../i18n/messages.js';
@@ -69,6 +89,17 @@ async function resolveSearchVehicle(phone: string) {
 }
 
 /**
+ * Runs the deterministic full-text inventory search for a part query,
+ * scoped to the customer's resolved vehicle — the shared DB-search step
+ * behind both a plain single-product search and each item of a multi-product basket search.
+ */
+async function runProductSearch(phone: string, part: string) {
+  const vehicle = await resolveSearchVehicle(phone);
+  const options = await searchProductsInInventory({ part, vehicle });
+  return { vehicle, options };
+}
+
+/**
  * Runs the deterministic full-text inventory search for the customer's
  * message, then either sends a WhatsApp list of matches, offers a waitlist
  * for an out-of-stock match, or reports no results found.
@@ -78,8 +109,7 @@ export async function searchAndRespond(phone: string, customerText: string, cust
   logger.info(`[PRODUCT SEARCH] ${phone} searching for: "${customerText}"`);
   await sendReply(phone, messages.agent.checkingStock());
 
-  const vehicle = await resolveSearchVehicle(phone);
-  const options = await searchProductsInInventory({ part: customerText, vehicle });
+  const { vehicle, options } = await runProductSearch(phone, customerText);
 
   if (!options || options.length === 0) {
     logger.info(`[PRODUCT SEARCH] ${phone} no matches for "${customerText}"`);
@@ -103,6 +133,193 @@ export async function searchAndRespond(phone: string, customerText: string, cust
     ? messages.agent.searchListBodyForVehicle(options.length, customerText, vehicle.make, vehicle.model, vehicle.year, customerName)
     : messages.agent.searchListBody(options.length, customerText, customerName);
   await sendReplyList(phone, body, messages.agent.searchListButton(), buildProductListRows(options));
+}
+
+/**
+ * Starts a multi-product "basket" — one order that will end up holding every
+ * product the customer named in a single message. Saves the queue of
+ * still-to-resolve product-name phrases and searches the first one.
+ */
+export async function startBasketSearch(phone: string, productNames: string[], customerName: string): Promise<void> {
+  const messages = await resolveMessages(phone);
+  await sendReply(phone, messages.agent.basketRequestSummary(productNames, customerName));
+
+  await savePendingBasket(phone, { queue: productNames, items: [] });
+  await searchNextBasketItem(phone, customerName);
+}
+
+/**
+ * Pops the next queued product-name phrase off the basket, runs the shared
+ * search, and either sends its results list (same UX as a plain single-
+ * product search), offers a waitlist for a matched-but-out-of-stock product,
+ * or — if nothing matches at all — skips straight to the next queued item
+ * (or the basket summary) rather than leaving the customer stuck mid-basket.
+ */
+async function searchNextBasketItem(phone: string, customerName: string): Promise<void> {
+  const basket = await getPendingBasket(phone);
+  if (!basket || basket.queue.length === 0) return;
+
+  const [part, ...rest] = basket.queue;
+  await savePendingBasket(phone, { ...basket, queue: rest });
+
+  const messages = await resolveMessages(phone);
+  logger.info(`[PRODUCT SEARCH][BASKET] ${phone} searching basket item: "${part}"`);
+  await sendReply(phone, messages.agent.checkingStock());
+
+  const { vehicle, options } = await runProductSearch(phone, part);
+
+  if (!options || options.length === 0) {
+    logger.info(`[PRODUCT SEARCH][BASKET] ${phone} no matches for "${part}"`);
+
+    const candidate = await findZeroQuantityProductMatch({ part });
+    if (candidate) {
+      await sendReplyButtons(phone, messages.agent.noStockFound(), messages.agent.noStockFoundButtons);
+      await savePendingWaitlistOffer(phone, { productId: candidate.id, productName: candidate.name, query: part });
+      return;
+    }
+
+    await sendReply(phone, messages.agent.noStockFound());
+    await advanceBasket(phone);
+    return;
+  }
+
+  logger.info(`[PRODUCT SEARCH][BASKET] ${phone} found ${options.length} match(es) for "${part}": ${options.map(o => o.name).join(', ')}`);
+  await savePendingOptions(phone, options);
+
+  const body = vehicle
+    ? messages.agent.searchListBodyForVehicle(options.length, part, vehicle.make, vehicle.model, vehicle.year, customerName)
+    : messages.agent.searchListBody(options.length, part, customerName);
+  await sendReplyList(phone, body, messages.agent.searchListButton(), buildProductListRows(options));
+}
+
+/**
+ * Handles the customer's reply to a basket item's search-results list —
+ * resolves the picked product exactly like a plain single-product search,
+ * but instead of creating an order immediately, offers matching services (if
+ * any) or appends the product straight to the basket and moves on to the
+ * next queued item.
+ */
+export async function processBasketProductSelection(
+  phone: string,
+  customerText: string | null,
+  listReplyId: string | null,
+  pendingOptions: Product[],
+  basket: PendingBasket
+): Promise<boolean> {
+  const idx = resolveOptionIndex(customerText, listReplyId);
+  if (idx === null) return false;
+
+  const choice = pendingOptions[idx];
+  const messages = await resolveMessages(phone);
+  if (!choice) {
+    await sendReply(phone, messages.agent.optionNotFound());
+    return true;
+  }
+
+  await clearPendingOptions(phone);
+
+  const matchingServices = choice.id ? await getMatchingServicesForProduct(choice.id) : [];
+  const offeredServices = matchingServices.slice(0, 3);
+
+  if (offeredServices.length > 0) {
+    await sendReply(phone, messages.agent.productSelected(choice.name, formatPrice(choice.price)));
+    await savePendingServiceOffer(phone, { product: choice, services: offeredServices });
+    await sendReplyList(
+      phone,
+      messages.agent.serviceListBody(offeredServices.length),
+      messages.agent.serviceListButton(),
+      buildServiceListRows(offeredServices, messages.agent.serviceSkipOption())
+    );
+    return true;
+  }
+
+  await savePendingBasket(phone, { ...basket, items: [...basket.items, { product: choice, service: null }] });
+  await advanceBasket(phone);
+  return true;
+}
+
+/**
+ * Formats a basket's resolved items into the {description, price} lines and
+ * running total `basketSummaryBody` expects — one line per product,
+ * appending its attached service (if any) to the same line.
+ */
+function summarizeBasket(basket: PendingBasket): { lines: { description: string; price: string }[]; total: number } {
+  const lines = basket.items.map((i) => ({
+    description: i.service ? `${i.product.name} + ${i.service.name}` : i.product.name,
+    price: formatPrice(Number(i.product.price) + Number(i.service?.price || 0)),
+  }));
+  const total = basket.items.reduce((sum, i) => sum + Number(i.product.price) + Number(i.service?.price || 0), 0);
+  return { lines, total };
+}
+
+/**
+ * Sends the basket summary + Sim/Não confirmation buttons and marks them shown.
+ */
+async function sendBasketSummary(phone: string, basket: PendingBasket, customerName: string): Promise<void> {
+  const messages = await resolveMessages(phone);
+  const { lines, total } = summarizeBasket(basket);
+  await sendReplyButtons(
+    phone,
+    messages.agent.basketSummaryBody(lines, customerName, formatPrice(total)),
+    messages.agent.basketConfirmButtons
+  );
+}
+
+/**
+ * Moves the basket forward once a product (and its service decision) has
+ * just been resolved: searches the next queued product name, or — once the
+ * queue is empty — sends the full basket summary with a Sim/Não confirmation.
+ */
+async function advanceBasket(phone: string): Promise<void> {
+  const basket = await getPendingBasket(phone);
+  if (!basket) return;
+
+  const customer = await getCustomerByPhone(phone);
+  const customerName = customer?.name?.split(' ')[0] || 'Cliente';
+
+  if (basket.queue.length > 0) {
+    await searchNextBasketItem(phone, customerName);
+    return;
+  }
+
+  await sendBasketSummary(phone, basket, customerName);
+  await markBasketConfirmShown(phone);
+}
+
+/**
+ * Handles the customer's Sim/Não reply to the basket summary: on yes,
+ * creates a single multi-item order for every product in the basket and
+ * kicks off stock confirmation exactly like a single-product order; on no,
+ * cancels the basket; on anything else, re-sends the summary + buttons.
+ */
+export async function processBasketConfirmation(
+  phone: string,
+  reply: string,
+  basket: PendingBasket
+): Promise<boolean> {
+  const messages = await resolveMessages(phone);
+
+  if (isAffirmativeReply(reply)) {
+    await clearPendingBasket(phone);
+    await clearBasketConfirmShown(phone);
+
+    const orderNumber = await generateOrderNumber();
+    await createMultiItemOrder(orderNumber, phone, basket.items);
+    await requestStockConfirmation(phone, orderNumber);
+    return true;
+  }
+
+  if (isNegativeReply(reply)) {
+    await clearPendingBasket(phone);
+    await clearBasketConfirmShown(phone);
+    await sendReply(phone, messages.agent.basketCancelled());
+    return true;
+  }
+
+  const customer = await getCustomerByPhone(phone);
+  const customerName = customer?.name?.split(' ')[0] || 'Cliente';
+  await sendBasketSummary(phone, basket, customerName);
+  return true;
 }
 
 /**
@@ -201,7 +418,13 @@ async function requestStockConfirmation(
   const messages = await resolveMessages(phone);
   await updateOrderStatus(orderNumber, 'awaiting_stock_confirmation');
   await sendReply(phone, messages.agent.confirmingAvailability());
-  await notifyAdminsStockConfirmationNeeded(orderNumber);
+
+  const order = await getOrderRaw(orderNumber);
+  if (order?.items) {
+    await notifyAdminsItemStockConfirmationNeeded(orderNumber, order.items);
+  } else {
+    await notifyAdminsStockConfirmationNeeded(orderNumber);
+  }
 }
 
 /**
@@ -246,6 +469,318 @@ async function notifyAdminsStockConfirmationNeeded(orderNumber: string): Promise
 }
 
 /**
+ * Pushes one item's Confirm/Unavailable buttons to every admin — the shared
+ * per-item sender behind both the initial bulk notification
+ * (`notifyAdminsItemStockConfirmationNeeded`, one call per item) and the
+ * single re-notification after a customer swaps a rejected item for an
+ * alternative (`startAlternativeResolution`'s pick branch), since both need
+ * the exact same button/message shape for one item at a time.
+ */
+async function notifyAdminsForItem(orderNumber: string, customerPhone: string, customerName: string, item: OrderItemEntry): Promise<void> {
+  const admins = await getAllAdmins();
+  for (const admin of admins) {
+    try {
+      await sendWhatsAppButtons(
+        admin.phone,
+        t.admin.stockConfirmationNeeded(
+          orderNumber,
+          item.productName,
+          item.reference,
+          item.supplierName,
+          formatPrice(item.unitPrice + (item.servicePrice || 0)),
+          customerName,
+          customerPhone
+        ),
+        [t.admin.confirmButtonLabel(), t.admin.unavailableButtonLabel()],
+        [`admin_item_confirm_${orderNumber}_${item.itemId}`, `admin_item_unavailable_${orderNumber}_${item.itemId}`]
+      );
+    } catch (error: any) {
+      logger.error(`[ADMIN STOCK][BASKET] Error notifying admin ${admin.phone} about item ${item.itemId} on order ${orderNumber}`, error);
+    }
+  }
+}
+
+/**
+ * Pushes a stock-confirmation request with Confirm/Unavailable buttons to
+ * every admin, one WhatsApp message per line item, for a multi-item
+ * "basket" order — the WhatsApp-native equivalent of
+ * `notifyAdminsStockConfirmationNeeded` for the multi-product case. Button
+ * ids carry both the order number and the item id
+ * (`admin_item_confirm_<orderNumber>_<itemId>`), since items aren't rows in
+ * their own table — see `processAdminItemStockReply`.
+ */
+async function notifyAdminsItemStockConfirmationNeeded(orderNumber: string, items: OrderItemEntry[]): Promise<void> {
+  const order = await getOrderByNumber(orderNumber);
+  if (!order) {
+    logger.error(`[ADMIN STOCK][BASKET] notifyAdminsItemStockConfirmationNeeded: order ${orderNumber} not found`);
+    return;
+  }
+
+  const customer = await getCustomerByPhone(order.customer_phone);
+  const customerName = customer?.name?.split(' ')[0] || 'Cliente';
+
+  logger.debug(`[ADMIN STOCK][BASKET] Notifying admins about ${items.length} item(s) on order ${orderNumber}`);
+  for (const item of items) {
+    await notifyAdminsForItem(orderNumber, order.customer_phone, customerName, item);
+  }
+}
+
+/**
+ * Handles an admin's tap on a per-item Confirm/Unavailable button for a
+ * multi-item "basket" order: records that one item's availability, and —
+ * once every item on the order has moved past 'pending' — finalizes the
+ * whole order (proforma for the available items + payment flow, or a plain
+ * "not available" notice if every item turned out unavailable).
+ */
+export async function processAdminItemStockReply(adminPhone: string, buttonReplyId: string | null): Promise<boolean> {
+  const match = buttonReplyId?.match(/^admin_item_(confirm|unavailable)_(.+)_(\d+)$/);
+  if (!match) return false;
+
+  const [, action, orderNumber, itemIdStr] = match;
+  const itemId = parseInt(itemIdStr, 10);
+  logger.info(`[ADMIN STOCK][BASKET] Admin ${adminPhone} tapped "${action}" for item ${itemId} on order ${orderNumber}`);
+
+  const order = await getOrderRaw(orderNumber);
+  if (!order?.items || order.status !== 'awaiting_stock_confirmation') {
+    logger.debug(`[ADMIN STOCK][BASKET] Order ${orderNumber} already handled or not found (status=${order?.status ?? 'not found'}) — telling ${adminPhone}`);
+    await sendWhatsAppMessage(adminPhone, t.admin.alreadyHandled(orderNumber));
+    return true;
+  }
+
+  await setOrderItemAvailability(orderNumber, itemId, action === 'confirm');
+  await sendWhatsAppMessage(adminPhone, action === 'confirm' ? t.admin.confirmedAck(orderNumber) : t.admin.unavailableAck(orderNumber));
+  await finalizeMultiItemOrderIfComplete(orderNumber);
+  return true;
+}
+
+/**
+ * Checks whether every item on a multi-item order now has an admin
+ * decision (none left `pending`) and, if so, finalizes it — shared by both
+ * the WhatsApp per-item button flow above and the admin-panel REST
+ * endpoint (`POST /orders/:number/confirm/stock` with an `items` body),
+ * which can apply several items' availability in one request.
+ */
+export async function finalizeMultiItemOrderIfComplete(orderNumber: string): Promise<void> {
+  const order = await getOrderRaw(orderNumber);
+  if (!order?.items) return;
+
+  const items: OrderItemEntry[] = order.items;
+  if (items.some((i) => i.availabilityStatus === 'pending')) return;
+
+  await finalizeMultiItemOrder(orderNumber, items);
+}
+
+/**
+ * Once every item on a multi-item order has an admin decision: if any item
+ * came back 'unavailable' (rejected, not yet resolved by the customer),
+ * pauses here and starts the alternative-resolution sub-flow instead of
+ * finalizing — the order only proceeds to a proforma once every rejected
+ * item has either been swapped for an alternative (and re-confirmed by
+ * admin) or explicitly declined by the customer.
+ */
+async function finalizeMultiItemOrder(orderNumber: string, items: OrderItemEntry[]): Promise<void> {
+  const order = await getOrderByNumber(orderNumber);
+  if (!order) throw new ApiError(404, `Order ${orderNumber} not found`);
+
+  const phone = order.customer_phone;
+  const locale = await resolveLocale(phone);
+  const messages = getMessages(locale);
+  const customer = await getCustomerByPhone(phone);
+  const firstName = customer?.name?.split(' ')[0] || 'Cliente';
+
+  const available = items.filter((i) => i.availabilityStatus === 'available');
+  const unavailable = items.filter((i) => i.availabilityStatus === 'unavailable');
+  const declined = items.filter((i) => i.availabilityStatus === 'declined');
+
+  if (unavailable.length > 0) {
+    await sendReply(
+      phone,
+      available.length > 0
+        ? messages.agent.basketPartialAvailability(available.map((i) => i.productName), unavailable.map((i) => i.productName))
+        : messages.agent.basketNoneAvailableYet(unavailable.map((i) => i.productName))
+    );
+    await savePendingAlternativeResolution(phone, { orderNumber, queue: unavailable.map((i) => i.itemId) });
+    await searchAlternativesForNextItem(orderNumber, phone);
+    return;
+  }
+
+  if (available.length === 0) {
+    await updateOrderStatus(orderNumber, 'stock_unavailable');
+    await sendReply(phone, messages.agent.basketAllUnavailable());
+    logger.info(`[ADMIN STOCK][BASKET] Order ${orderNumber} — every item unavailable or declined, customer notified`);
+    return;
+  }
+
+  if (declined.length > 0) {
+    await sendReply(phone, messages.agent.basketDeclinedNotice(declined.map((i) => i.productName)));
+  }
+
+  await sendReply(phone, messages.agent.stockConfirmedIntro(available.map((i) => i.productName).join(', '), firstName));
+
+  const proformaLineItems: { description: string; reference: string; price: number; supplierNote?: string | null }[] = [];
+  for (const item of available) {
+    proformaLineItems.push({
+      description: item.productName,
+      reference: item.reference,
+      price: item.unitPrice,
+      supplierNote: messages.pdf.proforma.supplierLabel(item.supplierName || 'Rede Peças'),
+    });
+    if (item.serviceName) {
+      proformaLineItems.push({ description: item.serviceName, reference: '—', price: item.servicePrice || 0, supplierNote: null });
+    }
+  }
+
+  const proformaPath = await generateProformaPDF(orderNumber, phone, proformaLineItems, locale);
+  await sendProformaWhatsApp(phone, proformaPath, orderNumber, locale);
+
+  const total = await getOrderAmount(orderNumber);
+  await askPaymentMethod(phone, orderNumber, total);
+
+  setTimeout(() => {
+    try {
+      fs.unlinkSync(proformaPath);
+    } catch {
+      // no-op
+    }
+  }, 60000);
+
+  logger.info(`[ADMIN STOCK][BASKET] Order ${orderNumber} finalized — ${available.length} available, ${declined.length} declined`);
+}
+
+/**
+ * Converts alternative product candidates into WhatsApp List Message rows,
+ * appending a final "skip this item" row — same UX pattern as
+ * `buildServiceListRows`, reusing the `option_N` id scheme
+ * `resolveOptionIndex` already expects.
+ */
+function buildAlternativeListRows(options: Product[], skipLabel: string): { id: string; title: string; description: string }[] {
+  const rows = buildProductListRows(options);
+  rows.push({ id: `option_${options.length + 1}`, title: truncate(skipLabel, 24), description: '' });
+  return rows;
+}
+
+/**
+ * Pops the next rejected item off a multi-item order's alternative-
+ * resolution queue and searches for in-stock alternatives (excluding every
+ * product already tried for that slot), sending the results as a
+ * selectable list with a skip option — or, if nothing matches at all,
+ * automatically declines the item and moves straight to the next one.
+ */
+async function searchAlternativesForNextItem(orderNumber: string, phone: string): Promise<void> {
+  const resolution = await getPendingAlternativeResolution(phone);
+  if (!resolution || resolution.queue.length === 0) return;
+
+  const [itemId, ...rest] = resolution.queue;
+  await savePendingAlternativeResolution(phone, { ...resolution, queue: rest });
+
+  const order = await getOrderRaw(orderNumber);
+  const items: OrderItemEntry[] = order?.items || [];
+  const item = items.find((i) => i.itemId === itemId);
+  if (!item) {
+    await advanceAlternativeResolution(orderNumber, phone);
+    return;
+  }
+
+  const messages = await resolveMessages(phone);
+  const vehicle = await resolveSearchVehicle(phone);
+  const excludeProductIds = [item.productId, ...(item.excludedProductIds || [])];
+  const options = await searchProductsInInventory({ part: item.productName, vehicle, excludeProductIds });
+
+  if (!options.length) {
+    await declineOrderItem(orderNumber, itemId);
+    await sendReply(phone, messages.agent.noAlternativesFound(item.productName));
+    await advanceAlternativeResolution(orderNumber, phone);
+    return;
+  }
+
+  await savePendingOptions(phone, options);
+  await savePendingAlternativeOffer(phone, { orderNumber, itemId });
+  await sendReplyList(
+    phone,
+    messages.agent.alternativesListBody(item.productName, options.length),
+    messages.agent.searchListButton(),
+    buildAlternativeListRows(options, messages.agent.alternativeSkipOption())
+  );
+}
+
+/**
+ * Moves the alternative-resolution queue forward after one item is
+ * resolved (picked or skipped): searches alternatives for the next
+ * rejected item, or — once the queue is empty — clears it and re-checks
+ * whether the order can now finalize (it may still be waiting on admin for
+ * a just-picked alternative).
+ */
+async function advanceAlternativeResolution(orderNumber: string, phone: string): Promise<void> {
+  const resolution = await getPendingAlternativeResolution(phone);
+  if (!resolution) return;
+
+  if (resolution.queue.length > 0) {
+    await searchAlternativesForNextItem(orderNumber, phone);
+    return;
+  }
+
+  await clearPendingAlternativeResolution(phone);
+  await finalizeMultiItemOrderIfComplete(orderNumber);
+}
+
+/**
+ * Handles the customer's reply to an unavailable item's alternatives list:
+ * on a pick, swaps the item for the chosen product and sends it back to
+ * admin for its own stock confirmation; on skip, marks the item declined.
+ * Either way, moves on to the next rejected item in the queue (if any).
+ */
+export async function processAlternativeSelection(
+  phone: string,
+  customerText: string | null,
+  listReplyId: string | null,
+  pendingOptions: Product[],
+  offer: PendingAlternativeOffer
+): Promise<boolean> {
+  const idx = resolveOptionIndex(customerText, listReplyId);
+  if (idx === null) return false;
+
+  const messages = await resolveMessages(phone);
+
+  if (idx === pendingOptions.length) {
+    await clearPendingOptions(phone);
+    await clearPendingAlternativeOffer(phone);
+    await declineOrderItem(offer.orderNumber, offer.itemId);
+    await advanceAlternativeResolution(offer.orderNumber, phone);
+    return true;
+  }
+
+  const choice = pendingOptions[idx];
+  if (!choice) {
+    await sendReply(phone, messages.agent.optionNotFound());
+    return true;
+  }
+
+  await clearPendingOptions(phone);
+  await clearPendingAlternativeOffer(phone);
+
+  await replaceOrderItemWithAlternative(offer.orderNumber, offer.itemId, {
+    id: choice.id!,
+    name: choice.name,
+    reference: choice.reference,
+    price: choice.price,
+    supplier_id: choice.supplier_id!,
+    supplier: choice.supplier,
+  });
+
+  const order = await getOrderRaw(offer.orderNumber);
+  const items: OrderItemEntry[] = order?.items || [];
+  const item = items.find((i) => i.itemId === offer.itemId);
+  if (item) {
+    const customer = await getCustomerByPhone(phone);
+    const customerName = customer?.name?.split(' ')[0] || 'Cliente';
+    await notifyAdminsForItem(offer.orderNumber, phone, customerName, item);
+  }
+
+  await advanceAlternativeResolution(offer.orderNumber, phone);
+  return true;
+}
+
+/**
  * Finalizes an order once staff confirm stock is available: sends the
  * customer a confirmation message, generates and sends the proforma PDF, and
  * kicks off the payment-method flow.
@@ -273,7 +808,11 @@ export async function confirmStockAndFinalizeOrder(orderNumber: string): Promise
   const messages = getMessages(locale);
   await sendReply(phone, messages.agent.stockConfirmedIntro(product.name, firstName));
 
-  const proformaPath = await generateProformaPDF(orderNumber, phone, product, service, locale);
+  const proformaLineItems = [
+    { description: product.name, reference: product.reference, price: product.price, supplierNote: messages.pdf.proforma.supplierLabel(product.supplier || 'Rede Peças') },
+    ...(service ? [{ description: service.name, reference: '—', price: service.price, supplierNote: null }] : []),
+  ];
+  const proformaPath = await generateProformaPDF(orderNumber, phone, proformaLineItems, locale);
   await sendProformaWhatsApp(phone, proformaPath, orderNumber, locale);
   await askPaymentMethod(phone, orderNumber, total);
 
@@ -352,7 +891,7 @@ export async function processStockUnavailableChoice(
   if (isYes) {
     await clearPendingStockUnavailableOffer(phone);
     const vehicle = await resolveSearchVehicle(phone);
-    const options = await searchProductsInInventory({ part: offer.productName, vehicle, excludeProductId: offer.productId });
+    const options = await searchProductsInInventory({ part: offer.productName, vehicle, excludeProductIds: [offer.productId] });
     if (!options.length) {
       await sendReplyButtons(phone, messages.agent.noStockFound(), messages.agent.noStockFoundButtons);
       await savePendingWaitlistOffer(phone, { productId: offer.productId, productName: offer.productName });
@@ -526,6 +1065,29 @@ export async function processServiceSelection(
 
   await clearPendingServiceOffer(phone);
 
+  if (!offer.orderNumber) {
+    // Basket mode: no order exists yet — append the choice/skip to the
+    // in-progress basket and move on to the next queued product (or the
+    // final summary) instead of requesting stock confirmation directly.
+    const basket = await getPendingBasket(phone);
+    if (!basket) return true;
+
+    if (selection === 'skip') {
+      await sendReply(phone, messages.agent.serviceDeclined());
+      await savePendingBasket(phone, { ...basket, items: [...basket.items, { product: offer.product, service: null }] });
+    } else {
+      const chosen = offer.services[selection];
+      const total = Number(offer.product.price) + Number(chosen.service_base_price);
+      await sendReply(phone, messages.agent.serviceAdded(chosen.service_name, formatPrice(total)));
+      await savePendingBasket(phone, {
+        ...basket,
+        items: [...basket.items, { product: offer.product, service: { name: chosen.service_name, price: Number(chosen.service_base_price) } }],
+      });
+    }
+    await advanceBasket(phone);
+    return true;
+  }
+
   if (selection === 'skip') {
     await sendReply(phone, messages.agent.serviceDeclined());
     await requestStockConfirmation(phone, offer.orderNumber);
@@ -559,11 +1121,13 @@ export async function processWaitlistOptIn(
     await addToProductWaitlist(offer.productId, phone);
     await clearPendingWaitlistOffer(phone);
     await sendReply(phone, messages.agent.waitlistConfirmed(offer.query ?? offer.productName));
+    if (await getPendingBasket(phone)) await advanceBasket(phone);
     return true;
   }
   if (isNo) {
     await clearPendingWaitlistOffer(phone);
     await sendReply(phone, messages.agent.waitlistDeclined());
+    if (await getPendingBasket(phone)) await advanceBasket(phone);
     return true;
   }
   return false;

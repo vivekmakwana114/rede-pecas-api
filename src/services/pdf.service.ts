@@ -27,16 +27,25 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
+export interface ProformaLineItem {
+  description: string;
+  reference: string;
+  price: number;
+  supplierNote?: string | null;
+}
+
 /**
- * Renders a locale-aware proforma invoice PDF for an order (part line item,
- * optional service line item, totals, and payment instructions) to a temp
- * file and resolves with its path once the write stream finishes.
+ * Renders a locale-aware proforma invoice PDF for an order (one row per
+ * line item, totals, and payment instructions) to a temp file and resolves
+ * with its path once the write stream finishes. Takes the line items
+ * directly — one product line (+ an optional following service line) for a
+ * single-product order, or one line per available product/service for a
+ * multi-item "basket" order — so this is the one PDF renderer for both.
  */
 export async function generateProformaPDF(
   orderNumber: string,
   phone: string,
-  item: any,
-  service: { name: string; price: number } | null = null,
+  lineItems: ProformaLineItem[],
   locale: 'pt' | 'en' = DEFAULT_LOCALE
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -80,11 +89,6 @@ export async function generateProformaPDF(
       .text(pc.tableQty, 380, tY + 9, { width: 40, align: 'center' })
       .text(pc.tableUnitPrice, 420, tY + 9, { width: 80, align: 'right' })
       .text(pc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
-
-    const lineItems = [
-      { description: item.name, reference: item.reference, price: item.price, supplierNote: pc.supplierLabel(item.supplier || 'Rede Peças') },
-      ...(service ? [{ description: service.name, reference: '—', price: service.price, supplierNote: null as string | null }] : []),
-    ];
 
     lineItems.forEach((line, i) => {
       const iY = tY + 28 + i * ROW_HEIGHT;
@@ -268,11 +272,17 @@ export async function sendFinalInvoiceWhatsApp(
 }
 
 /**
- * Renders a locale-aware final invoice PDF for an approved order (part
- * and optional service line items, total paid) to a temp file and resolves
- * with its path once the write stream finishes.
+ * Renders a locale-aware final invoice PDF for an approved order (one row
+ * per line item, total paid) to a temp file and resolves with its path once
+ * the write stream finishes. Takes the line items directly, same shape and
+ * same reasoning as `generateProformaPDF` — one renderer for both a
+ * single-product order and a multi-item "basket" order.
  */
-export async function generateInvoicePDF(order: any, locale: 'pt' | 'en' = DEFAULT_LOCALE): Promise<string> {
+export async function generateInvoicePDF(
+  order: any,
+  lineItems: ProformaLineItem[],
+  locale: 'pt' | 'en' = DEFAULT_LOCALE
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const tempDir = path.join(__dirname, '../../temp');
@@ -313,10 +323,6 @@ export async function generateInvoicePDF(order: any, locale: 'pt' | 'en' = DEFAU
       .text(mc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
 
     const ROW_HEIGHT = 36;
-    const lineItems = [
-      { description: order.product_name || mc.defaultProductName, reference: order.reference || 'PEC-GEN', price: order.unit_price },
-      ...(order.service_price ? [{ description: order.service_name || 'Serviço', reference: '—', price: order.service_price }] : []),
-    ];
 
     lineItems.forEach((line, i) => {
       const iY = tY + 28 + i * ROW_HEIGHT;
