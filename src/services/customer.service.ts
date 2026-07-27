@@ -12,10 +12,13 @@ import {
   markPartPromptSent,
   markVehicleIdChoiceShown,
   getLocale,
-  saveCustomerName
+  saveCustomerName,
+  incrementValidationAttempts,
+  clearValidationAttempts
 } from './session.service.js';
 import { capitalize } from '../utils/helpers.js';
 import { getMessages, DEFAULT_LOCALE } from '../i18n/messages.js';
+import { validateFreeText, isPlausibleNif, flagForReview, MAX_VALIDATION_ATTEMPTS } from './validation.service.js';
 
 export type { Customer };
 
@@ -64,6 +67,19 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_name') {
     const name = capitalize(r);
+    const result = await validateFreeText('name', name);
+
+    if (!result.valid) {
+      const attempts = await incrementValidationAttempts(phone, 'name');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidName());
+        return true;
+      }
+      await flagForReview('customer', phone, 'name', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${name}"`);
+    } else {
+      await clearValidationAttempts(phone, 'name');
+    }
+
     await updateCustomer(phone, { name, registration_status: 'awaiting_nif' });
     await sendReplyButtons(phone, messages.onboarding.askNifBody(name), messages.onboarding.askNifButtons);
     return true;
@@ -85,6 +101,18 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_nif_number') {
     const nif = r.replace(/\s/g, '').toUpperCase();
+
+    if (!isPlausibleNif(nif)) {
+      const attempts = await incrementValidationAttempts(phone, 'nif');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidNif());
+        return true;
+      }
+      await flagForReview('customer', phone, 'nif', `Failed format check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${nif}"`);
+    } else {
+      await clearValidationAttempts(phone, 'nif');
+    }
+
     await updateCustomer(phone, { nif, registration_status: 'awaiting_address' });
     await sendReply(phone, messages.onboarding.askAddress(firstName));
     return true;
@@ -92,7 +120,23 @@ export async function processCustomerRegistration(phone: string, customer: Custo
 
   if (status === 'awaiting_address') {
     const rLower = r.toLowerCase();
-    const address = (rLower === 'saltar' || rLower === 'skip') ? null : r;
+    const skipped = rLower === 'saltar' || rLower === 'skip';
+
+    if (!skipped) {
+      const result = await validateFreeText('address', r);
+      if (!result.valid) {
+        const attempts = await incrementValidationAttempts(phone, 'address');
+        if (attempts < MAX_VALIDATION_ATTEMPTS) {
+          await sendReply(phone, messages.validation.invalidAddress());
+          return true;
+        }
+        await flagForReview('customer', phone, 'address', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${r}"`);
+      } else {
+        await clearValidationAttempts(phone, 'address');
+      }
+    }
+
+    const address = skipped ? null : r;
 
     await updateCustomer(phone, {
       address,

@@ -200,6 +200,8 @@ Table customers {
   registered_at timestamptz
   contact_count int [default: 1]
   active boolean [default: true]
+  needs_review boolean [default: false, note: 'set when a profile field was accepted after exhausting validation retries']
+  needs_review_reason text [note: 'which field(s) failed validation and why, for admin follow-up']
 
   indexes {
     registration_status
@@ -221,6 +223,8 @@ Table vehicles {
   source text [note: 'vin | manual | document']
   status text [note: 'NULL/complete = confirmed vehicle (4h TTL via updated_at); other = in-progress manual wizard step (30-min TTL via created_at)']
   attempted_vin char(17) [note: 'VIN that failed NHTSA decode before falling back to manual entry']
+  needs_review boolean [default: false, note: 'set when a vehicle field was accepted after exhausting validation retries']
+  needs_review_reason text [note: 'which field(s) failed validation and why, for admin follow-up']
   created_at timestamptz [default: `NOW()`]
   updated_at timestamptz [default: `NOW()`]
 

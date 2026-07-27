@@ -12,6 +12,8 @@ export interface Customer {
   registered_at: Date | null;
   contact_count: number;
   active: boolean;
+  needs_review: boolean;
+  needs_review_reason: string | null;
 }
 
 /**

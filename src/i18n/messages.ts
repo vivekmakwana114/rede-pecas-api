@@ -165,6 +165,14 @@ interface Messages {
       agtStamp: string;
     };
   };
+  validation: {
+    invalidName: () => string;
+    invalidAddress: () => string;
+    invalidNif: () => string;
+    invalidMake: () => string;
+    invalidModel: () => string;
+    invalidEngineNumber: () => string;
+  };
   adminAuth: {
     resetCode: (code: string) => string;
   };
@@ -592,6 +600,25 @@ const pt: Messages = {
       totalPaid: 'TOTAL PAGO:',
       agtStamp: 'Processado por computador. Emitido de acordo com as regras de facturação da AGT Angola.',
     },
+  },
+  /**
+   * Plausibility-validation acceptance/rejection messages for free-text
+   * registration and vehicle fields — styled like manual.invalidYear (⚠️ + reason + example).
+   */
+  validation: {
+    invalidName: () =>
+      `⚠️ Isso não parece um nome válido. Por favor indica o teu nome completo.\n\nExemplo: _João Manuel Silva_`,
+    invalidAddress: () =>
+      `⚠️ Isso não parece um endereço válido. Indica a rua, bairro e município/cidade.\n\n` +
+      `Exemplo: _Rua Amílcar Cabral, Bairro Maianga, Luanda_`,
+    invalidNif: () =>
+      `⚠️ Esse número de NIF não parece válido. Confere e envia novamente.\n\nExemplo: _005123456LA042_`,
+    invalidMake: () =>
+      `⚠️ Isso não parece uma marca de veículo válida. Por favor indica a marca.\n\nExemplo: _Toyota, Mercedes, Volvo..._`,
+    invalidModel: () =>
+      `⚠️ Isso não parece um modelo de veículo válido. Por favor indica o modelo.\n\nExemplo: _Hilux, L200, Actros..._`,
+    invalidEngineNumber: () =>
+      `⚠️ Esse número de motor não parece válido. Confere e envia novamente, ou responde *"não sei"* para continuar.`,
   },
   /**
    * Admin panel password-reset code, delivered to the admin's own
@@ -1040,6 +1067,25 @@ const en: Messages = {
       totalPaid: 'TOTAL PAID:',
       agtStamp: 'Computer-processed. Issued in accordance with AGT Angola billing rules.',
     },
+  },
+  /**
+   * Plausibility-validation acceptance/rejection messages for free-text
+   * registration and vehicle fields — styled like manual.invalidYear (⚠️ + reason + example).
+   */
+  validation: {
+    invalidName: () =>
+      `⚠️ That doesn't look like a valid name. Please enter your full name.\n\nExample: _John Michael Smith_`,
+    invalidAddress: () =>
+      `⚠️ That doesn't look like a valid address. Please include the street, neighborhood, and city/municipality.\n\n` +
+      `Example: _Rua Amílcar Cabral, Bairro Maianga, Luanda_`,
+    invalidNif: () =>
+      `⚠️ That NIF number doesn't look valid. Please check it and send it again.\n\nExample: _005123456LA042_`,
+    invalidMake: () =>
+      `⚠️ That doesn't look like a valid vehicle make. Please enter the make.\n\nExample: _Toyota, Mercedes, Volvo..._`,
+    invalidModel: () =>
+      `⚠️ That doesn't look like a valid vehicle model. Please enter the model.\n\nExample: _Hilux, L200, Actros..._`,
+    invalidEngineNumber: () =>
+      `⚠️ That engine number doesn't look valid. Please check it and send it again, or reply *"don't know"* to continue.`,
   },
   /**
    * Admin panel password-reset code, delivered to the admin's own

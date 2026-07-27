@@ -988,6 +988,71 @@ export async function getActivePromptId(phone: string): Promise<string | null> {
   return getString(`activePrompt:${phone}`);
 }
 
+const validationAttemptSessions = new Map<string, { count: number; expiresAt: number }>();
+
+/**
+ * Retrieves how many consecutive times a customer's reply has failed
+ * validation for a given field this session (0 if none yet).
+ */
+export async function getValidationAttempts(phone: string, field: string): Promise<number> {
+  const key = `valattempts:${field}:${phone}`;
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    const entry = validationAttemptSessions.get(key);
+    return entry && entry.expiresAt >= Date.now() ? entry.count : 0;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? parseInt(data, 10) : 0;
+  } catch (err) {
+    logger.error('Error fetching validation attempts from Redis', err);
+    const entry = validationAttemptSessions.get(key);
+    return entry && entry.expiresAt >= Date.now() ? entry.count : 0;
+  }
+}
+
+/**
+ * Increments and returns the consecutive-failed-validation count for a
+ * phone/field, used to cap retries before accepting the value with a
+ * needs_review flag instead of re-asking forever.
+ */
+export async function incrementValidationAttempts(phone: string, field: string): Promise<number> {
+  const key = `valattempts:${field}:${phone}`;
+  const next = (await getValidationAttempts(phone, field)) + 1;
+  validationAttemptSessions.set(key, { count: next, expiresAt: Date.now() + SESSION_TTL * 1000 });
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return next;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, String(next));
+  } catch (err) {
+    logger.error('Error saving validation attempts to Redis', err);
+  }
+  return next;
+}
+
+/**
+ * Resets the consecutive-failed-validation count for a phone/field, called
+ * once a reply passes validation or the field is accepted with a flag.
+ */
+export async function clearValidationAttempts(phone: string, field: string): Promise<void> {
+  const key = `valattempts:${field}:${phone}`;
+  validationAttemptSessions.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing validation attempts in Redis', err);
+  }
+}
+
 const HUMANIZE_CACHE_TTL = 60 * 60 * 24;
 const humanizeCache = new Map<string, { value: string; expiresAt: number }>();
 
