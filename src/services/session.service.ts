@@ -1146,3 +1146,82 @@ export async function isTokenRevoked(token: string): Promise<boolean> {
   }
 }
 
+export interface ChatLogEntry {
+  direction: 'in' | 'out';
+  text: string;
+  at: string;
+}
+
+const CHAT_LOG_TTL = 60 * 60 * 24;
+const chatLogSessions = new Map<string, { messages: ChatLogEntry[]; expiresAt: number }>();
+
+/**
+ * Appends a message (inbound customer text or outbound bot reply) to the
+ * phone's chat transcript. The 24h TTL is a fixed window from the FIRST
+ * message that started it, not a sliding one — later messages in the same
+ * window are appended without touching the expiry, so the whole log expires
+ * exactly 24h after it started regardless of how active the conversation
+ * stays. Once it expires, the next message starts a brand-new 24h window.
+ */
+export async function appendChatMessage(phone: string, direction: 'in' | 'out', text: string): Promise<void> {
+  const key = `chatlog:${phone}`;
+  const entry: ChatLogEntry = { direction, text, at: new Date().toISOString() };
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    const cached = chatLogSessions.get(key);
+    const isFirstMessage = !cached || cached.expiresAt < Date.now();
+    const messages = isFirstMessage ? [] : cached!.messages;
+    messages.push(entry);
+    chatLogSessions.set(key, {
+      messages,
+      expiresAt: isFirstMessage ? Date.now() + CHAT_LOG_TTL * 1000 : cached!.expiresAt,
+    });
+    return;
+  }
+
+  try {
+    const ttl = await redisClient.ttl(key);
+    const isFirstMessage = ttl < 0; // -2 = key missing, -1 = no TTL (shouldn't happen, treat as first)
+    const data = isFirstMessage ? null : await redisClient.get(key);
+    const messages: ChatLogEntry[] = data ? JSON.parse(data) : [];
+    messages.push(entry);
+
+    chatLogSessions.set(key, {
+      messages,
+      expiresAt: Date.now() + (isFirstMessage ? CHAT_LOG_TTL : Math.max(ttl, 0)) * 1000,
+    });
+
+    if (isFirstMessage) {
+      await redisClient.setEx(key, CHAT_LOG_TTL, JSON.stringify(messages));
+    } else {
+      await redisClient.set(key, JSON.stringify(messages), { KEEPTTL: true });
+    }
+  } catch (err) {
+    logger.error('Error saving chat log to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the phone's rolling 24h chat transcript, oldest first, or an
+ * empty array if there's none yet or it's expired.
+ */
+export async function getChatLog(phone: string): Promise<ChatLogEntry[]> {
+  const key = `chatlog:${phone}`;
+  const readMemory = (): ChatLogEntry[] => {
+    const cached = chatLogSessions.get(key);
+    return cached && cached.expiresAt >= Date.now() ? cached.messages : [];
+  };
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return readMemory();
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : [];
+  } catch (err) {
+    logger.error('Error fetching chat log from Redis', err);
+    return readMemory();
+  }
+}
+

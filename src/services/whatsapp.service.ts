@@ -1,5 +1,6 @@
 import { config } from '../config/config.js';
 import { logger } from '../config/logger.js';
+import { appendChatMessage } from './session.service.js';
 
 const WHATSAPP_API_URL = `${config.whatsapp.graphApiUrl}/${config.whatsapp.phoneNumberId}/messages`;
 
@@ -20,6 +21,7 @@ function clampBody(body: string, context: string): string {
  */
 export async function sendWhatsAppMessage(phone: string, text: string): Promise<any> {
   logger.debug(`[TEST-CAPTURE] text -> ${phone}: ${text}`);
+  await appendChatMessage(phone, 'out', text);
   try {
     const response = await fetch(WHATSAPP_API_URL, {
       method: "POST",
@@ -143,6 +145,7 @@ export async function sendWhatsAppButtons(
     },
   };
   logger.debug(`[TEST-CAPTURE] buttons -> ${phone}: ${body} | [${buttons.join(' / ')}]`);
+  await appendChatMessage(phone, 'out', `${body} [${buttons.join(' / ')}]`);
 
   try {
     const response = await fetch(WHATSAPP_API_URL, {
@@ -190,6 +193,7 @@ export async function sendWhatsAppList(
     },
   };
   logger.debug(`[TEST-CAPTURE] list -> ${phone}: ${body} | button="${buttonText}" | rows=${JSON.stringify(rows)}`);
+  await appendChatMessage(phone, 'out', `${body} [list: ${buttonText}]`);
 
   try {
     const response = await fetch(WHATSAPP_API_URL, {
