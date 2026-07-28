@@ -42,6 +42,11 @@ export interface Product {
   supplier_rating?: number;
   supplier_address?: string;
   supplier_phone?: string;
+  // Every compatible-vehicle fit on file for this product (product_vehicles
+  // can hold several rows per product) — vehicle_make/model/year_start/
+  // year_end above are only the *first* of these, kept flat for the existing
+  // single-fit admin edit form; this is the full list, for display only.
+  vehicle_fits?: VehicleFit[];
 }
 
 const OR_TSQUERY = `to_tsquery('english', array_to_string(tsvector_to_array(to_tsvector('english', unaccent($1))), ' | '))`;
@@ -80,11 +85,13 @@ export interface SearchVehicle {
   year: string;
 }
 
-interface VehicleFit {
+export interface VehicleFit {
   make: string;
   model: string | null;
   year_start: number | null;
   year_end: number | null;
+  engine?: string | null;
+  engine_number?: string | null;
 }
 
 /**
@@ -219,7 +226,8 @@ const ADMIN_PRODUCT_SELECT = `
     s.name AS supplier,
     s.rating AS supplier_rating,
     s.province AS supplier_address,
-    s.phone AS supplier_phone
+    s.phone AS supplier_phone,
+    fits.vehicle_fits
   FROM product_suppliers ps
   JOIN products p ON p.id = ps.product_id
   JOIN suppliers s ON s.id = ps.supplier_id
@@ -230,6 +238,18 @@ const ADMIN_PRODUCT_SELECT = `
     ORDER BY pv.id
     LIMIT 1
   ) fit ON true
+  LEFT JOIN LATERAL (
+    SELECT COALESCE(json_agg(json_build_object(
+      'make', pv2.vehicle_make,
+      'model', pv2.vehicle_model,
+      'year_start', pv2.year_start,
+      'year_end', pv2.year_end,
+      'engine', pv2.engine,
+      'engine_number', pv2.engine_number
+    ) ORDER BY pv2.id), '[]'::json) AS vehicle_fits
+    FROM product_vehicles pv2
+    WHERE pv2.product_id = p.id
+  ) fits ON true
 `;
 
 /**
