@@ -21,9 +21,18 @@ export const orderStockConfirmation: ValidationSchema = {
   params: Joi.object().keys({
     number: Joi.string().required(),
   }),
+  // Legacy single-product orders send { available }; multi-item "basket"
+  // orders send { items: [{ itemId, available }] } instead — exactly one of
+  // the two shapes is required per request.
   body: Joi.object().keys({
-    available: Joi.boolean().required(),
-  }),
+    available: Joi.boolean(),
+    items: Joi.array().items(
+      Joi.object().keys({
+        itemId: Joi.number().integer().required(),
+        available: Joi.boolean().required(),
+      })
+    ),
+  }).xor('available', 'items'),
 };
 
 export const orderAnalyticsQuery: ValidationSchema = {

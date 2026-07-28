@@ -5,6 +5,7 @@ import * as vehicleService from '../services/vehicle.service.js';
 import * as productService from '../services/product.service.js';
 import * as paymentService from '../services/payment.service.js';
 import * as sessionService from '../services/session.service.js';
+import { extractProductNames } from '../services/ai.service.js';
 import { sendReply, sendReplyButtons } from '../services/reply.service.js';
 import { sendWhatsAppButtons, sendTypingIndicator } from '../services/whatsapp.service.js';
 import { getAdminByPhone } from '../models/adminUser.model.js';
@@ -85,6 +86,8 @@ async function processMessageFlow(
     logger.debug(`[ADMIN] Inbound message from admin ${phone} (${admin.name}) routed to admin handler, buttonReplyId=${buttonReplyId}`);
     if (buttonReplyId?.startsWith('admin_approve_payment_') || buttonReplyId?.startsWith('admin_reject_payment_')) {
       await paymentService.processAdminPaymentReply(phone, buttonReplyId);
+    } else if (buttonReplyId?.startsWith('admin_item_')) {
+      await productService.processAdminItemStockReply(phone, buttonReplyId);
     } else {
       await productService.processAdminStockReply(phone, buttonReplyId);
     }
@@ -105,6 +108,7 @@ async function processMessageFlow(
   const customer = await customerService.getOrCreateCustomer(phone);
   if (!customer) return;
 
+  const firstName = customer.name?.split(' ')[0] || 'Cliente';
   const messages = await customerService.resolveMessages(phone);
 
   const freshSession = await sessionService.isNewSession(phone);
@@ -228,6 +232,15 @@ async function processMessageFlow(
     if (handled) return;
   }
 
+  const basketConfirmShown = await sessionService.wasBasketConfirmShown(phone);
+  if (basketConfirmShown) {
+    const basket = await sessionService.getPendingBasket(phone);
+    if (basket) {
+      const handled = await productService.processBasketConfirmation(phone, customerText, basket);
+      if (handled) return;
+    }
+  }
+
   const pendingRestockOrderOffer = await sessionService.getPendingRestockOrderOffer(phone);
   if (pendingRestockOrderOffer) {
     const handled = await productService.processRestockOrderChoice(phone, customerText, pendingRestockOrderOffer);
@@ -277,8 +290,17 @@ async function processMessageFlow(
 
   const pendingProductOptions = await sessionService.getPendingOptions(phone);
   if (pendingProductOptions) {
-    const handled = await productService.processProductSelection(phone, customerText, listReplyId, pendingProductOptions);
-    if (handled) return;
+    const alternativeOffer = await sessionService.getPendingAlternativeOffer(phone);
+    if (alternativeOffer) {
+      const handled = await productService.processAlternativeSelection(phone, customerText, listReplyId, pendingProductOptions, alternativeOffer);
+      if (handled) return;
+    } else {
+      const basket = await sessionService.getPendingBasket(phone);
+      const handled = basket
+        ? await productService.processBasketProductSelection(phone, customerText, listReplyId, pendingProductOptions, basket)
+        : await productService.processProductSelection(phone, customerText, listReplyId, pendingProductOptions);
+      if (handled) return;
+    }
   }
 
   if (HUMAN_HANDOFF_PATTERN.test(customerText)) {
@@ -292,6 +314,11 @@ async function processMessageFlow(
     return;
   }
 
-  const searchFirstName = customer.name?.split(' ')[0] || 'Cliente';
-  await productService.searchAndRespond(phone, customerText, searchFirstName);
+  const productNames = await extractProductNames(customerText);
+  if (productNames && productNames.length > 1) {
+    await productService.startBasketSearch(phone, productNames, firstName);
+    return;
+  }
+
+  await productService.searchAndRespond(phone, customerText, firstName);
 }

@@ -4,7 +4,7 @@ import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from 
 import { sendReply, sendReplyButtons } from './reply.service.js';
 import { generateInvoicePDF, sendFinalInvoiceWhatsApp } from './pdf.service.js';
 import { extractPaymentProofData } from './ai.service.js';
-import { getOrderByNumber, getLatestOrderByStatus, updateOrderStatus } from '../models/order.model.js';
+import { getOrderByNumber, getLatestOrderByStatus, updateOrderStatus, getOrderAmount } from '../models/order.model.js';
 import { getSupplierPhoneById } from '../models/supplier.model.js';
 import { getCustomerByPhone } from '../models/customer.model.js';
 import { getAllAdmins, getAdminByPhone } from '../models/adminUser.model.js';
@@ -96,7 +96,7 @@ export async function processMethodChoice(phone: string, customerReply: string):
   const messages = getMessages(locale);
   const paymentMethods = getPaymentMethods(locale);
   const { rows } = await db.query(
-    `SELECT number, unit_price, service_price FROM orders
+    `SELECT number FROM orders
      WHERE customer_phone = $1
        AND status = 'awaiting_payment_method'
      ORDER BY created_at DESC LIMIT 1`,
@@ -104,8 +104,8 @@ export async function processMethodChoice(phone: string, customerReply: string):
   );
   if (!rows.length) return false;
 
-  const { number, unit_price, service_price } = rows[0];
-  const amount = Number(unit_price) + Number(service_price || 0);
+  const { number } = rows[0];
+  const amount = await getOrderAmount(number);
   const reply = customerReply.toLowerCase();
 
   if (reply.includes('transfer') || reply.includes('deposit') || reply.includes('depósito') || reply.includes('banco') || reply.includes('bank') || reply === '1') {
@@ -137,7 +137,7 @@ export async function processMethodSubtype(phone: string, reply: string): Promis
   const messages = getMessages(locale);
   const paymentMethods = getPaymentMethods(locale);
   const { rows } = await db.query(
-    `SELECT number, unit_price, service_price FROM orders
+    `SELECT number FROM orders
      WHERE customer_phone = $1
        AND status = 'awaiting_bank_subtype'
      ORDER BY created_at DESC LIMIT 1`,
@@ -145,8 +145,8 @@ export async function processMethodSubtype(phone: string, reply: string): Promis
   );
   if (!rows.length) return false;
 
-  const { number, unit_price, service_price } = rows[0];
-  const amount = Number(unit_price) + Number(service_price || 0);
+  const { number } = rows[0];
+  const amount = await getOrderAmount(number);
   const r = reply.toLowerCase();
 
   const isDeposit = r.includes('deposit') || r.includes('depósito') || r.includes('deposito') || r === '2';
@@ -209,7 +209,7 @@ export async function processPaymentProof(
   const locale = await resolveLocale(phone);
   const messages = getMessages(locale);
   const { rows } = await db.query(
-    `SELECT number, unit_price, service_price, payment_method FROM orders
+    `SELECT number, payment_method FROM orders
      WHERE customer_phone = $1
        AND status = 'awaiting_payment_proof'
      ORDER BY created_at DESC LIMIT 1`,
@@ -218,8 +218,8 @@ export async function processPaymentProof(
   if (!rows.length) return false;
   if (mediaType !== 'image' && mediaType !== 'document') return false;
 
-  const { number, unit_price, service_price, payment_method } = rows[0];
-  const amount = Number(unit_price) + Number(service_price || 0);
+  const { number, payment_method } = rows[0];
+  const amount = await getOrderAmount(number);
 
   await updateOrderStatus(number, 'awaiting_proof_verification');
 
@@ -361,8 +361,21 @@ export async function approveOrder(orderNumber: string, employeeId: number): Pro
   const customer = await getCustomerByPhone(order.customer_phone);
   const firstName = customer?.name?.split(' ')[0] || 'Cliente';
   const locale = await resolveLocale(order.customer_phone);
+  const mc = getMessages(locale).pdf.invoice;
 
-  const invoicePDF = await generateInvoicePDF(fullOrder, locale);
+  const invoiceLineItems = fullOrder.items
+    ? fullOrder.items
+        .filter((i: any) => i.availabilityStatus === 'available')
+        .flatMap((i: any) => [
+          { description: i.productName, reference: i.reference, price: Number(i.unitPrice) },
+          ...(i.serviceName ? [{ description: i.serviceName, reference: '—', price: Number(i.servicePrice || 0) }] : []),
+        ])
+    : [
+        { description: fullOrder.product_name || mc.defaultProductName, reference: fullOrder.reference || 'PEC-GEN', price: Number(fullOrder.unit_price) },
+        ...(fullOrder.service_price ? [{ description: fullOrder.service_name || 'Serviço', reference: '—', price: Number(fullOrder.service_price) }] : []),
+      ];
+
+  const invoicePDF = await generateInvoicePDF(fullOrder, invoiceLineItems, locale);
 
   await sendFinalInvoiceWhatsApp(order.customer_phone, invoicePDF, orderNumber, firstName, locale);
 

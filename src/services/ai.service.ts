@@ -5,6 +5,7 @@ import { logger } from "../config/logger.js";
 const anthropic = new Anthropic({ apiKey: config.anthropic.apiKey });
 
 const VISION_MODEL = "claude-haiku-4-5-20251001";
+const EXTRACTION_MODEL = "claude-haiku-4-5-20251001";
 
 export interface VisionData {
   document: boolean;
@@ -187,5 +188,56 @@ IMPORTANT RULES:
   } catch (error: any) {
     logger.error(`Claude Vision payment-proof error: ${error.message}`);
     throw error;
+  }
+}
+
+/**
+ * Sends a customer's free-text search message to Claude Haiku and parses
+ * back each distinct part/product mentioned, as short phrases suitable for
+ * the existing full-text search — the one deliberate exception to this
+ * codebase's "no conversational AI in the message pipeline" rule alongside
+ * `validation.service.ts`'s `validateFreeText` (see CLAUDE.md): a single-shot
+ * judgment call, no history, no system prompt, no JSON action dispatch.
+ * Fails OPEN by returning null on any network/API error or unparseable
+ * response, so the caller falls back to treating the whole message as one
+ * single-product search — today's unchanged behavior — rather than ever
+ * blocking a search on an Anthropic outage.
+ */
+export async function extractProductNames(customerText: string): Promise<string[] | null> {
+  try {
+    const response = await anthropic.messages.create({
+      model: EXTRACTION_MODEL,
+      max_tokens: 300,
+      messages: [{
+        role: "user",
+        content: `A customer sent this WhatsApp message to an auto-parts store, asking for one or more
+parts: "${customerText}"
+
+Identify each DISTINCT part/product they're asking for, as a short search phrase suitable for a
+parts-catalog full-text search (e.g. "filtro de óleo", "pastilhas de travão dianteiras") — not a
+rewrite of the whole message, not synonyms, no invented parts they didn't mention. If the message
+names only one product (or nothing clearly product-like), respond with an array containing just
+that one phrase (or the original message text verbatim if nothing product-like is identifiable).
+
+Respond ONLY with valid JSON, no additional text:
+{"products": ["phrase1", "phrase2", ...]}`,
+      }],
+    });
+
+    const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+
+    try {
+      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+      const products = Array.isArray(parsed.products)
+        ? parsed.products.map((p: any) => String(p).trim()).filter((p: string) => p.length > 0)
+        : [];
+      return products.length > 0 ? products : [customerText];
+    } catch {
+      logger.error(`Error parsing product-extraction model JSON: ${text}`);
+      return null;
+    }
+  } catch (error: any) {
+    logger.error(`Claude product-extraction error: ${error.message}`);
+    return null;
   }
 }

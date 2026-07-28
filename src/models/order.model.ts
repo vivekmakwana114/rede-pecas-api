@@ -22,6 +22,29 @@ export interface OrderInfo {
   stock_status?: 'pending' | 'unavailable' | 'confirmed';
   verifying?: boolean;
   reviewable?: boolean;
+  items?: OrderItemEntry[] | null;
+}
+
+export interface OrderItemEntry {
+  itemId: number;
+  productId: number;
+  productName: string;
+  reference: string;
+  supplierId: number;
+  supplierName: string;
+  quantity: number;
+  unitPrice: number;
+  serviceName: string | null;
+  servicePrice: number | null;
+  // 'unavailable' means admin rejected it and it hasn't been resolved yet —
+  // the customer still needs to be offered an alternative (or skip). Once
+  // the customer explicitly skips, it becomes 'declined' — a distinct,
+  // terminal state that (unlike 'unavailable') never triggers another
+  // alternative-search round.
+  availabilityStatus: 'pending' | 'available' | 'unavailable' | 'declined';
+  // productIds already offered and rejected/skipped for this item slot, so a
+  // later alternative search never re-offers the same one twice.
+  excludedProductIds?: number[];
 }
 
 const STOCK_STATUS_CASE_SQL = `
@@ -30,6 +53,33 @@ const STOCK_STATUS_CASE_SQL = `
       WHEN o.status = 'stock_unavailable' THEN 'unavailable'
       ELSE 'confirmed'
     END AS stock_status`;
+
+// Multi-item ("basket") orders keep product_id/unit_price/service_name/
+// service_price NULL and store their line items in `items` instead (see
+// db/schema.sql). These CASE expressions let every admin-facing query fall
+// back transparently to the legacy single-product columns when `items` is
+// NULL, so single-product orders (the overwhelming majority) are completely
+// unaffected — only orders.items IS NOT NULL ever takes the multi-item branch.
+const ITEMS_PRICE_CASE_SQL = `
+    CASE
+      WHEN o.items IS NOT NULL THEN (
+        SELECT COALESCE(SUM((elem->>'unitPrice')::numeric + COALESCE((elem->>'servicePrice')::numeric, 0)), 0)
+        FROM jsonb_array_elements(o.items) elem
+        WHERE elem->>'availabilityStatus' = 'available'
+      )
+      ELSE (o.unit_price + COALESCE(o.service_price, 0))
+    END AS price`;
+
+const ITEMS_PART_CASE_SQL = `
+    CASE
+      WHEN o.items IS NOT NULL THEN
+        (o.items->0->>'productName') ||
+        CASE WHEN jsonb_array_length(o.items) > 1 THEN ' +' || (jsonb_array_length(o.items) - 1) || ' more' ELSE '' END
+      ELSE p.name
+    END AS part`;
+
+const ITEMS_REFERENCE_CASE_SQL = `CASE WHEN o.items IS NOT NULL THEN (o.items->0->>'reference') ELSE p.reference END AS reference`;
+const ITEMS_SUPPLIER_CASE_SQL = `CASE WHEN o.items IS NOT NULL THEN (o.items->0->>'supplierName') ELSE s.name END AS supplier`;
 
 /**
  * Inserts a new `orders` row for a customer/product pair with status
@@ -45,6 +95,174 @@ export async function createOrder(
      VALUES ($1, $2, $3, $4, 1, $5, 'awaiting_payment', NOW())`,
     [orderNumber, phone, item.id, item.supplier_id, item.price]
   );
+}
+
+export interface MultiItemDraft {
+  product: Product;
+  service: { name: string; price: number } | null;
+}
+
+/**
+ * Inserts a single "basket" `orders` row for a multi-product WhatsApp
+ * request — `product_id`/`unit_price`/`service_name`/`service_price` stay
+ * NULL, and every selected product (with its own supplier, price, and
+ * optional attached service) is snapshotted into the `items` JSONB array
+ * instead, one entry per product with a stable 1-based `itemId` and
+ * `availabilityStatus` starting at 'pending'.
+ */
+export async function createMultiItemOrder(
+  orderNumber: string,
+  phone: string,
+  items: MultiItemDraft[]
+): Promise<void> {
+  const entries: OrderItemEntry[] = items.map((draft, i) => ({
+    itemId: i + 1,
+    productId: draft.product.id!,
+    productName: draft.product.name,
+    reference: draft.product.reference,
+    supplierId: draft.product.supplier_id!,
+    supplierName: draft.product.supplier || '',
+    quantity: 1,
+    unitPrice: draft.product.price,
+    serviceName: draft.service?.name ?? null,
+    servicePrice: draft.service?.price ?? null,
+    availabilityStatus: 'pending',
+  }));
+
+  await db.query(
+    `INSERT INTO orders (number, customer_phone, items, status, created_at)
+     VALUES ($1, $2, $3, 'awaiting_payment', NOW())`,
+    [orderNumber, phone, JSON.stringify(entries)]
+  );
+}
+
+/**
+ * Fetches the raw `orders` row (no joins) by order number — used where only
+ * the order's own columns (notably `items`, to detect a multi-item "basket"
+ * order) are needed, without pulling in `products`/`suppliers` fields that a
+ * multi-item order wouldn't have via `product_id` anyway.
+ */
+export async function getOrderRaw(orderNumber: string): Promise<any | null> {
+  const { rows } = await db.query(`SELECT * FROM orders WHERE number = $1`, [orderNumber]);
+  return rows.length ? rows[0] : null;
+}
+
+/**
+ * Computes an order's payable total: for a legacy single-product order,
+ * `unit_price + service_price` exactly as today; for a multi-item order,
+ * the sum of `unitPrice + servicePrice` across only the `items` entries
+ * currently marked `availabilityStatus: 'available'` — unavailable items
+ * never contribute to what the customer is asked to pay.
+ */
+export async function getOrderAmount(orderNumber: string): Promise<number> {
+  const order = await getOrderRaw(orderNumber);
+  if (!order) return 0;
+
+  if (!order.items) {
+    return Number(order.unit_price || 0) + Number(order.service_price || 0);
+  }
+
+  const entries: OrderItemEntry[] = order.items;
+  return entries
+    .filter((e) => e.availabilityStatus === 'available')
+    .reduce((sum, e) => sum + Number(e.unitPrice || 0) + Number(e.servicePrice || 0), 0);
+}
+
+/**
+ * Sets a single line item's availability on a multi-item order — reads
+ * `items`, mutates the matching entry's `availabilityStatus` in JS, and
+ * writes the whole array back. Never touches `items` on a legacy
+ * single-product order (a no-op if `itemId` doesn't match anything there).
+ */
+export async function setOrderItemAvailability(
+  orderNumber: string,
+  itemId: number,
+  available: boolean
+): Promise<void> {
+  const order = await getOrderRaw(orderNumber);
+  if (!order?.items) return;
+
+  const entries: OrderItemEntry[] = order.items;
+  const updated = entries.map((e) =>
+    e.itemId === itemId ? { ...e, availabilityStatus: available ? 'available' as const : 'unavailable' as const } : e
+  );
+
+  await db.query(`UPDATE orders SET items = $2, updated_at = NOW() WHERE number = $1`, [
+    orderNumber,
+    JSON.stringify(updated),
+  ]);
+}
+
+export interface AlternativeProduct {
+  id: number;
+  name: string;
+  reference: string;
+  price: number;
+  supplier_id: number;
+  supplier?: string;
+}
+
+/**
+ * Swaps a rejected line item's product for a customer-chosen alternative:
+ * remembers the old product id in `excludedProductIds` (so it's never
+ * re-offered for this slot), replaces the product/price/supplier fields with
+ * the alternative's, and resets `availabilityStatus` back to 'pending' —
+ * the alternative still needs its own admin stock confirmation, same as any
+ * other item.
+ */
+export async function replaceOrderItemWithAlternative(
+  orderNumber: string,
+  itemId: number,
+  product: AlternativeProduct
+): Promise<void> {
+  const order = await getOrderRaw(orderNumber);
+  if (!order?.items) return;
+
+  const entries: OrderItemEntry[] = order.items;
+  const updated = entries.map((e) =>
+    e.itemId === itemId
+      ? {
+          ...e,
+          excludedProductIds: [...(e.excludedProductIds || []), e.productId],
+          productId: product.id,
+          productName: product.name,
+          reference: product.reference,
+          supplierId: product.supplier_id,
+          supplierName: product.supplier || '',
+          unitPrice: product.price,
+          // The old service (if any) was matched/offered specifically for
+          // the rejected product — it doesn't necessarily apply to this
+          // replacement, so it's dropped rather than silently carried over.
+          serviceName: null,
+          servicePrice: null,
+          availabilityStatus: 'pending' as const,
+        }
+      : e
+  );
+
+  await db.query(`UPDATE orders SET items = $2, updated_at = NOW() WHERE number = $1`, [
+    orderNumber,
+    JSON.stringify(updated),
+  ]);
+}
+
+/**
+ * Marks a line item 'declined' — the customer explicitly skipped it rather
+ * than picking an offered alternative. Terminal: unlike 'unavailable', this
+ * never triggers another alternative-search round, and the item is simply
+ * left out of the order's proforma/total.
+ */
+export async function declineOrderItem(orderNumber: string, itemId: number): Promise<void> {
+  const order = await getOrderRaw(orderNumber);
+  if (!order?.items) return;
+
+  const entries: OrderItemEntry[] = order.items;
+  const updated = entries.map((e) => (e.itemId === itemId ? { ...e, availabilityStatus: 'declined' as const } : e));
+
+  await db.query(`UPDATE orders SET items = $2, updated_at = NOW() WHERE number = $1`, [
+    orderNumber,
+    JSON.stringify(updated),
+  ]);
 }
 
 /**
@@ -157,11 +375,12 @@ export async function getOrdersPendingApproval(): Promise<OrderInfo[]> {
   const { rows } = await db.query(`
     SELECT
       o.number, o.customer_phone AS customer,
-      (o.unit_price + COALESCE(o.service_price, 0)) AS price, o.quantity, o.created_at, o.updated_at,
+      ${ITEMS_PRICE_CASE_SQL}, o.quantity, o.created_at, o.updated_at,
       o.service_name, o.service_price,
       (o.service_name IS NOT NULL) AS service_offered,
-      p.name AS part, p.reference,
-      s.name AS supplier,
+      ${ITEMS_PART_CASE_SQL}, ${ITEMS_REFERENCE_CASE_SQL},
+      ${ITEMS_SUPPLIER_CASE_SQL},
+      o.items,
       o.payment_method,
       to_char(o.created_at, 'DD/MM/YYYY HH24:MI') AS time,
       (o.payment_proof_media_id IS NOT NULL) AS has_proof,
@@ -170,8 +389,9 @@ export async function getOrdersPendingApproval(): Promise<OrderInfo[]> {
       (o.status = 'awaiting_proof_verification') AS verifying,
       (o.status IN ('payment_proof_received', 'awaiting_agent_confirmation')) AS reviewable,${STOCK_STATUS_CASE_SQL}
     FROM orders o
-    JOIN products p ON p.id = o.product_id
-    JOIN suppliers s ON s.id = o.supplier_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
+    LEFT JOIN suppliers s ON s.id = o.supplier_id
     WHERE o.status IN (
       'awaiting_payment', 'awaiting_payment_method', 'awaiting_bank_subtype',
       'awaiting_payment_proof', 'awaiting_proof_verification', 'awaiting_agent_confirmation', 'payment_proof_received'
@@ -189,17 +409,19 @@ export async function getOrdersPendingStockConfirmation(): Promise<any[]> {
   const { rows } = await db.query(`
     SELECT
       o.number, o.customer_phone AS customer,
-      (o.unit_price + COALESCE(o.service_price, 0)) AS price, o.quantity, o.created_at,
+      ${ITEMS_PRICE_CASE_SQL}, o.quantity, o.created_at,
       o.service_name, o.service_price,
       (o.service_name IS NOT NULL) AS service_offered,
-      p.id AS product_id, p.name AS part, p.reference,
-      s.name AS supplier,
+      ps.id AS product_id, ${ITEMS_PART_CASE_SQL}, ${ITEMS_REFERENCE_CASE_SQL},
+      ${ITEMS_SUPPLIER_CASE_SQL},
+      o.items,
       to_char(o.created_at, 'DD/MM/YYYY HH24:MI') AS time,
       'pending' AS stock_status,
       EXTRACT(EPOCH FROM (NOW() - o.created_at)) / 60 AS waiting_minutes
     FROM orders o
-    JOIN products p ON p.id = o.product_id
-    JOIN suppliers s ON s.id = o.supplier_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
+    LEFT JOIN suppliers s ON s.id = o.supplier_id
     WHERE o.status = 'awaiting_stock_confirmation'
     ORDER BY o.created_at ASC
   `);
@@ -238,10 +460,17 @@ export async function markCourtesyMessageSent(orderNumber: string): Promise<void
  */
 export async function getOrdersAwaitingAdminReminder(minMinutes: number): Promise<{ number: string; product_name: string; customer_first_name: string }[]> {
   const { rows } = await db.query(
-    `SELECT o.number, p.name AS product_name,
+    `SELECT o.number,
+            CASE
+              WHEN o.items IS NOT NULL THEN
+                (o.items->0->>'productName') ||
+                CASE WHEN jsonb_array_length(o.items) > 1 THEN ' +' || (jsonb_array_length(o.items) - 1) || ' more' ELSE '' END
+              ELSE p.name
+            END AS product_name,
             COALESCE(split_part(c.name, ' ', 1), 'Cliente') AS customer_first_name
      FROM orders o
-     JOIN products p ON p.id = o.product_id
+     LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+     LEFT JOIN products p ON p.id = ps.product_id
      LEFT JOIN customers c ON c.phone = o.customer_phone
      WHERE o.status = 'awaiting_stock_confirmation'
        AND o.stock_confirmation_admin_reminder_sent = false
@@ -270,16 +499,18 @@ export async function getOrdersApproved(range: 'today' | 'all' = 'all'): Promise
   const { rows } = await db.query(`
     SELECT
       o.number, o.customer_phone AS customer,
-      (o.unit_price + COALESCE(o.service_price, 0)) AS price, o.quantity,
+      ${ITEMS_PRICE_CASE_SQL}, o.quantity,
       o.service_name, o.service_price,
       (o.service_name IS NOT NULL) AS service_offered,
-      p.name AS part,
+      ${ITEMS_PART_CASE_SQL},
+      o.items,
       to_char(o.approved_at, 'DD/MM/YYYY HH24:MI') AS time,
       (o.payment_proof_media_id IS NOT NULL) AS has_proof,
       o.payment_proof_media_type,
       'confirmed' AS stock_status
     FROM orders o
-    JOIN products p ON p.id = o.product_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
     WHERE o.status = 'approved'
       AND o.admin_hidden = false
       ${range === 'today' ? "AND o.approved_at::date = CURRENT_DATE" : ''}
@@ -296,16 +527,18 @@ export async function getOrdersRejected(range: 'today' | 'all' = 'all'): Promise
   const { rows } = await db.query(`
     SELECT
       o.number, o.customer_phone AS customer,
-      (o.unit_price + COALESCE(o.service_price, 0)) AS price, o.quantity,
+      ${ITEMS_PRICE_CASE_SQL}, o.quantity,
       o.service_name, o.service_price,
       (o.service_name IS NOT NULL) AS service_offered,
-      p.name AS part,
+      ${ITEMS_PART_CASE_SQL},
+      o.items,
       to_char(o.updated_at, 'DD/MM/YYYY HH24:MI') AS time,
       (o.payment_proof_media_id IS NOT NULL) AS has_proof,
       o.payment_proof_media_type,
       CASE WHEN o.status = 'stock_unavailable' THEN 'unavailable' ELSE 'confirmed' END AS stock_status
     FROM orders o
-    JOIN products p ON p.id = o.product_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
     WHERE o.status IN ('rejected', 'stock_unavailable')
       ${range === 'today' ? "AND o.updated_at::date = CURRENT_DATE" : ''}
     ORDER BY o.updated_at DESC
@@ -367,7 +600,14 @@ export async function getOrderAnalytics(period: AnalyticsPeriod): Promise<Analyt
      ),
      order_stats AS (
        SELECT date_trunc('${truncUnit}', created_at) AS bucket_start, status,
-              (unit_price + COALESCE(service_price, 0)) AS total_price
+              CASE
+                WHEN items IS NOT NULL THEN (
+                  SELECT COALESCE(SUM((elem->>'unitPrice')::numeric + COALESCE((elem->>'servicePrice')::numeric, 0)), 0)
+                  FROM jsonb_array_elements(items) elem
+                  WHERE elem->>'availabilityStatus' = 'available'
+                )
+                ELSE (unit_price + COALESCE(service_price, 0))
+              END AS total_price
        FROM orders
        WHERE created_at >= ${rangeStartExpr}
          AND created_at < ${rangeEndExpr} + $1::interval
@@ -408,7 +648,16 @@ export async function getOrderStats(): Promise<OrderStats> {
       COUNT(*)::int AS "totalOrders",
       COUNT(*) FILTER (WHERE status = 'approved')::int AS "approvedOrders",
       COUNT(*) FILTER (WHERE status = 'rejected')::int AS "rejectedOrders",
-      COALESCE(SUM(unit_price + COALESCE(service_price, 0)) FILTER (WHERE status = 'approved'), 0) AS "approvedRevenue"
+      COALESCE(SUM(
+        CASE
+          WHEN items IS NOT NULL THEN (
+            SELECT COALESCE(SUM((elem->>'unitPrice')::numeric + COALESCE((elem->>'servicePrice')::numeric, 0)), 0)
+            FROM jsonb_array_elements(items) elem
+            WHERE elem->>'availabilityStatus' = 'available'
+          )
+          ELSE (unit_price + COALESCE(service_price, 0))
+        END
+      ) FILTER (WHERE status = 'approved'), 0) AS "approvedRevenue"
     FROM orders
   `);
   return rows[0];
@@ -422,8 +671,9 @@ export async function getOrderByNumber(number: string): Promise<any | null> {
   const { rows } = await db.query(
     `SELECT o.*, p.name AS product_name, p.reference, s.name AS supplier_name
      FROM orders o
-     JOIN products p ON p.id = o.product_id
-     JOIN suppliers s ON s.id = o.supplier_id
+     LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+     LEFT JOIN products p ON p.id = ps.product_id
+     LEFT JOIN suppliers s ON s.id = o.supplier_id
      WHERE o.number = $1`,
     [number]
   );

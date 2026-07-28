@@ -91,6 +91,17 @@ interface Messages {
     stockConfirmationCourtesy: () => string;
     stockUnavailable: (productName: string, reference: string) => string;
     stockUnavailableButtons: [string, string];
+    basketRequestSummary: (productNames: string[], name: string) => string;
+    basketSummaryBody: (items: { description: string; price: string }[], name: string, total: string) => string;
+    basketConfirmButtons: [string, string];
+    basketCancelled: () => string;
+    basketPartialAvailability: (availableNames: string[], unavailableNames: string[]) => string;
+    basketNoneAvailableYet: (unavailableNames: string[]) => string;
+    basketAllUnavailable: () => string;
+    basketDeclinedNotice: (declinedNames: string[]) => string;
+    alternativesListBody: (productName: string, count: number) => string;
+    alternativeSkipOption: () => string;
+    noAlternativesFound: (productName: string) => string;
   };
   order: {
     rejected: (orderNumber: string) => string;
@@ -440,6 +451,30 @@ const pt: Messages = {
       `Não foi cobrado nenhum pagamento — não há nada com que te preocupares. 👍\n\n` +
       `Queres que eu procure uma alternativa?`,
     stockUnavailableButtons: ['✅ Alternativas', '❌ Lista de espera'],
+    basketRequestSummary: (productNames, name) =>
+      `Boa, ${name}! Percebi que precisas de:\n\n` +
+      productNames.map((p, idx) => `${idx + 1}. ${p}`).join('\n') +
+      `\n\nVamos começar pelo primeiro. 👇`,
+    basketSummaryBody: (items, name, total) =>
+      `Aqui está o que selecionaste, ${name}: 🛒\n\n` +
+      items.map((i, idx) => `${idx + 1}. ${i.description} — ${i.price}`).join('\n') +
+      `\n\n*Total: ${total}*\n\nPosso avançar com a proforma?`,
+    basketConfirmButtons: ['✅ Sim, confirmar', '❌ Não, cancelar'],
+    basketCancelled: () => `Sem problema, cancelei este pedido. 👍 Diz-me quando quiseres procurar outra peça.`,
+    basketPartialAvailability: (availableNames, unavailableNames) =>
+      `Boas notícias — ${availableNames.join(', ')} ${availableNames.length > 1 ? 'estão' : 'está'} disponíve${availableNames.length > 1 ? 'is' : 'l'}! ✅\n\n` +
+      `⚠️ Infelizmente ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? 'não estão' : 'não está'} disponíve${unavailableNames.length > 1 ? 'is' : 'l'} no momento. Vou procurar alternativas para ti.`,
+    basketNoneAvailableYet: (unavailableNames) =>
+      `⚠️ Infelizmente ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? 'não estão' : 'não está'} disponíve${unavailableNames.length > 1 ? 'is' : 'l'} no momento. Vou procurar alternativas para ti.`,
+    basketAllUnavailable: () =>
+      `Desculpa. 😔\n\nO fornecedor confirmou que nenhum dos itens deste pedido está disponível no momento.\n\nNão foi cobrado nenhum pagamento — não há nada com que te preocupares. 👍`,
+    basketDeclinedNotice: (declinedNames) =>
+      `Sem problema — segui em frente sem ${declinedNames.join(', ')}. 👍`,
+    alternativesListBody: (productName, count) =>
+      `Encontrei ${count} alternativa${count > 1 ? 's' : ''} para *${productName}*. Qual preferes? 👇`,
+    alternativeSkipOption: () => `Nenhuma, seguir sem este item`,
+    noAlternativesFound: (productName) =>
+      `Desculpa, não encontrei nenhuma alternativa para *${productName}* no momento — vou deixá-lo de fora do teu pedido.`,
     proformaSentChoosePayment: () =>
       `Proforma enviada! Por favor escolhe um dos métodos de pagamento abaixo. 👇`,
     transferToHuman: () =>
@@ -907,6 +942,30 @@ const en: Messages = {
       `No payment was taken — so there's nothing to worry about. 👍\n\n` +
       `Would you like me to search for an alternative?`,
     stockUnavailableButtons: ['✅ Alternatives', '❌ Join waitlist'],
+    basketRequestSummary: (productNames, name) =>
+      `Got it, ${name}! Here's what you've asked for:\n\n` +
+      productNames.map((p, idx) => `${idx + 1}. ${p}`).join('\n') +
+      `\n\nLet's start with the first one. 👇`,
+    basketSummaryBody: (items, name, total) =>
+      `Here's what you've selected, ${name}: 🛒\n\n` +
+      items.map((i, idx) => `${idx + 1}. ${i.description} — ${i.price}`).join('\n') +
+      `\n\n*Total: ${total}*\n\nShall I move forward with the proforma?`,
+    basketConfirmButtons: ['✅ Yes, confirm', '❌ No, cancel'],
+    basketCancelled: () => `No problem, I've cancelled this order. 👍 Let me know whenever you'd like to search for something else.`,
+    basketPartialAvailability: (availableNames, unavailableNames) =>
+      `Good news — ${availableNames.join(', ')} ${availableNames.length > 1 ? 'are' : 'is'} available! ✅\n\n` +
+      `⚠️ Unfortunately ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? "aren't" : "isn't"} available right now. Let me find some alternatives for you.`,
+    basketNoneAvailableYet: (unavailableNames) =>
+      `⚠️ Unfortunately ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? "aren't" : "isn't"} available right now. Let me find some alternatives for you.`,
+    basketAllUnavailable: () =>
+      `I'm sorry. 😔\n\nThe supplier confirmed that none of the items on this order are available right now.\n\nNo payment was taken — so there's nothing to worry about. 👍`,
+    basketDeclinedNotice: (declinedNames) =>
+      `No problem — I've moved forward without ${declinedNames.join(', ')}. 👍`,
+    alternativesListBody: (productName, count) =>
+      `Found ${count} alternative${count > 1 ? 's' : ''} for *${productName}*. Which one works for you? 👇`,
+    alternativeSkipOption: () => `None of these, skip this item`,
+    noAlternativesFound: (productName) =>
+      `Sorry, I couldn't find any alternatives for *${productName}* right now — I'll leave it out of your order.`,
     proformaSentChoosePayment: () =>
       `Proforma sent! Please choose one of the payment methods below. 👇`,
     transferToHuman: () =>
