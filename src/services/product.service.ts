@@ -8,6 +8,7 @@ import {
   addToProductWaitlist,
   findZeroQuantityProductMatch,
   getProductById,
+  getProductByIdAnyStatus,
   getMatchingServicesForProduct,
   Product
 } from '../models/product.model.js';
@@ -684,7 +685,17 @@ async function searchAlternativesForNextItem(orderNumber: string, phone: string)
   const messages = await resolveMessages(phone);
   const vehicle = await resolveSearchVehicle(phone);
   const excludeProductIds = [item.productId, ...(item.excludedProductIds || [])];
-  const options = await searchProductsInInventory({ part: item.productName, vehicle, excludeProductIds });
+  // Constrain to the rejected product's own subcategory (e.g. 'Brakes') —
+  // otherwise the OR-joined full-text query can match on just one common
+  // word in its name and surface a completely unrelated part as an
+  // "alternative". See searchProductsInInventory's subcategory param.
+  const rejectedProduct = await getProductByIdAnyStatus(item.productId);
+  const options = await searchProductsInInventory({
+    part: item.productName,
+    vehicle,
+    excludeProductIds,
+    subcategory: rejectedProduct?.subcategory,
+  });
 
   if (!options.length) {
     await declineOrderItem(orderNumber, itemId);
@@ -891,7 +902,15 @@ export async function processStockUnavailableChoice(
   if (isYes) {
     await clearPendingStockUnavailableOffer(phone);
     const vehicle = await resolveSearchVehicle(phone);
-    const options = await searchProductsInInventory({ part: offer.productName, vehicle, excludeProductIds: [offer.productId] });
+    // Constrain to the rejected product's own subcategory — see the same
+    // reasoning in searchAlternativesForNextItem (multi-item basket flow).
+    const rejectedProduct = await getProductByIdAnyStatus(offer.productId);
+    const options = await searchProductsInInventory({
+      part: offer.productName,
+      vehicle,
+      excludeProductIds: [offer.productId],
+      subcategory: rejectedProduct?.subcategory,
+    });
     if (!options.length) {
       await sendReplyButtons(phone, messages.agent.noStockFound(), messages.agent.noStockFoundButtons);
       await savePendingWaitlistOffer(phone, { productId: offer.productId, productName: offer.productName });

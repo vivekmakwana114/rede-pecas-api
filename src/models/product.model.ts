@@ -2,6 +2,12 @@ import { db } from '../config/db.js';
 import { logger } from '../config/logger.js';
 import { getMatchingServicesByCategory, Service } from './service.model.js';
 
+// `Product.id` is `product_suppliers.id` (a specific supplier's offer of a
+// part) throughout this app — orders, the waitlist, and search results all
+// mean "this offer" when they say "this product". `products.id` (the
+// shared catalog identity) is an internal detail of this file only — see
+// the 2026-07-28 products/product_suppliers/product_vehicles split
+// documented on the `products` table in db/schema.sql.
 export interface Product {
   id?: number;
   name: string;
@@ -74,68 +80,103 @@ export interface SearchVehicle {
   year: string;
 }
 
+interface VehicleFit {
+  make: string;
+  model: string | null;
+  year_start: number | null;
+  year_end: number | null;
+}
+
+/**
+ * Checks whether any of a product's compatible-vehicle fits matches the
+ * customer's vehicle (make/model/year) — a product now has zero or more
+ * fits (product_vehicles rows), so it's compatible if *any* one of them is.
+ */
+function anyFitMatches(fits: VehicleFit[] | null, vehicle: SearchVehicle): boolean {
+  if (!fits || fits.length === 0) return true;
+  return fits.some(
+    (fit) =>
+      vehicleFieldMatches(fit.make, vehicle.make) &&
+      vehicleFieldMatches(fit.model, vehicle.model) &&
+      vehicleYearMatches(fit.year_start, fit.year_end, vehicle.year)
+  );
+}
+
 /**
  * Runs a full-text search against `products.search_vector` for in-stock, active
- * items matching `part`, then filters the top candidates down to those compatible with the customer's vehicle
- * (make/model/year) and returns the cheapest, highest-rated-supplier 3 results.
+ * offers matching `part`, then filters the top candidates down to those compatible with the customer's vehicle
+ * (make/model/year, checked against every vehicle this product is registered to fit) and returns the
+ * cheapest, highest-rated-supplier 3 results.
  */
 export async function searchProductsInInventory({
   part,
   vehicle,
   excludeProductIds,
+  subcategory,
 }: {
   part: string;
   vehicle?: SearchVehicle | null;
   excludeProductIds?: number[];
+  // Constrains results to the same catalog subcategory (e.g. 'Brakes') as
+  // a known-good reference item — used by the "find an alternative for this
+  // rejected/out-of-stock item" flows, where searching on the rejected
+  // product's full display name alone (e.g. "Front Brake Pads Aftermarket
+  // ESD7052") under this app's OR-joined full-text query can match on just
+  // one common word like "front" and surface a completely unrelated part.
+  // The plain customer free-text search (searchAndRespond) never sets this
+  // — a customer's own short query doesn't have this failure mode.
+  subcategory?: string | null;
 }): Promise<Product[]> {
   const { rows } = await db.query(
     `
     SELECT
-      p.id,
+      ps.id,
       p.name,
       p.reference,
-      p.price,
-      p.quantity,
+      ps.price,
+      ps.quantity,
       p.service_category,
-      p.vehicle_make,
-      p.vehicle_model,
-      p.year_start,
-      p.year_end,
-      p.supplier_id,
+      ps.supplier_id,
       s.name AS supplier,
-      s.rating AS supplier_rating
+      s.rating AS supplier_rating,
+      vf.fits AS vehicle_fits
     FROM products p
-    JOIN suppliers s ON s.id = p.supplier_id
+    JOIN product_suppliers ps ON ps.product_id = p.id
+    JOIN suppliers s ON s.id = ps.supplier_id
+    LEFT JOIN LATERAL (
+      SELECT json_agg(json_build_object(
+        'make', pv.vehicle_make, 'model', pv.vehicle_model,
+        'year_start', pv.year_start, 'year_end', pv.year_end
+      )) AS fits
+      FROM product_vehicles pv WHERE pv.product_id = p.id
+    ) vf ON true
     WHERE
-      p.quantity > 0
+      ps.quantity > 0
+      AND ps.active = true
       AND p.active = true
       AND p.search_vector @@ ${OR_TSQUERY}
-      AND ($2::int[] IS NULL OR NOT (p.id = ANY($2::int[])))
+      AND ($2::int[] IS NULL OR NOT (ps.id = ANY($2::int[])))
+      AND ($3::text IS NULL OR p.subcategory = $3)
     ORDER BY
-      p.price ASC,
+      ps.price ASC,
       s.rating DESC
     LIMIT ${SEARCH_CANDIDATE_LIMIT}
     `,
-    [part, excludeProductIds?.length ? excludeProductIds : null]
+    [part, excludeProductIds?.length ? excludeProductIds : null, subcategory ?? null]
   );
 
   const compatible = vehicle
-    ? rows.filter(
-        (p: Product) =>
-          vehicleFieldMatches(p.vehicle_make, vehicle.make) &&
-          vehicleFieldMatches(p.vehicle_model, vehicle.model) &&
-          vehicleYearMatches(p.year_start, p.year_end, vehicle.year)
-      )
+    ? rows.filter((p: any) => anyFitMatches(p.vehicle_fits, vehicle))
     : rows;
 
-  const results = compatible.slice(0, 3);
+  const results = compatible.slice(0, 3).map(({ vehicle_fits, ...p }: any) => p as Product);
   logger.debug(`[PRODUCT SEARCH] query="${part}" vehicle=${vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'none'} candidates=${rows.length} compatible=${compatible.length} returned=${results.length}`);
   return results;
 }
 
 /**
  * Inserts a `waitlist_requests` row linking a customer to an out-of-stock
- * product, so they can be notified on restock. No-ops if already waitlisted for that product.
+ * offer, so they can be notified on restock. No-ops if already waitlisted for that offer.
  */
 export async function addToProductWaitlist(productId: number, phone: string): Promise<void> {
   await db.query(
@@ -146,188 +187,182 @@ export async function addToProductWaitlist(productId: number, phone: string): Pr
   );
 }
 
+const ADMIN_PRODUCT_SELECT = `
+  SELECT
+    ps.id,
+    p.name,
+    p.brand,
+    p.reference,
+    p.oem_reference,
+    p.synonyms,
+    p.description,
+    p.category,
+    p.subcategory,
+    p.service_category,
+    fit.vehicle_make,
+    fit.vehicle_model,
+    fit.year_start,
+    fit.year_end,
+    fit.engine,
+    fit.engine_number,
+    p.viscosity,
+    p.engine_type,
+    p.volume_liters,
+    p.specification,
+    p.interval_km,
+    p.image_url,
+    ps.price,
+    ps.quantity,
+    ps.delivery_time,
+    ps.active,
+    ps.supplier_id,
+    s.name AS supplier,
+    s.rating AS supplier_rating,
+    s.province AS supplier_address,
+    s.phone AS supplier_phone
+  FROM product_suppliers ps
+  JOIN products p ON p.id = ps.product_id
+  JOIN suppliers s ON s.id = ps.supplier_id
+  LEFT JOIN LATERAL (
+    SELECT vehicle_make, vehicle_model, year_start, year_end, engine, engine_number
+    FROM product_vehicles pv
+    WHERE pv.product_id = p.id
+    ORDER BY pv.id
+    LIMIT 1
+  ) fit ON true
+`;
+
 /**
- * Returns every `products` row (any active status) joined with its supplier's
- * name/rating/province/phone, newest-updated first, for the admin product list.
+ * Returns every `product_suppliers` row (any active status) joined with its
+ * product's catalog fields, supplier's name/rating/province/phone, and its
+ * product's first vehicle fit (a product can have several — the admin list
+ * shows one as a summary; see CLAUDE.md/plan for the full-multi-fit admin UI
+ * follow-up), newest-updated first, for the admin product list.
  */
 export async function getAllProducts(): Promise<Product[]> {
-  const { rows } = await db.query(
-    `SELECT
-      p.id,
-      p.name,
-      p.brand,
-      p.reference,
-      p.oem_reference,
-      p.synonyms,
-      p.description,
-      p.category,
-      p.subcategory,
-      p.service_category,
-      p.vehicle_make,
-      p.vehicle_model,
-      p.year_start,
-      p.year_end,
-      p.engine,
-      p.delivery_time,
-      p.engine_number,
-      p.viscosity,
-      p.engine_type,
-      p.volume_liters,
-      p.specification,
-      p.interval_km,
-      p.image_url,
-      p.price,
-      p.quantity,
-      p.active,
-      p.supplier_id,
-      s.name AS supplier,
-      s.rating AS supplier_rating,
-      s.province AS supplier_address,
-      s.phone AS supplier_phone
-    FROM products p
-    JOIN suppliers s ON s.id = p.supplier_id
-    ORDER BY p.updated_at DESC`
-  );
+  const { rows } = await db.query(`${ADMIN_PRODUCT_SELECT} ORDER BY ps.updated_at DESC`);
   return rows;
 }
 
 /**
- * Looks up a single active `products` row by id, joined with supplier details.
- * Returns null for inactive or missing products.
+ * Looks up a single active offer (`product_suppliers` row) by id, joined
+ * with its product/supplier details and first vehicle fit. Returns null for
+ * inactive or missing offers, or a product deactivated at the catalog level.
  */
 export async function getProductById(id: number): Promise<Product | null> {
   const { rows } = await db.query(
-    `SELECT
-      p.id,
-      p.name,
-      p.brand,
-      p.reference,
-      p.oem_reference,
-      p.synonyms,
-      p.description,
-      p.category,
-      p.subcategory,
-      p.service_category,
-      p.vehicle_make,
-      p.vehicle_model,
-      p.year_start,
-      p.year_end,
-      p.engine,
-      p.delivery_time,
-      p.engine_number,
-      p.viscosity,
-      p.engine_type,
-      p.volume_liters,
-      p.specification,
-      p.interval_km,
-      p.image_url,
-      p.price,
-      p.quantity,
-      p.active,
-      p.supplier_id,
-      s.name AS supplier,
-      s.rating AS supplier_rating,
-      s.province AS supplier_address,
-      s.phone AS supplier_phone
-    FROM products p
-    JOIN suppliers s ON s.id = p.supplier_id
-    WHERE p.id = $1 AND p.active = true`,
+    `${ADMIN_PRODUCT_SELECT} WHERE ps.id = $1 AND ps.active = true AND p.active = true`,
     [id]
   );
   return rows.length ? rows[0] : null;
 }
 
 /**
- * Looks up a single `products` row by id regardless of active status, joined
- * with supplier details — used by the admin edit/view endpoints.
+ * Looks up a single offer (`product_suppliers` row) by id regardless of
+ * active status, joined with its product/supplier details and first vehicle
+ * fit — used by the admin edit/view endpoints.
  */
 export async function getProductByIdAnyStatus(id: number): Promise<Product | null> {
-  const { rows } = await db.query(
-    `SELECT
-      p.id,
-      p.name,
-      p.brand,
-      p.reference,
-      p.oem_reference,
-      p.synonyms,
-      p.description,
-      p.category,
-      p.subcategory,
-      p.service_category,
-      p.vehicle_make,
-      p.vehicle_model,
-      p.year_start,
-      p.year_end,
-      p.engine,
-      p.delivery_time,
-      p.engine_number,
-      p.viscosity,
-      p.engine_type,
-      p.volume_liters,
-      p.specification,
-      p.interval_km,
-      p.image_url,
-      p.price,
-      p.quantity,
-      p.active,
-      p.supplier_id,
-      s.name AS supplier,
-      s.rating AS supplier_rating,
-      s.province AS supplier_address,
-      s.phone AS supplier_phone
-    FROM products p
-    JOIN suppliers s ON s.id = p.supplier_id
-    WHERE p.id = $1`,
-    [id]
-  );
+  const { rows } = await db.query(`${ADMIN_PRODUCT_SELECT} WHERE ps.id = $1`, [id]);
   return rows.length ? rows[0] : null;
 }
 
 /**
- * Looks up a product's `service_category` and returns the matching active
- * services for it, used to offer a related service alongside a product search result.
+ * Looks up an offer's `service_category` (via its product) and returns the
+ * matching active services for it, used to offer a related service
+ * alongside a product search result.
  */
-export async function getMatchingServicesForProduct(productId: number): Promise<Service[]> {
-  const { rows } = await db.query('SELECT service_category FROM products WHERE id = $1', [productId]);
+export async function getMatchingServicesForProduct(offerId: number): Promise<Service[]> {
+  const { rows } = await db.query(
+    `SELECT p.service_category
+     FROM product_suppliers ps JOIN products p ON p.id = ps.product_id
+     WHERE ps.id = $1`,
+    [offerId]
+  );
   if (!rows.length || !rows[0].service_category) return [];
   return getMatchingServicesByCategory(rows[0].service_category);
 }
 
+const OFFER_FIELDS = new Set(['price', 'quantity', 'delivery_time', 'active', 'supplier_id']);
+const VEHICLE_FIELDS = new Set(['vehicle_make', 'vehicle_model', 'year_start', 'year_end', 'engine', 'engine_number']);
+
 /**
  * Dynamically updates whichever `Product` fields are present in `fields` on
- * the `products` row for the given id, stamping `updated_at`. No-ops if `fields` is empty.
+ * the offer (`product_suppliers`), its product (`products`), or its first
+ * vehicle fit (`product_vehicles`, created if none exists yet) — split by
+ * which of the three tables each field actually lives on since the
+ * 2026-07-28 catalog split. No-ops if `fields` is empty. Full multi-fit/
+ * multi-supplier editing from the admin UI is a follow-up; this keeps the
+ * existing single-offer, single-vehicle-fit edit form working.
  */
 export async function updateProduct(id: number, fields: Partial<Product>): Promise<void> {
-  const keys = Object.keys(fields);
+  const keys = Object.keys(fields) as (keyof Product)[];
   if (!keys.length) return;
 
-  const setClauses = keys.map((key, index) => `"${key}" = $${index + 2}`).join(', ');
-  const values = keys.map((key) => (fields as any)[key]);
+  const offerKeys = keys.filter((k) => OFFER_FIELDS.has(k));
+  const vehicleKeys = keys.filter((k) => VEHICLE_FIELDS.has(k));
+  const productKeys = keys.filter((k) => !OFFER_FIELDS.has(k) && !VEHICLE_FIELDS.has(k) && k !== 'id');
 
-  await db.query(
-    `UPDATE products SET ${setClauses}, updated_at = NOW() WHERE id = $1`,
-    [id, ...values]
-  );
+  const { rows } = await db.query(`SELECT product_id FROM product_suppliers WHERE id = $1`, [id]);
+  if (!rows.length) return;
+  const productId = rows[0].product_id;
+
+  if (offerKeys.length) {
+    const setClauses = offerKeys.map((key, index) => `"${key}" = $${index + 2}`).join(', ');
+    const values = offerKeys.map((key) => (fields as any)[key]);
+    await db.query(`UPDATE product_suppliers SET ${setClauses}, updated_at = NOW() WHERE id = $1`, [id, ...values]);
+  }
+
+  if (productKeys.length) {
+    const setClauses = productKeys.map((key, index) => `"${key}" = $${index + 2}`).join(', ');
+    const values = productKeys.map((key) => (fields as any)[key]);
+    await db.query(`UPDATE products SET ${setClauses}, updated_at = NOW() WHERE id = $1`, [productId, ...values]);
+  }
+
+  if (vehicleKeys.length) {
+    const { rows: fitRows } = await db.query(
+      `SELECT id FROM product_vehicles WHERE product_id = $1 ORDER BY id LIMIT 1`,
+      [productId]
+    );
+    if (fitRows.length) {
+      const setClauses = vehicleKeys.map((key, index) => `"${key}" = $${index + 2}`).join(', ');
+      const values = vehicleKeys.map((key) => (fields as any)[key]);
+      await db.query(`UPDATE product_vehicles SET ${setClauses} WHERE id = $1`, [fitRows[0].id, ...values]);
+    } else {
+      const columns = vehicleKeys.join(', ');
+      const placeholders = vehicleKeys.map((_, index) => `$${index + 2}`).join(', ');
+      const values = vehicleKeys.map((key) => (fields as any)[key]);
+      await db.query(
+        `INSERT INTO product_vehicles (product_id, ${columns}) VALUES ($1, ${placeholders})`,
+        [productId, ...values]
+      );
+    }
+  }
 }
 
 export type HardDeleteResult = 'deleted' | 'not_found' | 'still_active';
 
 /**
- * Permanently deletes a `products` row by id, refusing to do so while the
- * product is still active. Returns 'not_found'/'still_active' instead of deleting when the row doesn't qualify.
+ * Permanently deletes one offer (`product_suppliers` row) by id, refusing
+ * to do so while it's still active. Returns 'not_found'/'still_active'
+ * instead of deleting when the row doesn't qualify. Never touches the
+ * shared `products`/`product_vehicles` rows — if this was the product's
+ * last remaining offer, they're simply orphaned (harmless: search requires
+ * a product_suppliers row, so an orphaned product never surfaces again).
  */
 export async function hardDeleteProduct(id: number): Promise<HardDeleteResult> {
-  const { rows } = await db.query('SELECT active FROM products WHERE id = $1', [id]);
+  const { rows } = await db.query('SELECT active FROM product_suppliers WHERE id = $1', [id]);
   if (!rows.length) return 'not_found';
   if (rows[0].active) return 'still_active';
 
-  await db.query('DELETE FROM products WHERE id = $1', [id]);
+  await db.query('DELETE FROM product_suppliers WHERE id = $1', [id]);
   return 'deleted';
 }
 
 /**
- * Full-text searches `products` for an active, out-of-stock (quantity = 0)
- * item matching `part`, used to check whether a "no stock" search should offer a restock waitlist instead of nothing.
+ * Full-text searches for an active, out-of-stock (quantity = 0) offer
+ * matching `part`, used to check whether a "no stock" search should offer a
+ * restock waitlist instead of nothing.
  */
 export async function findZeroQuantityProductMatch({
   part,
@@ -335,12 +370,14 @@ export async function findZeroQuantityProductMatch({
   part: string;
 }): Promise<{ id: number; name: string } | null> {
   const { rows } = await db.query(
-    `SELECT id, name
-     FROM products
-     WHERE quantity = 0
-       AND active = true
-       AND search_vector @@ ${OR_TSQUERY}
-     ORDER BY updated_at DESC
+    `SELECT ps.id, p.name
+     FROM product_suppliers ps
+     JOIN products p ON p.id = ps.product_id
+     WHERE ps.quantity = 0
+       AND ps.active = true
+       AND p.active = true
+       AND p.search_vector @@ ${OR_TSQUERY}
+     ORDER BY ps.updated_at DESC
      LIMIT 1`,
     [part]
   );

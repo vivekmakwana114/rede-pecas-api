@@ -66,14 +66,26 @@ ALTER INDEX IF EXISTS idx_parts_supplier RENAME TO idx_products_supplier;
 ALTER INDEX IF EXISTS idx_parts_price RENAME TO idx_products_price;
 ALTER INDEX IF EXISTS idx_parts_active RENAME TO idx_products_active;
 
+-- ============================================================
+-- PRODUCTS (2026-07-28: split into three tables — see product_suppliers/
+-- product_vehicles below). A products row is now the part's IDENTITY only
+-- (name, description, category, ...) — one row per real physical part,
+-- keyed by `reference` alone (previously (supplier_id, reference), back
+-- when a row conflated "this part" with "one supplier's listing of it").
+-- Price/quantity/delivery_time (differ per supplier) live in
+-- product_suppliers; vehicle fit (a part can fit several vehicles) lives in
+-- product_vehicles. This is what lets the same physical part have multiple
+-- suppliers and multiple compatible vehicles without duplicating the
+-- product itself — see product.model.ts and supplier.model.ts's
+-- importProductsBatch for the read/write side of this split.
+-- ============================================================
 CREATE TABLE IF NOT EXISTS products (
   id               SERIAL PRIMARY KEY,
-  supplier_id      INT NOT NULL REFERENCES suppliers(id),
 
   -- Identification
   name             TEXT NOT NULL,               -- e.g. "Filtro de óleo Mann W712/75"
   brand            TEXT,                        -- e.g. "Mann", "Bosch", "Original" — also holds the catalog CSV's part_brand
-  reference        TEXT NOT NULL,               -- e.g. "W712/75"
+  reference        TEXT NOT NULL UNIQUE,        -- e.g. "W712/75" — identifies the physical part, consistent across suppliers
   oem_reference    TEXT,                        -- original manufacturer reference
   synonyms         TEXT NOT NULL,                -- e.g. "filtro oleo, oil filter"
   category_keywords TEXT,                       -- free text for search
@@ -90,15 +102,9 @@ CREATE TABLE IF NOT EXISTS products (
   subcategory      TEXT NOT NULL,
   service_category TEXT NOT NULL,
 
-  -- Vehicle fit
-  vehicle_make     TEXT NOT NULL,
-  vehicle_model    TEXT,
-  year_start       INT,
-  year_end         INT,
-  engine           TEXT,                        -- engine this part fits, e.g. "2.5L" (not the customer's vehicle — see vehicles.engine_number)
-  engine_number    TEXT,
-
-  -- Lubricant-only specs (populated only when category = 'lubricant')
+  -- Lubricant-only specs (populated only when category = 'lubricant') —
+  -- describe the product itself (e.g. "5W-30 synthetic"), not a specific
+  -- vehicle fit, so they stay here rather than moving to product_vehicles.
   viscosity        TEXT,
   engine_type      TEXT,
   volume_liters    NUMERIC(5,2),
@@ -106,20 +112,11 @@ CREATE TABLE IF NOT EXISTS products (
   specification    TEXT,
   interval_km      INT,
   image_url        TEXT,
-  delivery_time    TEXT NOT NULL,
-
-  -- Price and stock
-  price            NUMERIC(12,2) NOT NULL,      -- in Kwanzas (AOA)
-  quantity         INT NOT NULL DEFAULT 0,
-  unit             TEXT DEFAULT 'unidade',
 
   -- Control
   active           BOOLEAN DEFAULT true,
   created_at       TIMESTAMPTZ DEFAULT NOW(),
   updated_at       TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Required by the supplier batch-import upsert
-  UNIQUE (supplier_id, reference),
 
   -- Full-text search index (auto-generated). Config is 'english' for now
   -- (2026-07-14) while catalog data is being entered in English — see the
@@ -136,6 +133,80 @@ CREATE TABLE IF NOT EXISTS products (
   ) STORED
 );
 
+-- An existing database still has the old single-row-per-supplier shape —
+-- drop the columns that moved out, and the old (supplier_id, reference)
+-- unique constraint, before applying the new bare UNIQUE(reference) above
+-- (already on the CREATE TABLE for a fresh install; ALTER here covers an
+-- existing table where the column predates this change).
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_supplier_id_reference_key;
+ALTER TABLE products DROP COLUMN IF EXISTS supplier_id;
+ALTER TABLE products DROP COLUMN IF EXISTS vehicle_make;
+ALTER TABLE products DROP COLUMN IF EXISTS vehicle_model;
+ALTER TABLE products DROP COLUMN IF EXISTS year_start;
+ALTER TABLE products DROP COLUMN IF EXISTS year_end;
+ALTER TABLE products DROP COLUMN IF EXISTS engine;
+ALTER TABLE products DROP COLUMN IF EXISTS engine_number;
+ALTER TABLE products DROP COLUMN IF EXISTS delivery_time;
+ALTER TABLE products DROP COLUMN IF EXISTS price;
+ALTER TABLE products DROP COLUMN IF EXISTS quantity;
+ALTER TABLE products DROP COLUMN IF EXISTS unit;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'products_reference_key'
+  ) THEN
+    ALTER TABLE products ADD CONSTRAINT products_reference_key UNIQUE (reference);
+  END IF;
+END $$;
+
+-- ============================================================
+-- PRODUCT_SUPPLIERS — one row per (product, supplier): that supplier's
+-- price/quantity/delivery time for this part. A part sold by 3 suppliers
+-- has 3 rows here, all pointing at the same products row. This is the
+-- table search/orders/waitlist actually reference as "the thing being
+-- bought" — see the product_id comment on orders/waitlist_requests below.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_suppliers (
+  id            SERIAL PRIMARY KEY,
+  product_id    INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  supplier_id   INT NOT NULL REFERENCES suppliers(id),
+  price         NUMERIC(12,2) NOT NULL,      -- in Kwanzas (AOA)
+  quantity      INT NOT NULL DEFAULT 0,
+  delivery_time TEXT NOT NULL,
+  active        BOOLEAN DEFAULT true,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Required by the supplier batch-import upsert
+  UNIQUE (product_id, supplier_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_suppliers_product ON product_suppliers (product_id);
+CREATE INDEX IF NOT EXISTS idx_product_suppliers_supplier ON product_suppliers (supplier_id);
+CREATE INDEX IF NOT EXISTS idx_product_suppliers_price ON product_suppliers (price);
+CREATE INDEX IF NOT EXISTS idx_product_suppliers_active ON product_suppliers (active) WHERE active = true;
+
+-- ============================================================
+-- PRODUCT_VEHICLES — one row per (product, compatible vehicle). A part
+-- that fits 4 cars has 4 rows here. `engine`/`engine_number` describe the
+-- vehicle's engine this fit applies to (not the customer's own vehicle —
+-- see vehicles.engine_number for that).
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_vehicles (
+  id             SERIAL PRIMARY KEY,
+  product_id     INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  vehicle_make   TEXT NOT NULL,
+  vehicle_model  TEXT,
+  year_start     INT,
+  year_end       INT,
+  engine         TEXT,
+  engine_number  TEXT,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_vehicles_product ON product_vehicles (product_id);
+CREATE INDEX IF NOT EXISTS idx_product_vehicles_make ON product_vehicles (vehicle_make);
+
 ALTER TABLE products DROP COLUMN IF EXISTS category_id;
 -- Replaced by the waitlist_requests table below — a real table records who
 -- joined and when, which an opaque array column couldn't.
@@ -150,28 +221,23 @@ ALTER TABLE products DROP COLUMN IF EXISTS service_name;
 ALTER TABLE products DROP COLUMN IF EXISTS service_price;
 
 -- Catalog columns from the 2026-07 products CSV import (category, subcategory,
--- vehicle fit, lubricant specs, delivery_time — see the products table
--- comment above). Re-added nullable here (delivery_time previously had a
--- DROP COLUMN IF EXISTS above, removed as of this change — do not re-add
--- that DROP, it would silently wipe this column again on every migrate run)
--- so an existing database can be backfilled before the NOT NULL constraints
--- below are applied.
+-- lubricant specs — see the products table comment above) so an existing
+-- database can be backfilled before the NOT NULL constraints below are
+-- applied. vehicle_make/vehicle_model/year_start/year_end/engine/
+-- engine_number/delivery_time used to be added back here too — as of the
+-- products/product_suppliers/product_vehicles split above, those columns
+-- were dropped from products for good, so they're deliberately no longer
+-- re-added in this block (re-adding them here would silently undo that
+-- split on every migrate run).
 ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS service_category TEXT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS vehicle_make TEXT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS vehicle_model TEXT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS year_start INT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS year_end INT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS engine TEXT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS engine_number TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS viscosity TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS engine_type TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS volume_liters NUMERIC(5,2);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS specification TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS interval_km INT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_time TEXT;
 
 -- Backfill placeholders for rows inserted before this migration (the CSV
 -- importer always supplies real values for these — this only covers
@@ -180,18 +246,14 @@ UPDATE products SET
   category         = COALESCE(category, 'part'),
   subcategory      = COALESCE(subcategory, 'Mechanical'),
   service_category = COALESCE(service_category, 'general_mechanics'),
-  vehicle_make     = COALESCE(vehicle_make, 'Unknown'),
-  delivery_time    = COALESCE(delivery_time, 'Unknown'),
   synonyms         = COALESCE(synonyms, ''),
   description      = COALESCE(description, name)
 WHERE category IS NULL OR subcategory IS NULL OR service_category IS NULL
-   OR vehicle_make IS NULL OR delivery_time IS NULL OR synonyms IS NULL OR description IS NULL;
+   OR synonyms IS NULL OR description IS NULL;
 
 ALTER TABLE products ALTER COLUMN category SET NOT NULL;
 ALTER TABLE products ALTER COLUMN subcategory SET NOT NULL;
 ALTER TABLE products ALTER COLUMN service_category SET NOT NULL;
-ALTER TABLE products ALTER COLUMN vehicle_make SET NOT NULL;
-ALTER TABLE products ALTER COLUMN delivery_time SET NOT NULL;
 ALTER TABLE products ALTER COLUMN synonyms SET NOT NULL;
 ALTER TABLE products ALTER COLUMN description SET NOT NULL;
 
@@ -224,66 +286,83 @@ BEGIN
   END IF;
 END $$;
 
+-- idx_products_supplier/idx_products_price used to live here — supplier_id
+-- and price moved to product_suppliers (see idx_product_suppliers_supplier/
+-- idx_product_suppliers_price above) along with the rest of the split.
 CREATE INDEX IF NOT EXISTS idx_products_fts ON products USING GIN (search_vector);
-CREATE INDEX IF NOT EXISTS idx_products_supplier ON products (supplier_id);
-CREATE INDEX IF NOT EXISTS idx_products_price ON products (price);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products (active) WHERE active = true;
 CREATE INDEX IF NOT EXISTS idx_products_service_category ON products (service_category);
+DROP INDEX IF EXISTS idx_products_supplier;
+DROP INDEX IF EXISTS idx_products_price;
 
 -- ============================================================
--- DATA FIX (2026-07-22): produtos_rede_pecas_via_pecas_v3_EN.csv has ~90 rows
--- (mostly branded filters/brakes/shocks — NGK, KYB, Ashika, Blue Print, SAS,
--- Hi-Q, FMSI, CTR, GMB, Klaxcar, KBS, Blackstorm, Venol — plus all 47 "Yato"
--- rows, which are power tools, not vehicle parts at all) where a parts-brand
--- name landed in vehicle_make instead of brand, bumping the real vehicle make
--- down into vehicle_model and the real model down into engine. This silently
--- broke the vehicle hard-filter in searchProductsInInventory
--- (product.model.ts) — e.g. an "Ashika" oil filter that actually fits
--- Hyundai/Kia never matched a registered Hyundai/Kia customer, since
--- vehicle_make held "Ashika" instead of "Hyundai/Kia". One-time correction,
--- idempotent — each WHERE vehicle_make = '<brand>' stops matching anything
--- once corrected, so a second run is a no-op.
+-- DATA FIX (2026-07-22, moot as of the 2026-07-28 products split above):
+-- produtos_rede_pecas_via_pecas_v3_EN.csv has ~90 rows (mostly branded
+-- filters/brakes/shocks — NGK, KYB, Ashika, Blue Print, SAS, Hi-Q, FMSI,
+-- CTR, GMB, Klaxcar, KBS, Blackstorm, Venol — plus all 47 "Yato" rows, which
+-- are power tools, not vehicle parts at all) where a parts-brand name landed
+-- in vehicle_make instead of brand, bumping the real vehicle make down into
+-- vehicle_model and the real model down into engine. This silently broke
+-- the vehicle hard-filter in searchProductsInInventory (product.model.ts)
+-- — e.g. an "Ashika" oil filter that actually fits Hyundai/Kia never
+-- matched a registered Hyundai/Kia customer, since vehicle_make held
+-- "Ashika" instead of "Hyundai/Kia". One-time correction, idempotent — each
+-- WHERE vehicle_make = '<brand>' stops matching anything once corrected, so
+-- a second run is a no-op. vehicle_make/vehicle_model/engine no longer
+-- exist on `products` after the split above (they're on product_vehicles
+-- now), so this whole block is guarded to skip entirely on any database
+-- that's been through that migration — kept only for a database migrating
+-- straight from before 2026-07-22.
 -- ============================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'products' AND column_name = 'vehicle_make'
+  ) THEN
+    -- Yato: a power-tools brand, not vehicle-specific — a wrench or drill
+    -- fits any vehicle job, so these become a wildcard fit rather than a
+    -- swapped make/model (their "vehicle_model" was actually a
+    -- product-type placeholder — Tool/Equipment/Electric/Consumable/EPI —
+    -- not a real vehicle model at all).
+    UPDATE products SET
+      brand = 'Yato', vehicle_make = 'Various', vehicle_model = NULL, engine = NULL
+    WHERE vehicle_make = 'Yato';
 
--- Yato: a power-tools brand, not vehicle-specific — a wrench or drill fits
--- any vehicle job, so these become a wildcard fit rather than a swapped
--- make/model (their "vehicle_model" was actually a product-type placeholder —
--- Tool/Equipment/Electric/Consumable/EPI — not a real vehicle model at all).
-UPDATE products SET
-  brand = 'Yato', vehicle_make = 'Various', vehicle_model = NULL, engine = NULL
-WHERE vehicle_make = 'Yato';
+    -- Generic swap for the branded-parts rows: real make was in
+    -- vehicle_model, real model (when present) was in engine. Rows whose
+    -- vehicle_model was 'Various' had no real make/model recorded at all
+    -- (a generic part), so they collapse to a wildcard fit instead of a swap.
+    UPDATE products SET
+      brand = vehicle_make, vehicle_make = 'Various', vehicle_model = NULL, engine = NULL
+    WHERE vehicle_make IN ('SAS','NGK','Blue Print','KYB','Ashika','Hi-Q (Sangsin)','Hi-Q','FMSI','CTR','Blackstorm','Venol','Klaxcar','KBS','GMB')
+      AND vehicle_model = 'Various';
 
--- Generic swap for the branded-parts rows: real make was in vehicle_model,
--- real model (when present) was in engine. Rows whose vehicle_model was
--- 'Various' had no real make/model recorded at all (a generic part), so they
--- collapse to a wildcard fit instead of a swap.
-UPDATE products SET
-  brand = vehicle_make, vehicle_make = 'Various', vehicle_model = NULL, engine = NULL
-WHERE vehicle_make IN ('SAS','NGK','Blue Print','KYB','Ashika','Hi-Q (Sangsin)','Hi-Q','FMSI','CTR','Blackstorm','Venol','Klaxcar','KBS','GMB')
-  AND vehicle_model = 'Various';
+    UPDATE products SET
+      brand = vehicle_make, vehicle_make = vehicle_model, vehicle_model = NULLIF(engine, 'Various'), engine = NULL
+    WHERE vehicle_make IN ('SAS','NGK','Blue Print','KYB','Ashika','Hi-Q (Sangsin)','Hi-Q','FMSI','CTR','Blackstorm','Venol','Klaxcar','KBS','GMB')
+      AND vehicle_model <> 'Various';
 
-UPDATE products SET
-  brand = vehicle_make, vehicle_make = vehicle_model, vehicle_model = NULLIF(engine, 'Various'), engine = NULL
-WHERE vehicle_make IN ('SAS','NGK','Blue Print','KYB','Ashika','Hi-Q (Sangsin)','Hi-Q','FMSI','CTR','Blackstorm','Venol','Klaxcar','KBS','GMB')
-  AND vehicle_model <> 'Various';
+    -- AMG (Mercedes' performance division) and Baldwin/Mercedes (a filter
+    -- brand) both implied a Mercedes fit that was never actually recorded as such.
+    UPDATE products SET brand = 'AMG', vehicle_make = 'Mercedes', vehicle_model = NULL
+    WHERE vehicle_make = 'AMG';
 
--- AMG (Mercedes' performance division) and Baldwin/Mercedes (a filter brand)
--- both implied a Mercedes fit that was never actually recorded as such.
-UPDATE products SET brand = 'AMG', vehicle_make = 'Mercedes', vehicle_model = NULL
-WHERE vehicle_make = 'AMG';
+    UPDATE products SET brand = 'Baldwin', vehicle_make = 'Mercedes', vehicle_model = NULL
+    WHERE vehicle_make = 'Baldwin/Mercedes';
 
-UPDATE products SET brand = 'Baldwin', vehicle_make = 'Mercedes', vehicle_model = NULL
-WHERE vehicle_make = 'Baldwin/Mercedes';
+    -- Motorcraft/Ford: vehicle_model ("F-150/Mustang") and engine ("V8")
+    -- were already correct — only vehicle_make conflated the brand with
+    -- the real make.
+    UPDATE products SET brand = 'Motorcraft', vehicle_make = 'Ford'
+    WHERE vehicle_make = 'Motorcraft/Ford';
 
--- Motorcraft/Ford: vehicle_model ("F-150/Mustang") and engine ("V8") were
--- already correct — only vehicle_make conflated the brand with the real make.
-UPDATE products SET brand = 'Motorcraft', vehicle_make = 'Ford'
-WHERE vehicle_make = 'Motorcraft/Ford';
-
--- Plain typo in the source file (also fixed in product.service.ts's
--- vehicleFieldMatches wildcard list going forward, but existing rows still
--- need this one-time correction).
-UPDATE products SET vehicle_make = 'Aftermarket' WHERE vehicle_make = 'AftermarkeDt';
+    -- Plain typo in the source file (also fixed in product.service.ts's
+    -- vehicleFieldMatches wildcard list going forward, but existing rows
+    -- still needed this one-time correction).
+    UPDATE products SET vehicle_make = 'Aftermarket' WHERE vehicle_make = 'AftermarkeDt';
+  END IF;
+END $$;
 
 DROP TABLE IF EXISTS categories;
 
@@ -355,7 +434,12 @@ CREATE TABLE IF NOT EXISTS orders (
   id                      SERIAL PRIMARY KEY,
   number                  TEXT UNIQUE NOT NULL,  -- e.g. "RP-2026-00123"
   customer_phone          TEXT NOT NULL,
-  product_id              INT REFERENCES products(id),
+  -- References product_suppliers(id), not products(id) — as of the
+  -- 2026-07-28 catalog split (see product_suppliers above), "the thing a
+  -- customer orders" is a specific supplier's offer of a product, not the
+  -- abstract product itself. Column name kept as `product_id` to avoid
+  -- churning every reader/writer of it; only what it points at changed.
+  product_id              INT REFERENCES product_suppliers(id),
   supplier_id             INT REFERENCES suppliers(id),
   quantity                INT DEFAULT 1,
   unit_price              NUMERIC(12,2),
@@ -431,6 +515,24 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_confirmation_courtesy_sent BOO
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_confirmation_admin_reminder_sent BOOLEAN DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB;
 
+-- Retarget orders.product_id's FK from products(id) to product_suppliers(id)
+-- on an existing database — see the column comment above. Guarded so a
+-- fresh install (whose CREATE TABLE already points at product_suppliers)
+-- doesn't try to drop a constraint that was never created with this name.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE table_name = 'orders' AND constraint_name = 'orders_product_id_fkey'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.constraint_column_usage
+    WHERE constraint_name = 'orders_product_id_fkey' AND table_name = 'products'
+  ) THEN
+    ALTER TABLE orders DROP CONSTRAINT orders_product_id_fkey;
+    ALTER TABLE orders ADD CONSTRAINT orders_product_id_fkey FOREIGN KEY (product_id) REFERENCES product_suppliers(id);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders (customer_phone);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
 
@@ -456,7 +558,10 @@ DROP TABLE IF EXISTS payment_proofs;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS waitlist_requests (
   id             SERIAL PRIMARY KEY,
-  product_id     INT NOT NULL REFERENCES products(id),
+  -- References product_suppliers(id), not products(id) — same reasoning as
+  -- orders.product_id above: a customer waitlists for a specific supplier's
+  -- offer (the one that was out of stock), not the abstract product.
+  product_id     INT NOT NULL REFERENCES product_suppliers(id),
   customer_phone TEXT NOT NULL,
   created_at     TIMESTAMPTZ DEFAULT NOW(),
   notified_at    TIMESTAMPTZ,
@@ -465,6 +570,23 @@ CREATE TABLE IF NOT EXISTS waitlist_requests (
 
 CREATE INDEX IF NOT EXISTS idx_waitlist_requests_product ON waitlist_requests (product_id);
 CREATE INDEX IF NOT EXISTS idx_waitlist_requests_notified ON waitlist_requests (notified_at);
+
+-- Retarget waitlist_requests.product_id's FK from products(id) to
+-- product_suppliers(id) on an existing database — see the column comment
+-- above.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE table_name = 'waitlist_requests' AND constraint_name = 'waitlist_requests_product_id_fkey'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.constraint_column_usage
+    WHERE constraint_name = 'waitlist_requests_product_id_fkey' AND table_name = 'products'
+  ) THEN
+    ALTER TABLE waitlist_requests DROP CONSTRAINT waitlist_requests_product_id_fkey;
+    ALTER TABLE waitlist_requests ADD CONSTRAINT waitlist_requests_product_id_fkey FOREIGN KEY (product_id) REFERENCES product_suppliers(id);
+  END IF;
+END $$;
 
 -- ============================================================
 -- ADMIN_ALERTS — replaces the old "push a WhatsApp message to the admin's

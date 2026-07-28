@@ -31,61 +31,77 @@ INSERT INTO suppliers (name, province, rating)
 SELECT 'Import Car Parts', 'Benguela', 4.2
 WHERE NOT EXISTS (SELECT 1 FROM suppliers WHERE name = 'Import Car Parts');
 
--- Looked up by name (not hardcoded ids) so this file works regardless of
--- what ids the suppliers above ended up with on a given database.
--- category/subcategory/service_category/vehicle_make/delivery_time/synonyms/
--- description are all NOT NULL as of the products-catalog schema extension —
--- see db/schema.sql. service_category is the derived
--- SUBCATEGORY_TO_SERVICE_CATEGORY grouping (src/constants/serviceCategory.ts).
-INSERT INTO products (supplier_id, name, brand, reference, price, quantity, synonyms, category_keywords, category, subcategory, service_category, vehicle_make, delivery_time, description)
-VALUES
-  ((SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 'Mann Oil Filter W712/75',    'Mann',   'W712/75',    2500,  8, 'oil filter lubricant filter', 'oil filter engine', 'lubricant', 'Filtration', 'maintenance',      'Various',    'Today', 'Mann Oil Filter W712/75'),
-  ((SELECT id FROM suppliers WHERE name = 'Angola Moto Parts'), 'Bosch Oil Filter P7153',     'Bosch',  'P7153',      3100, 12, 'oil filter lubricant filter', 'oil filter engine', 'lubricant', 'Filtration', 'maintenance',      'Various',    'Today', 'Bosch Oil Filter P7153'),
-  ((SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 'Mahle Oil Filter OC611',     'Mahle',  'OC611',      3800,  5, 'oil filter original oem',     'oil filter engine', 'lubricant', 'Filtration', 'maintenance',      'Various',    'Today', 'Mahle Oil Filter OC611'),
-  ((SELECT id FROM suppliers WHERE name = 'Import Car Parts'),  'Original VW Oil Filter',     'VW OEM', '06J115403Q', 5200,  2, 'oil filter original oem',     'oil filter engine', 'lubricant', 'Filtration', 'maintenance',      'Volkswagen', 'Today', 'Original VW Oil Filter'),
-  ((SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 'Hilux Front Shock Absorber', 'KYB',    'KYB334816', 18500,  4, 'shock absorber front strut',  'suspension shock absorber', 'part', 'Suspension', 'general_mechanics', 'Toyota',     'Today', 'Hilux Front Shock Absorber'),
-  ((SELECT id FROM suppliers WHERE name = 'Angola Moto Parts'), 'Golf Front Brake Pads',      'Textar', 'TEX2369201', 7200, 10, 'brake pads brake shoes',      'brakes brake pads', 'part', 'Brakes', 'general_mechanics', 'Volkswagen', 'Today', 'Golf Front Brake Pads')
-ON CONFLICT (supplier_id, reference) DO UPDATE SET
-  name = EXCLUDED.name, brand = EXCLUDED.brand, price = EXCLUDED.price, quantity = EXCLUDED.quantity,
-  synonyms = EXCLUDED.synonyms, category_keywords = EXCLUDED.category_keywords,
-  category = EXCLUDED.category, subcategory = EXCLUDED.subcategory, service_category = EXCLUDED.service_category,
-  vehicle_make = EXCLUDED.vehicle_make, delivery_time = EXCLUDED.delivery_time, description = EXCLUDED.description,
-  active = true;
-
--- Sample product whose service_category has matching seeded services below
--- (Filtration -> maintenance), to exercise the WhatsApp service-matching
--- follow-up (see CLAUDE.md message pipeline / product.service.ts's
--- startOrderForProduct -> getMatchingServicesForProduct).
-INSERT INTO products (supplier_id, name, brand, reference, price, quantity, synonyms, category_keywords, category, subcategory, service_category, vehicle_make, delivery_time, description)
-VALUES
-  ((SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 'Mann Oil Filter W712/75 Kit', 'Mann', 'W712/75-KIT', 2500, 6, 'oil filter lubricant filter', 'oil filter engine', 'lubricant', 'Filtration', 'maintenance', 'Various', 'Today', 'Mann Oil Filter W712/75 Kit')
-ON CONFLICT (supplier_id, reference) DO UPDATE SET
-  name = EXCLUDED.name, price = EXCLUDED.price, quantity = EXCLUDED.quantity,
-  category = EXCLUDED.category, subcategory = EXCLUDED.subcategory, service_category = EXCLUDED.service_category,
-  vehicle_make = EXCLUDED.vehicle_make, delivery_time = EXCLUDED.delivery_time, description = EXCLUDED.description,
-  active = true;
-
 -- ============================================================
--- Out-of-stock products (quantity = 0) — exercise the waitlist →
--- restock-notification → "Order now" chain (see TESTING.md).
+-- Products (2026-07-28 catalog split — see db/schema.sql): a `products` row
+-- is the part's identity only, keyed by `reference`; who sells it (and at
+-- what price/quantity) lives in `product_suppliers`; what it fits lives in
+-- `product_vehicles`. Each part below is seeded across all three tables.
+-- category/subcategory/service_category/synonyms/description are all NOT
+-- NULL — see the products table comment in db/schema.sql. service_category
+-- is the derived SUBCATEGORY_TO_SERVICE_CATEGORY grouping
+-- (src/constants/serviceCategory.ts).
 -- ============================================================
-INSERT INTO products (supplier_id, name, brand, reference, price, quantity, synonyms, category_keywords, category, subcategory, service_category, vehicle_make, delivery_time, description)
+INSERT INTO products (name, brand, reference, synonyms, category_keywords, category, subcategory, service_category, description)
 VALUES
-  ((SELECT id FROM suppliers WHERE name = 'Angola Moto Parts'), 'Continental Timing Belt CT1028', 'Continental', 'CT1028', 9800, 0, 'timing belt distribution belt', 'timing belt engine', 'part', 'Engine', 'general_mechanics', 'Various', 'Today', 'Continental Timing Belt CT1028')
-ON CONFLICT (supplier_id, reference) DO UPDATE SET
-  name = EXCLUDED.name, price = EXCLUDED.price, quantity = EXCLUDED.quantity,
-  category = EXCLUDED.category, subcategory = EXCLUDED.subcategory, service_category = EXCLUDED.service_category,
-  vehicle_make = EXCLUDED.vehicle_make, delivery_time = EXCLUDED.delivery_time, description = EXCLUDED.description,
-  active = true;
+  ('Mann Oil Filter W712/75',    'Mann',       'W712/75',     'oil filter lubricant filter', 'oil filter engine',          'lubricant', 'Filtration', 'maintenance',      'Mann Oil Filter W712/75'),
+  ('Bosch Oil Filter P7153',     'Bosch',      'P7153',       'oil filter lubricant filter', 'oil filter engine',          'lubricant', 'Filtration', 'maintenance',      'Bosch Oil Filter P7153'),
+  ('Mahle Oil Filter OC611',     'Mahle',      'OC611',       'oil filter original oem',     'oil filter engine',          'lubricant', 'Filtration', 'maintenance',      'Mahle Oil Filter OC611'),
+  ('Original VW Oil Filter',     'VW OEM',     '06J115403Q',  'oil filter original oem',     'oil filter engine',          'lubricant', 'Filtration', 'maintenance',      'Original VW Oil Filter'),
+  ('Hilux Front Shock Absorber', 'KYB',        'KYB334816',   'shock absorber front strut',  'suspension shock absorber',  'part',      'Suspension', 'general_mechanics', 'Hilux Front Shock Absorber'),
+  ('Golf Front Brake Pads',      'Textar',     'TEX2369201',  'brake pads brake shoes',      'brakes brake pads',          'part',      'Brakes',     'general_mechanics', 'Golf Front Brake Pads'),
+  ('Mann Oil Filter W712/75 Kit','Mann',       'W712/75-KIT', 'oil filter lubricant filter', 'oil filter engine',          'lubricant', 'Filtration', 'maintenance',      'Mann Oil Filter W712/75 Kit'),
+  ('Continental Timing Belt CT1028', 'Continental', 'CT1028',  'timing belt distribution belt','timing belt engine',       'part',      'Engine',     'general_mechanics', 'Continental Timing Belt CT1028'),
+  ('Fram Air Filter CA1234',     'Fram',       'CA1234',      'air filter engine filter',     'air filter engine',         'part',      'Filtration', 'maintenance',      'Fram Air Filter CA1234')
+ON CONFLICT (reference) DO UPDATE SET
+  name = EXCLUDED.name, brand = EXCLUDED.brand, synonyms = EXCLUDED.synonyms,
+  category_keywords = EXCLUDED.category_keywords, category = EXCLUDED.category,
+  subcategory = EXCLUDED.subcategory, service_category = EXCLUDED.service_category,
+  description = EXCLUDED.description, active = true;
 
-INSERT INTO products (supplier_id, name, brand, reference, price, quantity, synonyms, category_keywords, category, subcategory, service_category, vehicle_make, delivery_time, description)
+-- Who sells each part, and at what price/quantity/delivery time. Note
+-- (product_id, supplier_id) is the upsert key — the same product could
+-- appear here again under a different supplier without touching this row.
+INSERT INTO product_suppliers (product_id, supplier_id, price, quantity, delivery_time)
 VALUES
-  ((SELECT id FROM suppliers WHERE name = 'Import Car Parts'), 'Fram Air Filter CA1234', 'Fram', 'CA1234', 4200, 0, 'air filter engine filter', 'air filter engine', 'part', 'Filtration', 'maintenance', 'Various', 'Today', 'Fram Air Filter CA1234')
-ON CONFLICT (supplier_id, reference) DO UPDATE SET
-  name = EXCLUDED.name, price = EXCLUDED.price, quantity = EXCLUDED.quantity,
-  category = EXCLUDED.category, subcategory = EXCLUDED.subcategory, service_category = EXCLUDED.service_category,
-  vehicle_make = EXCLUDED.vehicle_make, delivery_time = EXCLUDED.delivery_time, description = EXCLUDED.description,
-  active = true;
+  ((SELECT id FROM products WHERE reference = 'W712/75'),     (SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 2500,  8, 'Today'),
+  ((SELECT id FROM products WHERE reference = 'P7153'),       (SELECT id FROM suppliers WHERE name = 'Angola Moto Parts'), 3100, 12, 'Today'),
+  ((SELECT id FROM products WHERE reference = 'OC611'),       (SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 3800,  5, 'Today'),
+  ((SELECT id FROM products WHERE reference = '06J115403Q'),  (SELECT id FROM suppliers WHERE name = 'Import Car Parts'),  5200,  2, 'Today'),
+  ((SELECT id FROM products WHERE reference = 'KYB334816'),   (SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 18500, 4, 'Today'),
+  ((SELECT id FROM products WHERE reference = 'TEX2369201'),  (SELECT id FROM suppliers WHERE name = 'Angola Moto Parts'), 7200, 10, 'Today'),
+  -- Sample product whose service_category has matching seeded services below
+  -- (Filtration -> maintenance), to exercise the WhatsApp service-matching
+  -- follow-up (see CLAUDE.md message pipeline / product.service.ts's
+  -- startOrderForProduct -> getMatchingServicesForProduct).
+  ((SELECT id FROM products WHERE reference = 'W712/75-KIT'), (SELECT id FROM suppliers WHERE name = 'Luanda Auto Parts'), 2500,  6, 'Today'),
+  -- Out-of-stock offers (quantity = 0) — exercise the waitlist →
+  -- restock-notification → "Order now" chain (see TESTING.md).
+  ((SELECT id FROM products WHERE reference = 'CT1028'),      (SELECT id FROM suppliers WHERE name = 'Angola Moto Parts'), 9800,  0, 'Today'),
+  ((SELECT id FROM products WHERE reference = 'CA1234'),      (SELECT id FROM suppliers WHERE name = 'Import Car Parts'),  4200,  0, 'Today')
+ON CONFLICT (product_id, supplier_id) DO UPDATE SET
+  price = EXCLUDED.price, quantity = EXCLUDED.quantity, delivery_time = EXCLUDED.delivery_time, active = true;
+
+-- What each part fits. Guarded with NOT EXISTS (not a unique constraint —
+-- see product_vehicles in db/schema.sql) so re-running this file doesn't
+-- pile up duplicate fit rows.
+INSERT INTO product_vehicles (product_id, vehicle_make)
+SELECT p.id, v.vehicle_make
+FROM (VALUES
+  ('W712/75',     'Various'),
+  ('P7153',       'Various'),
+  ('OC611',       'Various'),
+  ('06J115403Q',  'Volkswagen'),
+  ('KYB334816',   'Toyota'),
+  ('TEX2369201',  'Volkswagen'),
+  ('W712/75-KIT', 'Various'),
+  ('CT1028',      'Various'),
+  ('CA1234',       'Various')
+) AS v(reference, vehicle_make)
+JOIN products p ON p.reference = v.reference
+WHERE NOT EXISTS (
+  SELECT 1 FROM product_vehicles pv
+  WHERE pv.product_id = p.id AND pv.vehicle_make = v.vehicle_make AND pv.vehicle_model IS NULL
+);
 
 -- ============================================================
 -- Services domain (new 2026-07 catalog) — one provider + a few services

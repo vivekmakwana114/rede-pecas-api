@@ -230,6 +230,11 @@ export async function replaceOrderItemWithAlternative(
           supplierId: product.supplier_id,
           supplierName: product.supplier || '',
           unitPrice: product.price,
+          // The old service (if any) was matched/offered specifically for
+          // the rejected product — it doesn't necessarily apply to this
+          // replacement, so it's dropped rather than silently carried over.
+          serviceName: null,
+          servicePrice: null,
           availabilityStatus: 'pending' as const,
         }
       : e
@@ -384,7 +389,8 @@ export async function getOrdersPendingApproval(): Promise<OrderInfo[]> {
       (o.status = 'awaiting_proof_verification') AS verifying,
       (o.status IN ('payment_proof_received', 'awaiting_agent_confirmation')) AS reviewable,${STOCK_STATUS_CASE_SQL}
     FROM orders o
-    LEFT JOIN products p ON p.id = o.product_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
     LEFT JOIN suppliers s ON s.id = o.supplier_id
     WHERE o.status IN (
       'awaiting_payment', 'awaiting_payment_method', 'awaiting_bank_subtype',
@@ -406,14 +412,15 @@ export async function getOrdersPendingStockConfirmation(): Promise<any[]> {
       ${ITEMS_PRICE_CASE_SQL}, o.quantity, o.created_at,
       o.service_name, o.service_price,
       (o.service_name IS NOT NULL) AS service_offered,
-      p.id AS product_id, ${ITEMS_PART_CASE_SQL}, ${ITEMS_REFERENCE_CASE_SQL},
+      ps.id AS product_id, ${ITEMS_PART_CASE_SQL}, ${ITEMS_REFERENCE_CASE_SQL},
       ${ITEMS_SUPPLIER_CASE_SQL},
       o.items,
       to_char(o.created_at, 'DD/MM/YYYY HH24:MI') AS time,
       'pending' AS stock_status,
       EXTRACT(EPOCH FROM (NOW() - o.created_at)) / 60 AS waiting_minutes
     FROM orders o
-    LEFT JOIN products p ON p.id = o.product_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
     LEFT JOIN suppliers s ON s.id = o.supplier_id
     WHERE o.status = 'awaiting_stock_confirmation'
     ORDER BY o.created_at ASC
@@ -453,10 +460,17 @@ export async function markCourtesyMessageSent(orderNumber: string): Promise<void
  */
 export async function getOrdersAwaitingAdminReminder(minMinutes: number): Promise<{ number: string; product_name: string; customer_first_name: string }[]> {
   const { rows } = await db.query(
-    `SELECT o.number, p.name AS product_name,
+    `SELECT o.number,
+            CASE
+              WHEN o.items IS NOT NULL THEN
+                (o.items->0->>'productName') ||
+                CASE WHEN jsonb_array_length(o.items) > 1 THEN ' +' || (jsonb_array_length(o.items) - 1) || ' more' ELSE '' END
+              ELSE p.name
+            END AS product_name,
             COALESCE(split_part(c.name, ' ', 1), 'Cliente') AS customer_first_name
      FROM orders o
-     JOIN products p ON p.id = o.product_id
+     LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+     LEFT JOIN products p ON p.id = ps.product_id
      LEFT JOIN customers c ON c.phone = o.customer_phone
      WHERE o.status = 'awaiting_stock_confirmation'
        AND o.stock_confirmation_admin_reminder_sent = false
@@ -495,7 +509,8 @@ export async function getOrdersApproved(range: 'today' | 'all' = 'all'): Promise
       o.payment_proof_media_type,
       'confirmed' AS stock_status
     FROM orders o
-    LEFT JOIN products p ON p.id = o.product_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
     WHERE o.status = 'approved'
       AND o.admin_hidden = false
       ${range === 'today' ? "AND o.approved_at::date = CURRENT_DATE" : ''}
@@ -522,7 +537,8 @@ export async function getOrdersRejected(range: 'today' | 'all' = 'all'): Promise
       o.payment_proof_media_type,
       CASE WHEN o.status = 'stock_unavailable' THEN 'unavailable' ELSE 'confirmed' END AS stock_status
     FROM orders o
-    LEFT JOIN products p ON p.id = o.product_id
+    LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+    LEFT JOIN products p ON p.id = ps.product_id
     WHERE o.status IN ('rejected', 'stock_unavailable')
       ${range === 'today' ? "AND o.updated_at::date = CURRENT_DATE" : ''}
     ORDER BY o.updated_at DESC
@@ -655,7 +671,8 @@ export async function getOrderByNumber(number: string): Promise<any | null> {
   const { rows } = await db.query(
     `SELECT o.*, p.name AS product_name, p.reference, s.name AS supplier_name
      FROM orders o
-     LEFT JOIN products p ON p.id = o.product_id
+     LEFT JOIN product_suppliers ps ON ps.id = o.product_id
+     LEFT JOIN products p ON p.id = ps.product_id
      LEFT JOIN suppliers s ON s.id = o.supplier_id
      WHERE o.number = $1`,
     [number]

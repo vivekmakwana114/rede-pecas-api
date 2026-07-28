@@ -1,0 +1,709 @@
+﻿name;supplier;category;subcategory;reference;oem_reference;part_brand;price;quantity;delivery_time;vehicle_make;vehicle_model;year_start;year_end;engine;engine_number;viscosity;engine_type;volume_liters;specification;interval_km;description;synonyms;image_url;active
+Air Filter Hyundai 28113-L1000;Via Peças;part;Filtration;28113-L1000;;;9800.0;1;Today;Hyundai;Sonata;2019;2023.0;2.5L;;;;;;;Panel;filtro de ar, air filter;;yes
+Air Filter Hyundai 28130-5H000;Via Peças;part;Filtration;28130-5H000;;;9800.0;1;Today;Hyundai;Mighty;2004;2012.0;D4DB;;;;;;;Truck;filtro de ar, air filter;;yes
+Air Resonator Hyundai/Kia 28190-2S100;Via Peças;part;Mechanical;28190-2S100;;;50000.0;1;Today;Hyundai/Kia;Tucson;2010;2015.0;2.0/2.4;;;;;;;Intake;ressonador de ar, air resonator;;yes
+Intake Manifold Hyundai/Kia 28310-2G030;Via Peças;part;Engine;28310-2G030;;;135000.0;1;Today;Hyundai/Kia;Santa Fe;2010;2015.0;2.4L G4KE;;;;;;;G4KE Engine;coletor admissão, intake manifold;;yes
+Fuel Pump Module Kia 31110-07150;Via Peças;part;Engine;31110-07150;;;75000.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Complete Module;módulo bomba combustível, fuel pump assy;;yes
+Fuel Pump Module Hyundai 31110-0X000;Via Peças;part;Engine;31110-0X000;;;74500.0;1;Today;Hyundai;i10;2008;2013.0;1.1/1.2;;;;;;;Complete Module;módulo bomba combustível, fuel pump assy;;yes
+Fuel Pump Module Kia 31110-1W000;Via Peças;part;Engine;31110-1W000;;;75000.0;1;Today;Kia;Rio;2011;2017.0;1.2/1.4;;;;;;;Complete Module;módulo bomba combustível, fuel pump assy;;yes
+Fuel Pump Module Hyundai 31110-F2100;Via Peças;part;Engine;31110-F2100;;;85000.0;1;Today;Hyundai;Elantra;2016;2020.0;2.0L;;;;;;;Complete Module;módulo bomba combustível, fuel pump assy;;yes
+Fuel Pump Motor Hyundai/Kia 31111-12000;Via Peças;part;Engine;31111-12000;;;32000.0;1;Today;Hyundai/Kia;Various;;;;;;;;;;Electric Refill;motor bomba combustível, fuel pump motor;;yes
+Fuel Pump Motor Hyundai/Kia 31111-1R000;Via Peças;part;Engine;31111-1R000;;;32000.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;1.4/1.6;;;;;;;Electric Refill;motor bomba combustível, fuel pump motor;;yes
+Fuel Pump Motor Hyundai 31111-25000;Via Peças;part;Engine;31111-25000;;;35000.0;1;Today;Hyundai;Accent/Getz;2000;2006.0;Various;;;;;;;Electric Refill;motor bomba combustível, fuel pump motor;;yes
+In-Tank Fuel Filter Kia 31112-07000;Via Peças;part;Filtration;31112-07000;;;13500.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai/Kia 31112-1R000;Via Peças;part;Filtration;31112-1R000;;;16500.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;1.4/1.6;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai 31112-2B000;Via Peças;part;Filtration;31112-2B000;;;15800.0;1;Today;Hyundai;Santa Fe;2006;2009.0;2.7/3.3;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Kia 31112-2P000;Via Peças;part;Filtration;31112-2P000;;;15500.0;1;Today;Kia;Sorento;2009;2012.0;2.4/3.5;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai 31112-3J500;Via Peças;part;Filtration;31112-3J500;;;15800.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai 31112-3Q500;Via Peças;part;Filtration;31112-3Q500;;;15500.0;1;Today;Hyundai;Sonata/Optima;2010;2014.0;2.0/2.4;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai 31112-3R000;Via Peças;part;Filtration;31112-3R000;;;15500.0;1;Today;Hyundai;Azera;2011;2016.0;3.0/3.3;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai 31112-3X000;Via Peças;part;Filtration;31112-3X000;;;13500.0;1;Today;Hyundai;Elantra;2011;2015.0;1.6/1.8;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+In-Tank Fuel Filter Hyundai 31112-C9100;Via Peças;part;Filtration;31112-C9100;;;15500.0;1;Today;Hyundai;Creta/ix25;2015;2020.0;1.6/2.0;;;;;;;Inside the Tank;filtro combustível tanque, fuel filter (internal);;yes
+Clutch Pressure Plate Toyota 31210-36350;Via Peças;part;Transmission;31210-36350;;;65800.0;1;Today;Toyota;Coaster/Dyna;1995;2004.0;4.1L;;;;;;;Commercial;prensa de embraiagem, clutch cover;;yes
+Clutch Disc Toyota 31250-60432;Via Peças;part;Transmission;31250-60432;;;52500.0;1;Today;Toyota;Land Cruiser;1996;2008.0;3.0 TD;;;;;;;Prado 90/120;disco de embraiagem, clutch disc;;yes
+Oil Filter Perkins/Industrial 3886349-2125;Via Peças;lubricant;Filtration;3886349-2125;;;;1;Today;Perkins/Industrial;Geradores;;;;;15W40;Universal;1.0;;;Series 1100;filtro de óleo, oil filter;;yes
+Coolant Temperature Sensor Hyundai/Kia 39220-38030;Via Peças;part;Mechanical;39220-38030;;;35500.0;1;Today;Hyundai/Kia;Various;2000;2018.0;;;;;;;;Sensor ECT;sensor temp. água, coolant temp sensor;;yes
+Lower Control Arm (R) Mitsubishi 4010A037/MR;Via Peças;part;Suspension;4010A037/MR;;;42800.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;2.5/3.2;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (L) Mitsubishi 4010A038/MR;Via Peças;part;Suspension;4010A038/MR;;;42800.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;2.5/3.2;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Ball Joint Renault/Dacia 40160-2308R;Via Peças;part;Suspension;40160-2308R;;;25000.0;1;Today;Renault/Dacia;Duster/Oroch;2011;2020.0;Various;;;;;;;Suspension;rótula suspensão inf, lower ball joint;;yes
+Release Bearing Hyundai/Kia 41421-39275;Via Peças;part;Mechanical;41421-39275;;;34500.0;1;Today;Hyundai/Kia;Tucson;2004;2010.0;2.0L;;;;;;;Clutch;rolamento encosto, release bearing;;yes
+Upper Ball Joint Toyota 43310-09015;Via Peças;part;Suspension;43310-09015;;;28500.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Front;rótula suspensão sup, upper ball joint;;yes
+Lower Ball Joint Toyota 43330-09510;Via Peças;part;Suspension;43330-09510;;;26800.0;1;Today;Toyota;Hilux/Prado;2002;2015.0;Various;;;;;;;Front;rótula suspensão inf, lower ball joint;;yes
+Lower Ball Joint Toyota 43330-29565;Via Peças;part;Suspension;43330-29565;;;18700.0;1;Today;Toyota;Hiace;1996;2004.0;Various;;;;;;;Front;rótula suspensão inf, lower ball joint;;yes
+Brake Disc Toyota 43512-0K060;Via Peças;part;Brakes;43512-0K060;;;52500.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Vented;disco de travão, front brake disc;;yes
+Brake Disc Toyota 43512-60150;Via Peças;part;Brakes;43512-60150;;;54800.0;1;Today;Toyota;Land Cruiser;1998;2007.0;4.2 TD;;;;;;;Series 100;disco de travão, front brake disc;;yes
+Brake Disc Toyota 43512-60190;Via Peças;part;Brakes;43512-60190;;;65000.0;1;Today;Toyota;Prado;2002;2020.0;Various;;;;;;;Series 120/150;disco de travão, front brake disc;;yes
+Tie Rod End (R) Mitsubishi 4422A037;Via Peças;part;Steering;4422A037;;;26500.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Outer;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Mitsubishi 4422A038;Via Peças;part;Steering;4422A038;;;26500.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Outer;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Toyota 45046-09280;Via Peças;part;Steering;45046-09280;;;22500.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Outer;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (R) Toyota 45046-29456;Via Peças;part;Steering;45046-29456;;;24500.0;1;Today;Toyota;Hiace;1996;2004.0;Various;;;;;;;Outer;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (R) Toyota 45046-39505;Via Peças;part;Steering;45046-39505;;;25500.0;1;Today;Toyota;Hilux/Prado;1996;2004.0;Various;;;;;;;90 Series;terminal direção (d), tie rod end (r);;yes
+Tie Rod End Toyota 45046-69236;Via Peças;part;Steering;45046-69236;;;37500.0;1;Today;Toyota;Land Cruiser;1998;2018.0;Various;;;;;;;Series 100/200;terminal direção, tie rod end;;yes
+Tie Rod End (L) Toyota 45047-69145;Via Peças;part;Steering;45047-69145;;;37500.0;1;Today;Toyota;Land Cruiser;1998;2007.0;Various;;;;;;;Series 100;terminal direção (e), tie rod end (l);;yes
+Steering Rack End Toyota 45503-09321;Via Peças;part;Steering;45503-09321;;;26800.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Steering;axial de direção, rack end;;yes
+Steering Rack End Toyota 45503-60030;Via Peças;part;Steering;45503-60030;;;26000.0;1;Today;Toyota;Land Cruiser;2002;2009.0;Various;;;;;;;Series 120;axial de direção, rack end;;yes
+Front Brake Pads Mitsubishi 4605A198;Via Peças;part;Brakes;4605A198;;;27800.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Akebono System;pastilhas travão diant, brake pad set;;yes
+Front Brake Pads Mitsubishi 4605B541/L2Y;Via Peças;part;Brakes;4605B541/L2Y;;;75500.0;1;Today;Mitsubishi;L200 Triton;2015;2023.0;Various;;;;;;;New Generation;pastilhas travão diant, brake pad set;;yes
+Automatic Transmission Filter Hyundai/Kia 46321-23000;Via Peças;part;Filtration;46321-23000;;;22500.0;1;Today;Hyundai/Kia;Tucson/Elantra;2004;2012.0;2.0L;;;;;;;4 Speeds;filtro caixa auto, at filter;;yes
+Automatic Transmission Filter Hyundai/Kia 46321-26000;Via Peças;part;Filtration;46321-26000;;;22500.0;1;Today;Hyundai/Kia;Santa Fe;2006;2009.0;2.7/3.3;;;;;;;4 Speeds;filtro caixa auto, at filter;;yes
+Automatic Transmission Filter Hyundai/Kia 46321-39010;Via Peças;part;Filtration;46321-39010;;;26500.0;1;Today;Hyundai/Kia;Sonata/XG;1998;2005.0;V6;;;;;;;4 Speeds;filtro caixa auto, at filter;;yes
+Wheel Bearing Aftermarket 46T080805;Via Peças;part;Mechanical;46T080805;;;34500.0;1;Today;Aftermarket;Various;;;;;;;;;;Industrial Ref.;rolamento roda, wheel bearing;;yes
+Oil Filter Chery 480-1012010;Via Peças;lubricant;Filtration;480-1012010;;;7500.0;1;Today;Chery;QQ/Face;2006;2015.0;1.0/1.1;;15W40;Universal;1.0;;;Acteco Engine;filtro de óleo, oil filter;;yes
+Lower Control Arm (R) Toyota 48068-26160;Via Peças;part;Suspension;48068-26160;;;48500.0;1;Today;Toyota;Hiace;2005;2018.0;Various;;;;;;;Front;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Toyota 48068-60030;Via Peças;part;Suspension;48068-60030;;;190000.0;1;Today;Toyota;Prado/4Runner;2002;2009.0;Series 120;;;;;;;Front;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (L) Toyota 48069-26160;Via Peças;part;Suspension;48069-26160;;;48500.0;1;Today;Toyota;Hiace;2005;2018.0;Various;;;;;;;Front;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Toyota 48069-60030;Via Peças;part;Suspension;48069-60030;;;190000.0;1;Today;Toyota;Prado/4Runner;2002;2009.0;Series 120;;;;;;;Front;braço suspensão inf (e), lower control arm (l);;yes
+Rear Shock Absorber Toyota 48530-69165;Via Peças;part;Suspension;48530-69165;;;52000.0;1;Today;Toyota;Land Cruiser;2002;2009.0;Series 120;;;;;;;Diesel/Petrol;amortecedor traseiro, shock absorber rear;;yes
+Upper Control Arm (R) Toyota 48610-60030;Via Peças;part;Suspension;48610-60030;;;65800.0;1;Today;Toyota;Prado/4Runner;2002;2009.0;Series 120;;;;;;;Front;braço suspensão sup (d), upper control arm (r);;yes
+Bushing Suspension Toyota 48654-60030;Via Peças;part;Suspension;48654-60030;;;19800.0;1;Today;Toyota;Prado;2002;2020.0;Series 120/150;;;;;;;Lower/Front;casquilho suspensão, control arm bush;;yes
+Bushing Suspension Toyota 48655-60050;Via Peças;part;Suspension;48655-60050;;;9500.0;1;Today;Toyota;Prado;2002;2020.0;Series 120/150;;;;;;;Lower/Rear;casquilho suspensão, control arm bush;;yes
+Link Stabilizer Front Toyota 48810-0K030;Via Peças;part;Mechanical;48810-0K030;;;26500.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Right/Left;pendural estabiliz diant, stabilizer link;;yes
+Link Stabilizer Front Toyota 48810-60051;Via Peças;part;Mechanical;48810-60051;;;15000.0;1;Today;Toyota;Prado;2009;2021.0;Series 150;;;;;;;Front Axle;pendural estabiliz diant, stabilizer link;;yes
+Rubber Stabilizer Bar Toyota 48815-0K010;Via Peças;part;Mechanical;48815-0K010;;;9800.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Front;borracha barra estabiliz, stabilizer bush;;yes
+Rubber Stabilizer Bar Toyota 48818-60040;Via Peças;part;Mechanical;48818-60040;;;9500.0;1;Today;Toyota;Prado;2002;2009.0;Series 120;;;;;;;Rear;borracha barra estabiliz, stabilizer bush;;yes
+Link Stabilizer Front Toyota 48820-26050;Via Peças;part;Mechanical;48820-26050;;;24500.0;1;Today;Toyota;Hiace;2005;2018.0;Various;;;;;;;Right/Left;pendural estabiliz diant, stabilizer link;;yes
+Link Stabilizer Front Toyota 48820-60071;Via Peças;part;Mechanical;48820-60071;;;15000.0;1;Today;Toyota;Prado;2002;2021.0;Series 120/150;;;;;;;Right/Left;pendural estabiliz diant, stabilizer link;;yes
+Link Stabilizer Rear Toyota 48830-60030;Via Peças;part;Mechanical;48830-60030;;;25800.0;1;Today;Toyota;Prado;2002;2021.0;Series 120/150;;;;;;;Rear Axle;pendural estabiliz tras, stabilizer link rear;;yes
+Transmission Front (R) Hyundai 49500-0X800;Via Peças;part;Mechanical;49500-0X800;;;90500.0;1;Today;Hyundai;i10;2008;2013.0;1.1/1.2;;;;;;;Right Side;transmissão diant (d), drive shaft (r);;yes
+Transmission Front (R) Hyundai 49500-2W400;Via Peças;part;Mechanical;49500-2W400;;;180000.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;AT/4WD;transmissão diant (d), drive shaft (r);;yes
+Transmission Front (R) Hyundai 49500-2W600;Via Peças;part;Mechanical;49500-2W600;;;180000.0;1;Today;Hyundai;Santa Fe;2015;2018.0;2.2 CRDi;;;;;;;Right Side;transmissão diant (d), drive shaft (r);;yes
+Transmission Front (L) Hyundai 49501-2W450;Via Peças;part;Mechanical;49501-2W450;;;175000.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Left Side;transmissão diant (e), drive shaft (l);;yes
+Transmission Front (L) Hyundai 49501-2W650;Via Peças;part;Mechanical;49501-2W650;;;175000.0;1;Today;Hyundai;Santa Fe;2015;2018.0;2.2 CRDi;;;;;;;Left Side;transmissão diant (e), drive shaft (l);;yes
+Piston of Engine Mitsubishi/Fuso 4D3031;Via Peças;part;Engine;4D3031;;;48000.0;1;Today;Mitsubishi/Fuso;Canter;;;4D30;;;;;;;Truck;pistão de motor, engine piston;;yes
+Belt Accessories Various 4PK830;Via Peças;part;Mechanical;4PK830;;;19800.0;1;Today;Various;Toyota/Suzuki;;;;;;;;;;4PK830;correia acessórios, v-ribbed belt;;yes
+Belt Accessories Various 4PK870;Via Peças;part;Mechanical;4PK870;;;19500.0;1;Today;Various;Toyota/Nissan;;;;;;;;;;4PK870;correia acessórios, v-ribbed belt;;yes
+Bushing Aftermarket 50525 YADA;Via Peças;part;Mechanical;50525 YADA;;;10000.0;1;Today;Aftermarket;Various;;;;;;;;;;Generic Ref.;casquilho, bushing;;yes
+Bushing Aftermarket 50526 YADA;Via Peças;part;Mechanical;50526 YADA;;;12000.0;1;Today;Aftermarket;Various;;;;;;;;;;Generic Ref.;casquilho, bushing;;yes
+Bushing Aftermarket 50529 YADA;Via Peças;part;Mechanical;50529 YADA;;;14000.0;1;Today;Aftermarket;Various;;;;;;;;;;Generic Ref.;casquilho, bushing;;yes
+Brake Disc Kia 51712-07500;Via Peças;part;Brakes;51712-07500;;;37800.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Front;disco de travão, front brake disc;;yes
+Brake Disc Hyundai/Kia 51712-1R000;Via Peças;part;Brakes;51712-1R000;;;49800.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;1.4/1.6;;;;;;;Front;disco de travão, front brake disc;;yes
+Brake Disc Hyundai 51712-3J000;Via Peças;part;Brakes;51712-3J000;;;49800.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Front;disco de travão, front brake disc;;yes
+Brake Disc Hyundai/Kia 51712-3X000;Via Peças;part;Brakes;51712-3X000;;;42000.0;1;Today;Hyundai/Kia;Elantra/Cerato;2011;2016.0;1.6/1.8;;;;;;;Front;disco de travão, front brake disc;;yes
+Brake Disc Hyundai 51712-4H000;Via Peças;part;Brakes;51712-4H000;;;45800.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5 CRDi;;;;;;;Front;disco de travão, front brake disc;;yes
+Wheel Bearing Front Hyundai 51720-02000;Via Peças;part;Mechanical;51720-02000;;;32500.0;1;Today;Hyundai;Atos/i10;1997;2013.0;Various;;;;;;;Front;rolamento roda diant, wheel bearing;;yes
+Wheel Bearing Front Hyundai/Kia 51720-2H000;Via Peças;part;Mechanical;51720-2H000;;;36500.0;1;Today;Hyundai/Kia;i30/Ceed;2007;2012.0;Various;;;;;;;Front;rolamento roda diant, wheel bearing;;yes
+Wheel Bearing Front Hyundai/Kia 51720-2S100;Via Peças;part;Mechanical;51720-2S100;;;16000.0;1;Today;Hyundai/Kia;Tucson/Sportage;2010;2015.0;Various;;;;;;;Front;rolamento roda diant, wheel bearing;;yes
+Wheel Bearing Front Hyundai/Kia 51720-38110;Via Peças;part;Mechanical;51720-38110;;;16000.0;1;Today;Hyundai/Kia;Santa Fe/Sonata;2001;2010.0;Various;;;;;;;W/ ABS;rolamento roda diant, wheel bearing;;yes
+Wheel Hub Front Hyundai 51750-0X000;Via Peças;part;Mechanical;51750-0X000;;;31200.0;1;Today;Hyundai;i10;2008;2013.0;1.1/1.2;;;;;;;Front Axle;cubo de roda diant, wheel hub front;;yes
+Wheel Hub Front Hyundai/Kia 51750-1J000;Via Peças;part;Mechanical;51750-1J000;;;32500.0;1;Today;Hyundai/Kia;i20/Rio;2008;2015.0;Various;;;;;;;Front Axle;cubo de roda diant, wheel hub front;;yes
+Wheel Bearing Rear Hyundai/Kia 52710-2E500;Via Peças;part;Mechanical;52710-2E500;;;29800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;2WD;;;;;;;Rear;rolamento roda tras, wheel bearing rear;;yes
+Hub Wheel Rear Hyundai/Kia 52730-3S200;Via Peças;part;Mechanical;52730-3S200;;;62500.0;1;Today;Hyundai/Kia;Sonata/Optima;2010;2014.0;Various;;;;;;;Rear Axle;cubo roda tras, wheel hub rear;;yes
+Hub Wheel Rear Hyundai/Kia 52750-1G000;Via Peças;part;Mechanical;52750-1G000;;;45800.0;1;Today;Hyundai/Kia;Accent/Rio;2005;2011.0;Various;;;;;;;Rear Axle;cubo roda tras, wheel hub rear;;yes
+Arm Suspension Front Renault 54500-0138R;Via Peças;part;Suspension;54500-0138R;;;42500.0;1;Today;Renault;Logan/Sandero;2007;2014.0;Various;;;;;;;Right;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Kia 54500-07160;Via Peças;part;Suspension;54500-07160;;;42800.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Hyundai 54500-1J700;Via Peças;part;Suspension;54500-1J700;;;43800.0;1;Today;Hyundai;i20;2012;2014.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Hyundai/Kia 54500-1R000;Via Peças;part;Suspension;54500-1R000;;;43500.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Kia 54500-1W000;Via Peças;part;Suspension;54500-1W000;;;48500.0;1;Today;Kia;Rio;2011;2017.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Kia 54500-1Y000;Via Peças;part;Suspension;54500-1Y000;;;39900.0;1;Today;Kia;Picanto;2011;2017.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Hyundai 54500-2B000;Via Peças;part;Suspension;54500-2B000;;;48500.0;1;Today;Hyundai;Santa Fe;2006;2012.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Hyundai/Kia 54500-2E000;Via Peças;part;Suspension;54500-2E000;;;45500.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Kia 54500-2K500;Via Peças;part;Suspension;54500-2K500;;;43500.0;1;Today;Kia;Soul;2008;2013.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Arm Suspension Front Kia 54500-2P000;Via Peças;part;Suspension;54500-2P000;;;46500.0;1;Today;Kia;Sorento;2009;2014.0;Various;;;;;;;Right Side;braço suspensão diant, control arm front;;yes
+Lower Control Arm (R) Hyundai/Kia 54500-2S000;Via Peças;part;Suspension;54500-2S000;;;43500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-2W000;Via Peças;part;Suspension;54500-2W000;;;42500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-3J000;Via Peças;part;Suspension;54500-3J000;;;49800.0;1;Today;Hyundai;Veracruz/ix55;2007;2012.0;3.8/3.0;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai/Kia 54500-3S000;Via Peças;part;Suspension;54500-3S000;;;46500.0;1;Today;Hyundai/Kia;Sonata/Optima;2011;2014.0;2.0/2.4;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-4H000;Via Peças;part;Suspension;54500-4H000;;;51500.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5 CRDi;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Kia 54500-A7000;Via Peças;part;Suspension;54500-A7000;;;45500.0;1;Today;Kia;Cerato/Forte;2013;2018.0;1.6/2.0;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Kia 54500-B2000;Via Peças;part;Suspension;54500-B2000;;;44500.0;1;Today;Kia;Soul;2014;2019.0;1.6;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-B4000;Via Peças;part;Suspension;54500-B4000;;;38900.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-C1000;Via Peças;part;Suspension;54500-C1000;;;42500.0;1;Today;Hyundai;Sonata (LF);2015;2019.0;2.0/2.4;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Kia 54500-C5000;Via Peças;part;Suspension;54500-C5000;;;42500.0;1;Today;Kia;Sorento (UM);2015;2020.0;2.2/2.4;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai/Kia 54500-D3000;Via Peças;part;Suspension;54500-D3000;;;54500.0;1;Today;Hyundai/Kia;Tucson/Sportage;2015;2020.0;1.6/2.0;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-D7000;Via Peças;part;Suspension;54500-D7000;;;45500.0;1;Today;Hyundai;Santa Fe;2018;2023.0;2.0/2.2;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (R) Hyundai 54500-F2000;Via Peças;part;Suspension;54500-F2000;;;42500.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;2.0;;;;;;;Right;braço suspensão inf (d), lower control arm (r);;yes
+Lower Control Arm (L) Kia 54501-07160;Via Peças;part;Suspension;54501-07160;;;42800.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Renault 54501-1697R;Via Peças;part;Suspension;54501-1697R;;;42500.0;1;Today;Renault;Duster/Oroch;2011;2020.0;Various;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-1J700;Via Peças;part;Suspension;54501-1J700;;;43800.0;1;Today;Hyundai;i20;2012;2014.0;Various;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai/Kia 54501-1R000;Via Peças;part;Suspension;54501-1R000;;;43500.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;1.4/1.6;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-1W000;Via Peças;part;Suspension;54501-1W000;;;48500.0;1;Today;Kia;Rio;2011;2017.0;Various;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-1Y000;Via Peças;part;Suspension;54501-1Y000;;;39900.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-2B000;Via Peças;part;Suspension;54501-2B000;;;48500.0;1;Today;Hyundai;Santa Fe;2006;2012.0;2.7/3.3;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai/Kia 54501-2E000;Via Peças;part;Suspension;54501-2E000;;;45500.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;2.0;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-2K500;Via Peças;part;Suspension;54501-2K500;;;43500.0;1;Today;Kia;Soul;2008;2013.0;1.6/2.0;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-2P000;Via Peças;part;Suspension;54501-2P000;;;46500.0;1;Today;Kia;Sorento;2009;2014.0;2.2/2.4;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-2W000;Via Peças;part;Suspension;54501-2W000;;;42500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-3J000;Via Peças;part;Suspension;54501-3J000;;;49800.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai/Kia 54501-3S000;Via Peças;part;Suspension;54501-3S000;;;46500.0;1;Today;Hyundai/Kia;Sonata/Optima;2011;2014.0;2.0/2.4;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-3X000;Via Peças;part;Suspension;54501-3X000;;;48500.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-4H000;Via Peças;part;Suspension;54501-4H000;;;51500.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-A7000;Via Peças;part;Suspension;54501-A7000;;;45500.0;1;Today;Kia;Cerato/Forte;2013;2018.0;1.6/2.0;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-B2000;Via Peças;part;Suspension;54501-B2000;;;44500.0;1;Today;Kia;Soul;2014;2019.0;1.6;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-B4000;Via Peças;part;Suspension;54501-B4000;;;38900.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-C1000;Via Peças;part;Suspension;54501-C1000;;;42500.0;1;Today;Hyundai;Sonata (LF);2015;2019.0;2.0/2.4;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Kia 54501-C5000;Via Peças;part;Suspension;54501-C5000;;;42500.0;1;Today;Kia;Sorento (UM);2015;2020.0;2.2/2.4;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai/Kia 54501-D3000;Via Peças;part;Suspension;54501-D3000;;;54500.0;1;Today;Hyundai/Kia;Tucson/Sportage;2015;2020.0;1.6/2.0;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-D7000;Via Peças;part;Suspension;54501-D7000;;;42500.0;1;Today;Hyundai;Santa Fe;2018;2023.0;2.0/2.2;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Lower Control Arm (L) Hyundai 54501-F2000;Via Peças;part;Suspension;54501-F2000;;;42500.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;2.0;;;;;;;Left;braço suspensão inf (e), lower control arm (l);;yes
+Ball Joint of Suspension Kia 54530-07000;Via Peças;part;Suspension;54530-07000;;;45500.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Hyundai/Kia 54530-0U000;Via Peças;part;Suspension;54530-0U000;;;14500.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;Various;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Kia 54530-2K000;Via Peças;part;Suspension;54530-2K000;;;15800.0;1;Today;Kia;Soul;2008;2013.0;1.6/2.0;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Kia 54530-2T010;Via Peças;part;Suspension;54530-2T010;;;16800.0;1;Today;Kia;Optima;2011;2015.0;2.0/2.4;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Hyundai 54530-3J000;Via Peças;part;Suspension;54530-3J000;;;15800.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Hyundai 54530-3S000;Via Peças;part;Suspension;54530-3S000;;;16500.0;1;Today;Hyundai;Sonata;2011;2014.0;2.0/2.4;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Hyundai/Kia 54530-3S100;Via Peças;part;Suspension;54530-3S100;;;14500.0;1;Today;Hyundai/Kia;Azera/Cadenza;2011;2016.0;3.0/3.3;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Hyundai 54530-3X000;Via Peças;part;Suspension;54530-3X000;;;15000.0;1;Today;Hyundai;Elantra;2011;2015.0;1.6/1.8;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Ball Joint of Suspension Hyundai 54530-C1000;Via Peças;part;Suspension;54530-C1000;;;16500.0;1;Today;Hyundai;Sonata;2015;2019.0;2.0/2.4;;;;;;;Front;rótula de suspensão, ball joint;;yes
+Support/Mount of Shock Absorber Kia 54610-C5000;Via Peças;part;Suspension;54610-C5000;;;19800.0;1;Today;Kia;Sorento;2015;2020.0;2.2/2.4;;;;;;;Front Axle;apoio de amortecedor, strut mount;;yes
+Front Shock Absorber (L) Hyundai 54650-1J000;Via Peças;part;Suspension;54650-1J000;;;58800.0;1;Today;Hyundai;i20;2008;2012.0;1.2/1.4;;;;;;;Left Side;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54650-1J351;Via Peças;part;Suspension;54650-1J351;;;45500.0;1;Today;Hyundai;i20;2012;2014.0;1.2/1.4;;;;;;;Left Side;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54650-1R000;Via Peças;part;Suspension;54650-1R000;;;45500.0;1;Today;Hyundai;Accent;2011;2017.0;1.4/1.6;;;;;;;Left Side;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54650-1Y000;Via Peças;part;Suspension;54650-1Y000;;;40000.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Left Side;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54650-2B200;Via Peças;part;Suspension;54650-2B200;;;46800.0;1;Today;Hyundai;Santa Fe;2006;2009.0;2.2/2.7;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai/Kia 54650-2H000;Via Peças;part;Suspension;54650-2H000;;;43900.0;1;Today;Hyundai/Kia;i30/Ceed;2007;2012.0;Various;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54650-2K400;Via Peças;part;Suspension;54650-2K400;;;44800.0;1;Today;Kia;Soul;2008;2013.0;1.6;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54650-2P100;Via Peças;part;Suspension;54650-2P100;;;45800.0;1;Today;Kia;Sorento;2009;2014.0;2.2/2.4;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54650-3J200;Via Peças;part;Suspension;54650-3J200;;;43200.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54650-B4100;Via Peças;part;Suspension;54650-B4100;;;48800.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54650-D4000;Via Peças;part;Suspension;54650-D4000;;;548000.0;1;Today;Kia;Optima (JF);2016;2020.0;2.0;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54651-2T020;Via Peças;part;Suspension;54651-2T020;;;63800.0;1;Today;Kia;Optima (TF);2011;2015.0;2.0/2.4;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54651-2T232;Via Peças;part;Suspension;54651-2T232;;;60500.0;1;Today;Kia;Optima;2012;2015.0;Various;;;;;;;Gas;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Kia 54651-2T410;Via Peças;part;Suspension;54651-2T410;;;62500.0;1;Today;Kia;Optima Hybrid;2011;2015.0;2.0/2.4;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54651-2W200;Via Peças;part;Suspension;54651-2W200;;;61500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54651-3S010;Via Peças;part;Suspension;54651-3S010;;;60600.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;2.0/2.4;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54651-3V410;Via Peças;part;Suspension;54651-3V410;;;58900.0;1;Today;Hyundai;Azera (HG);2011;2016.0;3.0/3.3;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54651-3X250;Via Peças;part;Suspension;54651-3X250;;;54800.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (L) Hyundai 54651-F2500;Via Peças;part;Suspension;54651-F2500;;;55800.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;2.0;;;;;;;Left;amortecedor diant (e), shock absorber (l);;yes
+Front Shock Absorber (R) Hyundai 54660-1J000;Via Peças;part;Suspension;54660-1J000;;;49800.0;1;Today;Hyundai;i20;2008;2012.0;1.2/1.4;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54660-1J351;Via Peças;part;Suspension;54660-1J351;;;588000.0;1;Today;Hyundai;i20;2012;2014.0;1.2/1.4;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54660-1R000;Via Peças;part;Suspension;54660-1R000;;;54500.0;1;Today;Hyundai;Accent;2011;2017.0;1.4/1.6;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54660-1Y000;Via Peças;part;Suspension;54660-1Y000;;;40000.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54660-2B200;Via Peças;part;Suspension;54660-2B200;;;46800.0;1;Today;Hyundai;Santa Fe;2006;2009.0;2.2/2.7;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai/Kia 54660-2H000;Via Peças;part;Suspension;54660-2H000;;;43900.0;1;Today;Hyundai/Kia;i30/Ceed;2007;2012.0;Various;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54660-2K400;Via Peças;part;Suspension;54660-2K400;;;44800.0;1;Today;Kia;Soul;2008;2013.0;1.6;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54660-2P100;Via Peças;part;Suspension;54660-2P100;;;45800.0;1;Today;Kia;Sorento;2009;2014.0;2.2/2.4;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54660-3J200;Via Peças;part;Suspension;54660-3J200;;;43200.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54660-B4100;Via Peças;part;Suspension;54660-B4100;;;48800.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54660-D4000;Via Peças;part;Suspension;54660-D4000;;;548000.0;1;Today;Kia;Optima (JF);2016;2020.0;2.0;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai/Kia 54661-2S550;Via Peças;part;Suspension;54661-2S550;;;51200.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;2.0;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54661-2T020;Via Peças;part;Suspension;54661-2T020;;;63800.0;1;Today;Kia;Optima (TF);2011;2015.0;2.0/2.4;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54661-2T232;Via Peças;part;Suspension;54661-2T232;;;60500.0;1;Today;Kia;Optima;2012;2015.0;Various;;;;;;;Gas;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Kia 54661-2T410;Via Peças;part;Suspension;54661-2T410;;;62500.0;1;Today;Kia;Optima Hybrid;2011;2015.0;2.0/2.4;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54661-2W200;Via Peças;part;Suspension;54661-2W200;;;61500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54661-3S010;Via Peças;part;Suspension;54661-3S010;;;60600.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;2.0/2.4;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54661-3V410;Via Peças;part;Suspension;54661-3V410;;;58900.0;1;Today;Hyundai;Azera (HG);2011;2016.0;3.0/3.3;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54661-3X250;Via Peças;part;Suspension;54661-3X250;;;54800.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Front Shock Absorber (R) Hyundai 54661-F2500;Via Peças;part;Suspension;54661-F2500;;;55800.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;2.0;;;;;;;Right;amortecedor diant (d), shock absorber (r);;yes
+Stabilizer Bar Kia 54810-1W000;Via Peças;part;Mechanical;54810-1W000;;;97500.0;1;Today;Kia;Rio;2011;2017.0;Various;;;;;;;Front Axle;barra estabilizadora, stabilizer bar;;yes
+Stabilizer Bar Kia 54810-1Y000;Via Peças;part;Mechanical;54810-1Y000;;;75500.0;1;Today;Kia;Picanto;2011;2017.0;Various;;;;;;;Front Axle;barra estabilizadora, stabilizer bar;;yes
+Stabilizer Bar Hyundai/Kia 54810-2S700;Via Peças;part;Mechanical;54810-2S700;;;89800.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;2.0;;;;;;;Front Axle;barra estabilizadora, stabilizer bar;;yes
+Stabilizer Bar Bushing Kia 54812-07000;Via Peças;part;Mechanical;54812-07000;;;14500.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Kia 54813-1W000;Via Peças;part;Mechanical;54813-1W000;;;6500.0;1;Today;Kia;Rio;2011;2017.0;Various;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Kia 54813-1Y000;Via Peças;part;Mechanical;54813-1Y000;;;7800.0;1;Today;Kia;Picanto;2011;2017.0;Various;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Kia 54813-2J000;Via Peças;part;Mechanical;54813-2J000;;;9800.0;1;Today;Kia;Mohave/Borrego;2008;2015.0;3.0/3.8;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai/Kia 54813-2S000;Via Peças;part;Mechanical;54813-2S000;;;7500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Kia 54813-2T000;Via Peças;part;Mechanical;54813-2T000;;;7500.0;1;Today;Kia;Optima;2011;2015.0;2.0/2.4;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai 54813-2W100;Via Peças;part;Mechanical;54813-2W100;;;7800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai 54813-3K100;Via Peças;part;Mechanical;54813-3K100;;;7500.0;1;Today;Hyundai;Sonata (NF);2005;2010.0;2.0/2.4;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai 54813-3X000;Via Peças;part;Mechanical;54813-3X000;;;6800.0;1;Today;Hyundai;Elantra;2011;2015.0;1.6/1.8;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai 54813-3X500;Via Peças;part;Mechanical;54813-3X500;;;6800.0;1;Today;Hyundai;Elantra;2013;2016.0;Various;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai 54813-B4000;Via Peças;part;Mechanical;54813-B4000;;;7400.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Stabilizer Bar Bushing Hyundai/Kia 54813-D3000;Via Peças;part;Mechanical;54813-D3000;;;7800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2015;2020.0;Various;;;;;;;Rubber;casquilho barra estabiliz, stabilizer bush;;yes
+Link Stabilizer Front Kia 54830-07000;Via Peças;part;Mechanical;54830-07000;;;14500.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front Hyundai/Kia 54830-0U000;Via Peças;part;Mechanical;54830-0U000;;;12000.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;Various;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front Hyundai 54830-1J000;Via Peças;part;Mechanical;54830-1J000;;;18500.0;1;Today;Hyundai;i20;2008;2014.0;Various;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front Hyundai/Kia 54830-2E100;Via Peças;part;Mechanical;54830-2E100;;;15800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;Various;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front Hyundai/Kia 54830-2H100;Via Peças;part;Mechanical;54830-2H100;;;17800.0;1;Today;Hyundai/Kia;i30/Ceed;2007;2012.0;Various;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front Hyundai 54830-2W000;Via Peças;part;Mechanical;54830-2W000;;;16800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;Various;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front Kia 54830-C5000;Via Peças;part;Mechanical;54830-C5000;;;16800.0;1;Today;Kia;Sorento (UM);2015;2020.0;2.2/2.4;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Link Stabilizer Front (R) Hyundai 54840-2B000;Via Peças;part;Mechanical;54840-2B000;;;15800.0;1;Today;Hyundai;Santa Fe;2006;2012.0;2.7/3.3;;;;;;;Right;pendural estabiliz diant (d), front stabilizer link (r);;yes
+Link Stabilizer Front Kia 54840-2K000;Via Peças;part;Mechanical;54840-2K000;;;14500.0;1;Today;Kia;Soul;2008;2013.0;1.6/2.0;;;;;;;Front;pendural estabiliz diant, front stabilizer link;;yes
+Rear Axle Hyundai/Kia 55100-2S000;Via Peças;part;Mechanical;55100-2S000;;;35500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Frame;eixo traseiro, rear axle beam;;yes
+Arm Suspension Rear Suzuki 55211-60A00;Via Peças;part;Suspension;55211-60A00;;;30500.0;1;Today;Suzuki;Vitara/Sidekick;1988;1998.0;Various;;;;;;;Suspension;braço suspensão tras, rear control arm;;yes
+Arm of Adjustment Rear Hyundai 55250-2W000;Via Peças;part;Suspension;55250-2W000;;;39800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Wheel Alignment;braço de ajuste tras, rear assist arm;;yes
+Arm Suspension Rear (L) Hyundai 55270-2W000;Via Peças;part;Suspension;55270-2W000;;;37800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;Various;;;;;;;Upper/Left;braço suspensão tras (e), rear control arm (l);;yes
+Arm Suspension Rear (R) Hyundai 55280-2W000;Via Peças;part;Suspension;55280-2W000;;;37800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;Various;;;;;;;Upper/Right;braço suspensão tras (d), rear control arm (r);;yes
+Rear Shock Absorber Hyundai 55300-0X100;Via Peças;part;Suspension;55300-0X100;;;31500.0;1;Today;Hyundai;i10;2008;2013.0;1.1;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55300-1J000;Via Peças;part;Suspension;55300-1J000;;;33800.0;1;Today;Hyundai;i20;2008;2014.0;1.2/1.4;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55300-1M000;Via Peças;part;Suspension;55300-1M000;;;33800.0;1;Today;Kia;Cerato/Forte;2008;2013.0;1.6/2.0;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55300-1R100;Via Peças;part;Suspension;55300-1R100;;;34500.0;1;Today;Hyundai;Accent;2011;2017.0;1.4/1.6;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55300-1Y000;Via Peças;part;Suspension;55300-1Y000;;;27800.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55300-2K400;Via Peças;part;Suspension;55300-2K400;;;46500.0;1;Today;Kia;Soul;2008;2013.0;1.6/2.0;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55300-2V200;Via Peças;part;Suspension;55300-2V200;;;33500.0;1;Today;Hyundai;Veloster;2011;2017.0;1.6 GDI;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55300-3X100;Via Peças;part;Suspension;55300-3X100;;;35800.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55300-A7100;Via Peças;part;Suspension;55300-A7100;;;34500.0;1;Today;Kia;Cerato;2013;2018.0;1.6/2.0;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55310-1Y200;Via Peças;part;Suspension;55310-1Y200;;;28500.0;1;Today;Kia;Picanto;2015;2017.0;Various;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55310-2B520;Via Peças;part;Suspension;55310-2B520;;;36800.0;1;Today;Hyundai;Santa Fe;2006;2012.0;2.2/2.7;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55310-2P200;Via Peças;part;Suspension;55310-2P200;;;37800.0;1;Today;Kia;Sorento;2009;2014.0;2.2/2.4;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55310-2W300;Via Peças;part;Suspension;55310-2W300;;;38900.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55310-3J200;Via Peças;part;Suspension;55310-3J200;;;41500.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55310-B2040;Via Peças;part;Suspension;55310-B2040;;;39800.0;1;Today;Kia;Soul;2014;2019.0;1.6;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55310-F2500;Via Peças;part;Suspension;55310-F2500;;;35800.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;2.0;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai/Kia 55311-2S400;Via Peças;part;Suspension;55311-2S400;;;45000.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;2.0/2.4;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55311-3S010;Via Peças;part;Suspension;55311-3S010;;;37800.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;2.0/2.4;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55311-3X250;Via Peças;part;Suspension;55311-3X250;;;35500.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;Various;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Hyundai 55311-C1200;Via Peças;part;Suspension;55311-C1200;;;38500.0;1;Today;Hyundai;Sonata (LF);2015;2019.0;2.0/2.4;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber Kia 55311-F1000;Via Peças;part;Suspension;55311-F1000;;;38500.0;1;Today;Kia;Sportage (QL);2016;2021.0;1.6/2.0;;;;;;;Rear;amortecedor traseiro, rear shock absorber;;yes
+Front Shock Absorber (L) Hyundai/Kia 55351-2E501;Via Peças;part;Suspension;55351-2E501;;;48200.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;4WD;;;;;;;Left;amortecedor dianteiro (e), rear shock (l);;yes
+Front Shock Absorber (R) Hyundai/Kia 55361-2E501;Via Peças;part;Suspension;55361-2E501;;;48200.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;4WD;;;;;;;Right;amortecedor dianteiro (d), rear shock (r);;yes
+Stabilizer Bar Rear Hyundai/Kia 55510-2S000;Via Peças;part;Mechanical;55510-2S000;;;98700.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Rear;barra estabilizadora tras, rear stabilizer bar;;yes
+Bushing Stabilizer Rear Hyundai/Kia 55513-2S000;Via Peças;part;Mechanical;55513-2S000;;;7500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Rubber;casquilho estabiliz tras, rear stabilizer bush;;yes
+Bushing Stabilizer Rear Hyundai 55513-3K100;Via Peças;part;Mechanical;55513-3K100;;;8700.0;1;Today;Hyundai;Sonata;2005;2010.0;Various;;;;;;;Rubber;casquilho estabiliz tras, rear stabilizer bush;;yes
+Bushing Stabilizer Rear Hyundai 55513-3N200;Via Peças;part;Mechanical;55513-3N200;;;8500.0;1;Today;Hyundai;Equus/Genesis;2009;2013.0;Various;;;;;;;Rubber;casquilho estabiliz tras, rear stabilizer bush;;yes
+Bushing Stabilizer Rear Hyundai 55513-3S000;Via Peças;part;Mechanical;55513-3S000;;;8500.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;Various;;;;;;;Rubber;casquilho estabiliz tras, rear stabilizer bush;;yes
+Link Stabilizer Rear Hyundai 55530-2B200;Via Peças;part;Mechanical;55530-2B200;;;22500.0;1;Today;Hyundai;Santa Fe;2006;2012.0;2.2/2.7;;;;;;;Rear;pendural estabiliz tras, rear stabilizer link;;yes
+Link Stabilizer Rear Hyundai/Kia 55530-2S100;Via Peças;part;Mechanical;55530-2S100;;;18800.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Rear;pendural estabiliz tras, rear stabilizer link;;yes
+Link Stabilizer Rear Hyundai/Kia 55530-3R000;Via Peças;part;Mechanical;55530-3R000;;;23500.0;1;Today;Hyundai/Kia;Azera/Cadenza;2011;2016.0;Various;;;;;;;Rear;pendural estabiliz tras, rear stabilizer link;;yes
+Link Stabilizer Rear Kia 55530-C5000;Via Peças;part;Mechanical;55530-C5000;;;22800.0;1;Today;Kia;Sorento (UM);2015;2020.0;2.2/2.4;;;;;;;Rear;pendural estabiliz tras, rear stabilizer link;;yes
+Link Stabilizer Rear (R) Hyundai 55540-2W100;Via Peças;part;Mechanical;55540-2W100;;;19800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;Various;;;;;;;Rear Right;pendural estabiliz tras (d), rear stabilizer link (r);;yes
+Brake Pads Front Suzuki 55810-71L51;Via Peças;part;Brakes;55810-71L51;;;25500.0;1;Today;Suzuki;Swift;2010;2017.0;1.2;;;;;;;Braking;pastilhas de travão diant, front brake pads;;yes
+Brake Pads Front Suzuki/Maruti 55810M68K10;Via Peças;part;Brakes;55810M68K10;;;26800.0;1;Today;Suzuki/Maruti;Alto/Celerio;2009;2014.0;1.0;;;;;;;Braking;pastilhas de travão diant, front brake pads;;yes
+Brake Pads Front Suzuki/Maruti 55810M75J30;Via Peças;part;Brakes;55810M75J30;;;24500.0;1;Today;Suzuki/Maruti;Swift/SX4;2005;2015.0;Various;;;;;;;Braking;pastilhas de travão diant, front brake pads;;yes
+Tie Rod End (L) Kia 56820-07000;Via Peças;part;Steering;56820-07000;;;15500.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (L) Hyundai 56820-0U500;Via Peças;part;Steering;56820-0U500;;;19800.0;1;Today;Hyundai;Accent;2011;2017.0;1.4/1.6;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai 56820-0U590;Via Peças;part;Steering;56820-0U590;;;18800.0;1;Today;Hyundai;Accent;2011;2017.0;1.4/1.6;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Kia 56820-1W000;Via Peças;part;Steering;56820-1W000;;;18800.0;1;Today;Kia;Rio;2011;2017.0;Various;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Kia 56820-1W090;Via Peças;part;Steering;56820-1W090;;;17800.0;1;Today;Kia;Rio;2011;2017.0;Various;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Kia 56820-1Y501;Via Peças;part;Steering;56820-1Y501;;;15500.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Kia 56820-1Y551;Via Peças;part;Steering;56820-1Y551;;;15500.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai/Kia 56820-2E000;Via Peças;part;Steering;56820-2E000;;;19800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;Various;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai/Kia 56820-2E900;Via Peças;part;Steering;56820-2E900;;;19800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;Various;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Kia 56820-2K000;Via Peças;part;Steering;56820-2K000;;;18500.0;1;Today;Kia;Soul;2008;2013.0;1.6/2.0;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Kia 56820-2K050;Via Peças;part;Steering;56820-2K050;;;18900.0;1;Today;Kia;Soul;2008;2013.0;1.6/2.0;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai/Kia 56820-2S000;Via Peças;part;Steering;56820-2S000;;;24500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai/Kia 56820-2S050;Via Peças;part;Steering;56820-2S050;;;24500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai 56820-2W000;Via Peças;part;Steering;56820-2W000;;;26500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai 56820-2W050;Via Peças;part;Steering;56820-2W050;;;26500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End Hyundai 56820-2W500;Via Peças;part;Steering;56820-2W500;;;23500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;Various;;;;;;;Steering;terminal direção, tie rod end;;yes
+Tie Rod End (L) Hyundai 56820-3Q000;Via Peças;part;Steering;56820-3Q000;;;25400.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;2.0/2.4;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai 56820-3Q500;Via Peças;part;Steering;56820-3Q500;;;24500.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;2.0/2.4;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai 56820-3X000;Via Peças;part;Steering;56820-3X000;;;24500.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai 56820-3X090;Via Peças;part;Steering;56820-3X090;;;24500.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai 56820-4H000;Via Peças;part;Steering;56820-4H000;;;22500.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai 56820-4H100;Via Peças;part;Steering;56820-4H100;;;22500.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai 56820-A5000;Via Peças;part;Steering;56820-A5000;;;23500.0;1;Today;Hyundai;i30 (GD);2012;2016.0;1.4/1.6;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Tie Rod End (R) Hyundai 56820-A5090;Via Peças;part;Steering;56820-A5090;;;23500.0;1;Today;Hyundai;i30 (GD);2012;2016.0;1.4/1.6;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (R) Hyundai 56820-B4050;Via Peças;part;Steering;56820-B4050;;;22500.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Right;terminal direção (d), tie rod end (r);;yes
+Tie Rod End (L) Hyundai/Kia 56820-D3000;Via Peças;part;Steering;56820-D3000;;;25500.0;1;Today;Hyundai/Kia;Tucson/Sportage;2015;2020.0;Various;;;;;;;Left;terminal direção (e), tie rod end (l);;yes
+Steering Rack End Hyundai 57724-1J000;Via Peças;part;Steering;57724-1J000;;;21800.0;1;Today;Hyundai;i20;2008;2014.0;Various;;;;;;;Steering;axial de direção, rack end;;yes
+Steering Rack End Kia 57724-2T000;Via Peças;part;Steering;57724-2T000;;;22500.0;1;Today;Kia;Optima;2011;2015.0;2.0/2.4;;;;;;;Steering;axial de direção, rack end;;yes
+Front Brake Pads Hyundai 58101-0XA00;Via Peças;part;Brakes;58101-0XA00;;;22500.0;1;Today;Hyundai;i10;2008;2013.0;1.1;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-1CA00;Via Peças;part;Brakes;58101-1CA00;;;22000.0;1;Today;Hyundai;Getz;2002;2009.0;1.1/1.3;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-1GA00;Via Peças;part;Brakes;58101-1GA00;;;25000.0;1;Today;Hyundai;Rio/Accent;2005;2011.0;Various;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Kia 58101-1YA00;Via Peças;part;Brakes;58101-1YA00;;;22500.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-2BA00;Via Peças;part;Brakes;58101-2BA00;;;29000.0;1;Today;Hyundai;Santa Fe;2006;2009.0;2.2/2.7;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai/Kia 58101-2EA10;Via Peças;part;Brakes;58101-2EA10;;;26800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;2.0;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai/Kia 58101-2SA70;Via Peças;part;Brakes;58101-2SA70;;;27800.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Kia 58101-2TA00;Via Peças;part;Brakes;58101-2TA00;;;26800.0;1;Today;Kia;Optima;2011;2013.0;2.0/2.4;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Kia 58101-2TA21;Via Peças;part;Brakes;58101-2TA21;;;27000.0;1;Today;Kia;Optima;2013;2015.0;Various;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-3JA50;Via Peças;part;Brakes;58101-3JA50;;;32000.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-3QA50;Via Peças;part;Brakes;58101-3QA50;;;27200.0;1;Today;Hyundai;Sonata (YF);2011;2014.0;2.0/2.4;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-3SA20;Via Peças;part;Brakes;58101-3SA20;;;26500.0;1;Today;Hyundai;Azera (HG);2011;2016.0;3.0/3.3;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-4AA00;Via Peças;part;Brakes;58101-4AA00;;;26800.0;1;Today;Hyundai;H1 Starex;1997;2007.0;2.5;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-4FA00;Via Peças;part;Brakes;58101-4FA00;;;28100.0;1;Today;Hyundai;H100;2004;2020.0;2.5;;;;;;;Light Truck;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-4HA50;Via Peças;part;Brakes;58101-4HA50;;;32500.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5;;;;;;;New Generation;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-B4A00;Via Peças;part;Brakes;58101-B4A00;;;25500.0;1;Today;Hyundai;i10 (IA);2014;2019.0;1.0/1.2;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Kia 58101-C5A00;Via Peças;part;Brakes;58101-C5A00;;;27000.0;1;Today;Kia;Sorento (UM);2015;2020.0;2.2/2.4;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai/Kia 58101-D3A00;Via Peças;part;Brakes;58101-D3A00;;;288000.0;1;Today;Hyundai/Kia;Tucson/Sportage;2015;2020.0;Various;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Kia 58101-D4A10;Via Peças;part;Brakes;58101-D4A10;;;27500.0;1;Today;Kia;Optima (JF);2016;2020.0;2.0/2.4;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-F2A00;Via Peças;part;Brakes;58101-F2A00;;;27500.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;2.0;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hyundai 58101-S1A00;Via Peças;part;Brakes;58101-S1A00;;;32500.0;1;Today;Hyundai;Santa Fe;2018;2023.0;2.0/2.2;;;;;;;Braking;pastilhas travão diant, front brake pads;;yes
+Brake Pads Rear Hyundai 58302-2BA00;Via Peças;part;Brakes;58302-2BA00;;;26500.0;1;Today;Hyundai;Santa Fe;2006;2012.0;Various;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Brake Pads Rear Hyundai/Kia 58302-2EA00;Via Peças;part;Brakes;58302-2EA00;;;24000.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;2.0;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Brake Pads Rear Hyundai 58302-2MA90;Via Peças;part;Brakes;58302-2MA90;;;26800.0;1;Today;Hyundai;Genesis Coupe;2008;2016.0;2.0/3.8;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Brake Pads Rear Hyundai/Kia 58302-2SA30;Via Peças;part;Brakes;58302-2SA30;;;24000.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Brake Pads Rear Hyundai 58302-3JA00;Via Peças;part;Brakes;58302-3JA00;;;28800.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Brake Pads Rear Hyundai 58302-3KA62;Via Peças;part;Brakes;58302-3KA62;;;22500.0;1;Today;Hyundai;Sonata (NF);2005;2010.0;2.0/2.4;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Brake Pads Rear Hyundai 58302-S1A00;Via Peças;part;Brakes;58302-S1A00;;;25800.0;1;Today;Hyundai;Santa Fe;2018;2023.0;2.0/2.2;;;;;;;Rear;pastilhas travão tras, rear brake pads;;yes
+Set of Brake Shoes Rear Hyundai 58305-1CA00;Via Peças;part;Mechanical;58305-1CA00;;;25800.0;1;Today;Hyundai;Getz;2002;2009.0;1.1/1.3;;;;;;;For Drum;jogo de maxilas tras, rear brake shoe set;;yes
+Set of Brake Shoes Rear Hyundai 58305-2BA00;Via Peças;part;Mechanical;58305-2BA00;;;38800.0;1;Today;Hyundai;Santa Fe;2006;2012.0;Various;;;;;;;Handbrake;jogo de maxilas tras, rear brake shoe set;;yes
+Set of Brake Shoes Rear Hyundai/Kia 58305-2SA00;Via Peças;part;Mechanical;58305-2SA00;;;34500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2015.0;Various;;;;;;;Handbrake;jogo de maxilas tras, rear brake shoe set;;yes
+Set of Brake Shoes Rear Hyundai/Kia 58305-2SA30;Via Peças;part;Mechanical;58305-2SA30;;;26500.0;1;Today;Hyundai/Kia;ix35;2011;2015.0;Various;;;;;;;Handbrake;jogo de maxilas tras, rear brake shoe set;;yes
+Set of Brake Shoes Rear Hyundai 58305-2WA00;Via Peças;part;Mechanical;58305-2WA00;;;38500.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Handbrake;jogo de maxilas tras, rear brake shoe set;;yes
+Set of Brake Shoes Rear Hyundai 58305-3XA00;Via Peças;part;Mechanical;58305-3XA00;;;30500.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Handbrake;jogo de maxilas tras, rear brake shoe set;;yes
+Set of Brake Shoes Rear Hyundai 58305-4FA01;Via Peças;part;Mechanical;58305-4FA01;;;38800.0;1;Today;Hyundai;H100;2004;2020.0;2.5;;;;;;;Rear Axle;jogo de maxilas tras, rear brake shoe set;;yes
+Cylinder of Wheel (L) Kia 58330-1Y000;Via Peças;part;Mechanical;58330-1Y000;;;22800.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Left;cilindro de roda (e), wheel cylinder (l);;yes
+Set of Brake Shoes Rear Kia 58350-2JA00;Via Peças;part;Mechanical;58350-2JA00;;;72500.0;1;Today;Kia;Mohave;2008;2015.0;3.0/3.8;;;;;;;Handbrake;jogo de maxilas tras, rear brake shoe set;;yes
+Cylinder of Wheel (R) Kia 58380-1Y000;Via Peças;part;Mechanical;58380-1Y000;;;28700.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Right;cilindro de roda (d), wheel cylinder (r);;yes
+Tambor of Brake Hyundai/Kia 58411-1H300;Via Peças;part;Brakes;58411-1H300;;;43500.0;1;Today;Hyundai/Kia;Accent/Rio;2005;2011.0;Various;;;;;;;Rear;tambor de travão, brake drum;;yes
+Brake Disc Rear Kia 58411-2P000;Via Peças;part;Brakes;58411-2P000;;;45500.0;1;Today;Kia;Sorento;2009;2014.0;2.2/2.4;;;;;;;Rear;disco de travão tras, rear brake disc;;yes
+Brake Disc Rear Hyundai 58411-3A300;Via Peças;part;Brakes;58411-3A300;;;42500.0;1;Today;Hyundai;Trajet;2000;2008.0;2.0/2.7;;;;;;;Rear;disco de travão tras, rear brake disc;;yes
+Brake Disc Rear Hyundai 58411-3X300;Via Peças;part;Brakes;58411-3X300;;;39800.0;1;Today;Hyundai;Elantra (MD);2011;2015.0;1.6/1.8;;;;;;;Rear;disco de travão tras, rear brake disc;;yes
+Pump Central Brake Hyundai 58510-0X010;Via Peças;part;Brakes;58510-0X010;;;39800.0;1;Today;Hyundai;i10;2008;2013.0;1.1;;;;;;;Main;bomba central travão, brake master cylinder;;yes
+Pump Central Brake Hyundai 58510-2S101;Via Peças;part;Brakes;58510-2S101;;;56800.0;1;Today;Hyundai;ix35;2010;2015.0;2.0;;;;;;;Main;bomba central travão, brake master cylinder;;yes
+Belt Accessories Various 5PK1200;Via Peças;part;Mechanical;5PK1200;;;19800.0;1;Today;Various;Toyota/Mazda;;;;;;;;;;5PK1200;correia acessórios, v-ribbed belt;;yes
+Belt Accessories Various 5PK1263;Via Peças;part;Mechanical;5PK1263;;;19800.0;1;Today;Various;Hyundai/Kia;;;;;;;;;;5PK1263;correia acessórios, v-ribbed belt;;yes
+Engine Oil 5W30 Universal 5W30-4L;Via Peças;lubricant;Engine Oil;5W30-4L;;;38000.0;1;Today;Universal;Various;;;;;15W40;Universal;1.0;;;4-Litre Jug;óleo de motor 5w30, engine oil 5w30 (4l);;yes
+Engine Oil 5W40 Universal 5W40-4L;Via Peças;lubricant;Engine Oil;5W40-4L;;;38000.0;1;Today;Universal;Various;;;;;15W40;Universal;1.0;;;4-Litre Jug;óleo de motor 5w40, engine oil 5w40 (4l);;yes
+Belt of the Alternator Aftermarket 60316S;Via Peças;part;Mechanical;60316S;;;25800.0;1;Today;Aftermarket;Various;;;;;;;;;;Cross Reference;correia do alternador, v-ribbed belt;;yes
+Panel Front Hyundai 64101-2B500;Via Peças;part;Mechanical;64101-2B500;;;95800.0;1;Today;Hyundai;Santa Fe;2006;2009.0;Various;;;;;;;Frame;painel frontal, front radiator support;;yes
+Panel Front Kia 64101-3W000;Via Peças;part;Mechanical;64101-3W000;;;98800.0;1;Today;Kia;Sportage;2010;2015.0;Various;;;;;;;Frame;painel frontal, front radiator support;;yes
+Air Filter Jeep/Dodge 68071668AA/;Via Peças;part;Filtration;68071668AA/;;;17500.0;1;Today;Jeep/Dodge;Grand Cherokee;2011;2020.0;3.0 CRD;;;;;;;WK2;filtro de ar, air filter;;yes
+Window Weatherstrip Hyundai 68116-34000;Via Peças;part;Mechanical;68116-34000;;;7500.0;1;Today;Hyundai;Pony/Excel;;;Various;;;;;;;Rubber;calha de vidro, window weatherstrip;;yes
+Bearing of Clutch Toyota 68SCRN57P;Via Peças;part;Mechanical;68SCRN57P;;;28500.0;1;Today;Toyota;Various;2014;2021.0;V6 3.6;;;;;;;Element;rolamento de embreagem, nan;;yes
+Belt Accessories Various 6PK1623;Via Peças;part;Mechanical;6PK1623;;;25200.0;1;Today;Various;Hyundai/Kia;;;;;;;;;;6PK1623;correia acessórios, v-ribbed belt;;yes
+Belt Accessories Various 6PK1655;Via Peças;part;Mechanical;6PK1655;;;25800.0;1;Today;Various;Toyota/Honda;;;;;;;;;;6PK1655;correia acessórios, v-ribbed belt;;yes
+Belt Accessories Various 6PK1660;Via Peças;part;Mechanical;6PK1660;;;16800.0;1;Today;Various;Hyundai/Kia;;;V6;;;;;;;6PK1660;correia acessórios, v-ribbed belt;;yes
+Gasket of Silicone Universal 703141410;Via Peças;part;Mechanical;703141410;;;9800.0;1;Today;Universal;Various;;;;;;;;;;Reinzosil (70ml);junta de silicone, victor reinz sealant;;yes
+Spark Plug NGK 7055;Via Peças;part;Engine;7055;;;;1;Today;NGK;Various;;;;;;;;;;Ref: LFR6A-11;vela de ignição, spark plug;;yes
+Spark Plug NGK 7466;Via Peças;part;Engine;7466;;;;1;Today;NGK;Various;;;;;;;;;;Ref: IZFR6K-11S;vela de ignição, spark plug;;yes
+Fuel Filter Fiat 77364561;Via Peças;part;Filtration;77364561;;;;1;Today;Fiat;Ducato;2006;2020.0;Various;;;;;;;Commercial;filtro de combustível, front brake pads;;yes
+Front Brake Pads Fiat 77367241;Via Peças;part;Brakes;77367241;;;23500.0;1;Today;Fiat;Toro/500X;2015;2021.0;2.0 MultiJet;;;;;;;Diesel;pastilhas travão diant, fuel filter;;yes
+Filter of Cabin Mitsubishi 7803A112;Via Peças;part;Filtration;7803A112;;;7500.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Light of License Plate Universal 8150-05;Via Peças;part;Mechanical;8150-05;;;;1;Today;Universal;Various;;;;;;;;;;Bulb/Accessory;luz de matrícula, license plate light;;yes
+Lens of Turn Signal Toyota 8151-02;Via Peças;part;Mechanical;8151-02;;;;1;Today;Toyota;Hilux;;;Various;;;;;;;Left Side;lente de pisca, indicator lens;;yes
+Lens of Turn Signal (R) Toyota 8151-10;Via Peças;part;Mechanical;8151-10;;;;1;Today;Toyota;Hilux;;;Various;;;;;;;Right;lente de pisca (d), indicator lens (r);;yes
+Lens of Turn Signal Toyota 8151-39;Via Peças;part;Mechanical;8151-39;;;;1;Today;Toyota;Land Cruiser;;;Series 70;;;;;;;Lighting;lente de pisca, indicator lens;;yes
+Lens of Turn Signal Toyota 8151-70;Via Peças;part;Mechanical;8151-70;;;;1;Today;Toyota;Prado;;;Series 90;;;;;;;Lighting;lente de pisca, indicator lens;;yes
+Spark Plug NGK 8320;Via Peças;part;Engine;8320;;;;1;Today;NGK;Various;;;;;;;;;;Ref: BCPR6ES;vela de ignição, spark plug;;yes
+Spark Plug NGK 8341;Via Peças;part;Engine;8341;;;;1;Today;NGK;Various;;;;;;;;;;Ref: BKR6E-11;vela de ignição, spark plug;;yes
+Brush Wiper-Vidros Toyota 85222-6062;Via Peças;part;Mechanical;85222-6062;;;3000.0;1;Today;Toyota;Land Cruiser;;;Various;;;;;;;Driver;escova limpa-vidros, wiper blade;;yes
+Washer Motor Toyota 86600-03825;Via Peças;part;Engine;86600-03825;;;6800.0;1;Today;Toyota;Camry/Corolla;;;Various;;;;;;;Windshield Washer Fluid;motor de esguicho, washer motor;;yes
+Filter of Cabin Toyota 87139-30040;Via Peças;part;Filtration;87139-30040;;;7000.0;1;Today;Toyota;Lexus/Camry;2005;2015.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Toyota 87139-47010;Via Peças;part;Filtration;87139-47010;;;6800.0;1;Today;Toyota;Prius/Corolla;2009;2018.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Toyota 87139-58010;Via Peças;part;Filtration;87139-58010;;;7500.0;1;Today;Toyota;Hilux/Fortuner;2015;2023.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Pulley Tensioner Toyota 88440-35130;Via Peças;part;Mechanical;88440-35130;;;65000.0;1;Today;Toyota;Hilux/Prado;2005;2015.0;1KD/2KD-FTV;;;;;;;Air Conditioning;polia tensora, idler pulley;;yes
+Seal of Differential Toyota 90311-47027;Via Peças;part;Mechanical;90311-47027;;;15200.0;1;Today;Toyota;Hilux/Prado;;;Various;;;;;;;Front Axle;retentor de diferencial, oil seal;;yes
+Seal of Crankshaft Toyota 90311-62001;Via Peças;part;Mechanical;90311-62001;;;14500.0;1;Today;Toyota;Hilux;;;5L/3L;;;;;;;Rear;retentor de cambota, crankshaft seal;;yes
+Seal of Hub Toyota 90311-T0013;Via Peças;part;Mechanical;90311-T0013;;;15800.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Front;retentor de cubo, wheel hub seal;;yes
+Oil Filter Toyota 90915-03006;Via Peças;lubricant;Filtration;90915-03006;;;7500.0;1;Today;Toyota;Land Cruiser;;;1HZ/1HD;;15W40;Universal;1.0;;;Diesel;filtro de óleo, oil filter;;yes
+Oil Filter Toyota 90915-41010;Via Peças;lubricant;Filtration;90915-41010;;;5000.0;1;Today;Toyota;Cressida/Crown;;;Various;;15W40;Universal;1.0;;;Petrol;filtro de óleo, oil filter;;yes
+Oil Filter Toyota 90915-YZZD2;Via Peças;lubricant;Filtration;90915-YZZD2;;;5000.0;1;Today;Toyota;Hilux/Prado;2005;2015.0;1KD/2KD/1KZ;;15W40;Universal;1.0;;;Diesel;filtro de óleo, oil filter;;yes
+Oil Filter Toyota 90915-YZZE1;Via Peças;lubricant;Filtration;90915-YZZE1;;;3800.0;1;Today;Toyota;Corolla/Yaris;2000;2018.0;Various;;15W40;Universal;1.0;;;Petrol;filtro de óleo, oil filter;;yes
+Oil Filter Toyota 90915-YZZE2;Via Peças;lubricant;Filtration;90915-YZZE2;;;3800.0;1;Today;Toyota;Avensis/Rav4;2000;2015.0;Various;;15W40;Universal;1.0;;;Petrol;filtro de óleo, oil filter;;yes
+Belt of Accessories Toyota 90916-02524;Via Peças;part;Mechanical;90916-02524;;;28700.0;1;Today;Toyota;Hilux;2005;2015.0;1KD/2KD;;;;;;;7PK1515;correia de acessórios, v-ribbed belt;;yes
+Belt of Accessories Toyota 90916-02556;Via Peças;part;Mechanical;90916-02556;;;25800.0;1;Today;Toyota;Hilux/Fortuner;2005;2015.0;1KD/2KD;;;;;;;7PK1510;correia de acessórios, v-ribbed belt;;yes
+Belt of Accessories Toyota 90916-02639;Via Peças;part;Mechanical;90916-02639;;;27500.0;1;Today;Toyota;Corolla;2007;2014.0;1.6/1.8;;;;;;;6PK1230;correia de acessórios, v-ribbed belt;;yes
+Belt of Accessories Toyota 90916-02640;Via Peças;part;Mechanical;90916-02640;;;35500.0;1;Today;Toyota;Corolla;2009;2017.0;1.8/2.0;;;;;;;6PK1220;correia de acessórios, v-ribbed belt;;yes
+Belt of Accessories Toyota 90916-A2014;Via Peças;part;Mechanical;90916-A2014;;;39800.0;1;Today;Toyota;Land Cruiser;2009;2020.0;1GR-FE;;;;;;;7PK2120;correia de acessórios, v-ribbed belt;;yes
+Belt of Accessories Toyota 90916-T2006;Via Peças;part;Mechanical;90916-T2006;;;37800.0;1;Today;Toyota;Hilux;;;Various;;;;;;;7PK1516;correia de acessórios, v-ribbed belt;;yes
+Belt of Accessories Toyota 90916-T2024;Via Peças;part;Mechanical;90916-T2024;;;24500.0;1;Today;Toyota;Hilux/Prado;;;Various;;;;;;;7PK1520;correia de acessórios, v-ribbed belt;;yes
+Spark Plug Toyota 90919-01191;Via Peças;part;Engine;90919-01191;;;4500.0;1;Today;Toyota;Camry/Rav4;;;Various;;;;;;;SK20R11 (Iridium);vela de ignição, spark plug;;yes
+Spark Plug Toyota 90919-01210;Via Peças;part;Engine;90919-01210;;;4500.0;1;Today;Toyota;Corolla/Yaris;;;Various;;;;;;;SK20PR-L11;vela de ignição, spark plug;;yes
+Spark Plug Toyota 90919-01253;Via Peças;part;Engine;90919-01253;;;4500.0;1;Today;Toyota;Corolla/Land Cruiser;;;Various;;;;;;;SC20HR11;vela de ignição, spark plug;;yes
+Front Shock Absorber Chevrolet 95967285;Via Peças;part;Suspension;95967285;;;20200.0;1;Today;Chevrolet;Spark;2010;2015.0;1.0/1.2;;;;;;;Suspension;amortecedor dianteiro, front shock absorber;;yes
+Front Shock Absorber Chevrolet 95967294;Via Peças;part;Suspension;95967294;;;23500.0;1;Today;Chevrolet;Spark;2010;2015.0;1.0/1.2;;;;;;;Suspension;amortecedor dianteiro, front shock absorber;;yes
+Rear Shock Absorber Chevrolet 96586885;Via Peças;part;Suspension;96586885;;;48500.0;1;Today;Chevrolet;Aveo/Cruze;;;Various;;;;;;;Ecotec Engine;amortecedor traseiro, rear shock absober;;yes
+Filter of Cabin Hyundai/Kia 97133-2K000;Via Peças;part;Filtration;97133-2K000;;;6800.0;1;Today;Hyundai/Kia;Soul/Tucson;2008;2015.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Hyundai/Kia 97133-3SAA0;Via Peças;part;Filtration;97133-3SAA0;;;6800.0;1;Today;Hyundai/Kia;Sonata/Optima;2011;2015.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Hyundai 97133-C1000;Via Peças;part;Filtration;97133-C1000;;;7800.0;1;Today;Hyundai;Sonata (LF);2015;2019.0;2.0/2.4;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Hyundai 97133-C2000;Via Peças;part;Filtration;97133-C2000;;;7000.0;1;Today;Hyundai;Sonata;2016;2020.0;Various;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Kia 97133-C5000;Via Peças;part;Filtration;97133-C5000;;;7000.0;1;Today;Kia;Sorento (UM);2015;2020.0;2.2/2.4;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Hyundai/Kia 97133-D3000;Via Peças;part;Filtration;97133-D3000;;;7800.0;1;Today;Hyundai/Kia;Tucson/Sportage;2015;2021.0;1.6/2.0;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Kia 97133-D4000;Via Peças;part;Filtration;97133-D4000;;;7000.0;1;Today;Kia;Optima (JF);2016;2020.0;2.0;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Hyundai 97133-F2000;Via Peças;part;Filtration;97133-F2000;;;7000.0;1;Today;Hyundai;Elantra (AD);2016;2020.0;1.6/2.0;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Filter of Cabin Hyundai 97133-L1000;Via Peças;part;Filtration;97133-L1000;;;7000.0;1;Today;Hyundai;Sonata/Santa Fe;2019;2023.0;2.5;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Condenser A/C Hyundai 97606-0X000;Via Peças;part;Mechanical;97606-0X000;;;58800.0;1;Today;Hyundai;i10;2008;2013.0;1.1;;;;;;;Cooling System;condensador a/c, a/c condenser;;yes
+Condenser A/C Hyundai 97606-1R000;Via Peças;part;Mechanical;97606-1R000;;;65800.0;1;Today;Hyundai;Accent;2011;2017.0;1.4/1.6;;;;;;;Cooling System;condensador a/c, a/c condenser;;yes
+Condenser A/C Kia 97606-1Y000;Via Peças;part;Mechanical;97606-1Y000;;;54800.0;1;Today;Kia;Picanto;2011;2017.0;1.0/1.2;;;;;;;Cooling System;condensador a/c, a/c condenser;;yes
+Condenser A/C Kia 97606-2P500;Via Peças;part;Mechanical;97606-2P500;;;78500.0;1;Today;Kia;Sorento;2009;2014.0;2.2/2.4;;;;;;;Cooling System;condensador a/c, a/c condenser;;yes
+Condenser A/C Hyundai 97606-2W500;Via Peças;part;Mechanical;97606-2W500;;;69800.0;1;Today;Hyundai;Santa Fe;2013;2018.0;2.0/2.2;;;;;;;Cooling System;condensador a/c, a/c condenser;;yes
+Valve Expansion A/C Hyundai 97617-1C000;Via Peças;part;Mechanical;97617-1C000;;;7500.0;1;Today;Hyundai;Getz;2002;2009.0;Various;;;;;;;A/C System;válvula expansão a/c, a/c expansion valve;;yes
+Valve Expansion A/C Hyundai 97617-4H000;Via Peças;part;Mechanical;97617-4H000;;;7500.0;1;Today;Hyundai;H1 Starex;2008;2020.0;2.5;;;;;;;A/C System;válvula expansão a/c, a/c expansion valve;;yes
+Belt of the Compressor Hyundai/Kia 97713-1E000;Via Peças;part;Mechanical;97713-1E000;;;24500.0;1;Today;Hyundai/Kia;Accent/Rio;2005;2011.0;Various;;;;;;;4PK845;correia do compressor, a/c belt;;yes
+Belt Trapezoidal Toyota 99332-11265/;Via Peças;part;Mechanical;99332-11265/;;;42000.0;1;Today;Toyota;Hilux/Hiace;;;Various;;;;;;;Toothed Belt;correia trapezoidal, v-belt;;yes
+Fuel Filter Ford AB39-9176-AC;Via Peças;part;Filtration;AB39-9176-AC;;;7500.0;1;Today;Ford;Ranger (T6);2012;2022.0;2.2/3.2 TDCI;;;;;;;Diesel;filtro de combustível, fuel filter;;yes
+Air Filter Blue Print ADK82248;Via Peças;part;Filtration;ADK82248;;;7500.0;1;Today;Blue Print;Suzuki;1.0;;Alto/Celerio;;;;;;;2009-2015;filtro de ar, air filter;;yes
+Filter of Cabin Blue Print ADM52529;Via Peças;part;Filtration;ADM52529;;;7800.0;1;Today;Blue Print;Mazda;2.5;;BT-50;;;;;;;2006-2012;filtro de habitáculo, cabin air filter;;yes
+Front Brake Pads Blue Print ADM54286;Via Peças;part;Brakes;ADM54286;;;27500.0;1;Today;Blue Print;Mazda;Various;;BT-50;;;;;;;2012-2020;pastilhas travão diant, front brake pads;;yes
+Oil Filter Blue Print ADN12125;Via Peças;lubricant;Filtration;ADN12125;;;4000.0;1;Today;Blue Print;Nissan;Various;;Patrol/Navara;;15W40;Universal;1.0;;;;filtro de óleo, oil filter;;yes
+Filter of Cabin Blue Print ADN12517;Via Peças;part;Filtration;ADN12517;;;6800.0;1;Today;Blue Print;Nissan;Various;;Qashqai/X-Trail;;;;;;;2014-2021;filtro de habitáculo, cabin air filter;;yes
+Connector Steering Blue Print ADN13906;Via Peças;part;Steering;ADN13906;;;35200.0;1;Today;Blue Print;Nissan;;;Various;;;;;;;;conector direção, steering part;;yes
+Oil Filter Blue Print ADT322100;Via Peças;lubricant;Filtration;ADT322100;;;7500.0;1;Today;Blue Print;Toyota;Various;;Hilux/Land Cruiser;;15W40;Universal;1.0;;;;filtro de óleo, oil filter;;yes
+Lubricant/Brand AMG AMG;Via Peças;lubricant;Engine Oil;AMG;;;9800.0;1;Today;AMG;Various;;;;;15W40;Universal;1.0;;;Oil Brand;lubrificante/marca, lubricant brand;;yes
+Lubricant/Brand Venol VENOL S;Via Peças;lubricant;Engine Oil;VENOL S;;;9800.0;1;Today;Venol;Various;;;;;15W40;Universal;1.0;;;Oil Brand (Synthetic);lubrificante/marca, lubricant brand;;yes
+Fuel Filter Baldwin/Mercedes BF7972/A6420;Via Peças;part;Filtration;BF7972/A6420;;;38700.0;1;Today;Baldwin/Mercedes;Various;;;V6 CDI;;;;;;;Cross Reference;filtro de combustível, fuel filter;;yes
+Battery/Brand Blackstorm BLACKSTORM;Via Peças;part;Mechanical;BLACKSTORM;;;75000.0;1;Today;Blackstorm;Various;;;;;;;;;;Energy Accumulator;bateria/marca, battery brand;;yes
+Filter of Cabin Blackstorm BLK045149;Via Peças;part;Filtration;BLK045149;;;12500.0;1;Today;Blackstorm;Various;;;;;;;;;;Aftermarket;filtro de habitáculo, cabin air filter;;yes
+silicone red Ashika C-952;Via Peças;part;Mechanical;C-952;;;6500.0;1;Today;Ashika;Suzuki/Maruti;;;Various;;;;;;;Japanese Reference;silicone vermelho, oil filter;;yes
+Silicone Blue Ashika C-953;Via Peças;part;Mechanical;C-953;;;6500.0;1;Today;Ashika;Toyota;;;Various;;;;;;;Japanese Reference;silicone azul, oil filter;;yes
+Arm Suspension (L) CTR CQKH-92L;Via Peças;part;Suspension;CQKH-92L;;;63500.0;1;Today;CTR;Hyundai/Kia;;;Various;;;;;;;Left (Aftermarket);braço suspensão (e), control arm (l);;yes
+Arm Suspension (R) CTR CQKH-92R;Via Peças;part;Suspension;CQKH-92R;;;63500.0;1;Today;CTR;Hyundai/Kia;;;Various;;;;;;;Right (Aftermarket);braço suspensão (d), control arm (r);;yes
+Front Brake Pads FMSI D1877-9105;Via Peças;part;Brakes;D1877-9105;;;80000.0;1;Today;FMSI;Hyundai;;;Various;;;;;;;Global Reference;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads FMSI D1886-9114;Via Peças;part;Brakes;D1886-9114;;;106000.0;1;Today;FMSI;Kia;;;Various;;;;;;;Global Reference;pastilhas travão diant, front brake pads;;yes
+Brake Disc Aftermarket DD060-56G26;Via Peças;part;Brakes;DD060-56G26;;;39800.0;1;Today;Aftermarket;Suzuki;Various;;Vitara;;;;;;;;disco de travão, brake disc;;yes
+Spark Plug of Glow NGK DG-611;Via Peças;part;Engine;DG-611;;;25000.0;1;Today;NGK;Toyota;1KD/2KD;;Hilux;;;;;;;2005-2015;vela de incandescência, glow plug;;yes
+Brake Disc Ashika DI-323;Via Peças;part;Brakes;DI-323;;;65000.0;1;Today;Ashika;Mazda;Various;;BT-50;;;;;;;;disco de travão, brake disc;;yes
+Oil Filter Ashika DO-710;Via Peças;lubricant;Filtration;DO-710;;;5000.0;1;Today;Ashika;Hyundai/Kia;;;Various;;15W40;Universal;1.0;;;Japanese Reference;filtro de óleo, oil filter;;yes
+Ball Joint Aftermarket DS-003;Via Peças;part;Mechanical;DS-003;;;140000.0;1;Today;Aftermarket;Various;;;;;;;;;;Commercial Series;rotula, shock absorber;;yes
+Ball Joint Aftermarket DS-004;Via Peças;part;Mechanical;DS-004;;;145000.0;1;Today;Aftermarket;Various;;;;;;;;;;Commercial Series;rotula, shock absorber;;yes
+Ball Joint Aftermarket DS-005;Via Peças;part;Mechanical;DS-005;;;125000.0;1;Today;Aftermarket;Various;;;;;;;;;;Commercial Series;rotula, shock absorber;;yes
+Kit Timing Aftermarket DTK9032;Via Peças;part;Mechanical;DTK9032;;;175000.0;1;Today;Aftermarket;Toyota;5L;;Hilux;;;;;;;;kit distribuição, timing tool/kit;;yes
+Filter of Cabin Aftermarket E710;Via Peças;part;Filtration;E710;;;14500.0;1;Today;Aftermarket;Various;;;;;;;;;;Cross Reference;filtro de habitáculo, cabin air filter;;yes
+Front Brake Pads Aftermarket ESD7052;Via Peças;part;Brakes;ESD7052;;;27500.0;1;Today;Aftermarket;Various;;;;;;;;;;Commercial Series;pastilhas travão diant, shock absorber;;yes
+Air Filter Chery F08-1109111H;Via Peças;part;Filtration;F08-1109111H;;;10500.0;1;Today;Chery;QQ/Face;2010;2015.0;1.1;;;;;;;Acteco Engine;filtro de ar, air filter;;yes
+Filter of Cabin Chery F18-8107041;Via Peças;part;Filtration;F18-8107041;;;8500.0;1;Today;Chery;Tiggo;2009;2016.0;2.0;;;;;;;Air Conditioning;filtro de habitáculo, cabin air filter;;yes
+Brake Pads Aftermarket FBP-1817;Via Peças;part;Brakes;FBP-1817;;;35800.0;1;Today;AftermarkeDt;Various;;;;;;;;;;Front Axle;pastilhas de travão, brake pads;;yes
+Oil Filter Motorcraft/Ford FL-820S;Via Peças;lubricant;Filtration;FL-820S;;;7000.0;1;Today;Motorcraft/Ford;F-150/Mustang;;;V8;;15W40;Universal;1.0;;;Original Ford;filtro de óleo, oil filter;;yes
+Limpeza of Engine Universal FLUSH;Via Peças;part;Engine;FLUSH;;;9000.0;1;Today;Universal;Various;;;;;;;;;;Cleaning Additive;limpeza de motor, engine flush;;yes
+Brake Bands Aftermarket GF-311AF;Via Peças;part;Brakes;GF-311AF;;;48500.0;1;Today;Aftermarket;Various;;;;;;;;;;Diesel/Petrol;cintas de travão, fuel filter;;yes
+Lubricating Grease Universal GREASE.;Via Peças;lubricant;Engine Oil;GREASE.;;;9800.0;1;Today;Universal;Various;;;;;15W40;Universal;1.0;;;Multi-purpose;massa lubrificante, chassis grease;;yes
+U-Joint of Driveshaft GMB/Toyota GUT-20;Via Peças;part;Mechanical;GUT-20;;;27800.0;1;Today;GMB/Toyota;Hilux;;;Various;;;;;;;Transmission;cruzeta de cardan, universal joint;;yes
+Control Arm Aftermarket HY-8-007;Via Peças;part;Suspension;HY-8-007;;;168500.0;1;Today;Aftermarket;Hyundai;;;Various;;;;;;;Suspension;braço de suspensão, control arm;;yes
+Control Arm Aftermarket HY-8-008;Via Peças;part;Suspension;HY-8-008;;;145600.0;1;Today;Aftermarket;Hyundai;;;Various;;;;;;;Suspension;braço de suspensão, control arm;;yes
+Wheel Hub Aftermarket IJ111003;Via Peças;part;Mechanical;IJ111003;;;38400.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Front Axle;cubo de roda, wheel hub;;yes
+Wheel Hub Aftermarket IJ111010;Via Peças;part;Mechanical;IJ111010;;;38800.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Front Axle;cubo de roda, wheel hub;;yes
+Wheel Hub Rear Aftermarket IJ211001;Via Peças;part;Mechanical;IJ211001;;;38800.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Rear Axle;cubo de roda tras, rear wheel hub;;yes
+Shock Absorber Aftermarket J5522018G;Via Peças;part;Suspension;J5522018G;;;57800.0;1;Today;Aftermarket;Various;;;;;;;;;;Suspension;amortecedor, shock absorber;;yes
+Ball Joint Aftermarket KA-04;Via Peças;part;Mechanical;KA-04;;;27500.0;1;Today;Aftermarket;Kia;;;Various;;;;;;;Intake;rôtula, rôtula;;yes
+Ball Joint Aftermarket KA-07;Via Peças;part;Mechanical;KA-07;;;315000.0;1;Today;Aftermarket;Kia;;;Various;;;;;;;Intake;rôtula, rôtula;;yes
+Kit of Timing Aftermarket KAUT29296;Via Peças;part;Mechanical;KAUT29296;;;;1;Today;Aftermarket;Various;;;;;;;;;;Belt and Tensioners;kit de distribuição, timing kit;;yes
+Kit of Bearings Aftermarket KBS9922;Via Peças;part;Mechanical;KBS9922;;;;1;Today;Aftermarket;Various;;;;;;;;;;Wheel;kit de rolamentos, bearing kit;;yes
+Rear Shock Absorber KYB KYB343287;Via Peças;part;Suspension;KYB343287;;;48000.0;1;Today;KYB;Toyota;2005;2015.0;Hilux;;;;;;;Excel-G Series;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber KYB KYB343408;Via Peças;part;Suspension;KYB343408;;;45800.0;1;Today;KYB;Mitsubishi;2005;2015.0;L200 Triton;;;;;;;Excel-G Series;amortecedor traseiro, rear shock absorber;;yes
+Rear Shock Absorber KYB KYB349243;Via Peças;part;Suspension;KYB349243;;;39800.0;1;Today;KYB;Hyundai;2006;2012.0;Santa Fe;;;;;;;Excel-G Series;amortecedor traseiro, rear shock absorber;;yes
+Oil Filter Universal L061;Via Peças;lubricant;Engine Oil;L061;;;;1;Today;Universal;Various;;;;;15W40;Universal;1.0;;;;filto de óleo, universal ;;yes
+Covers of Connecting Rod Aftermarket M121H-STD;Via Peças;part;Mechanical;M121H-STD;;;75800.0;1;Today;Aftermarket;Mitsubishi;;;4D56;;;;;;;Standard Size;capas de biela, conrod bearings;;yes
+Main Bearing Set Aftermarket M736A-STD;Via Peças;part;Mechanical;M736A-STD;;;38500.0;1;Today;Aftermarket;Mitsubishi;;;4D56;;;;;;;Standard Size;capas de apoio, main bearings;;yes
+Oil Filter Mitsubishi MD069782;Via Peças;lubricant;Filtration;MD069782;;;7500.0;1;Today;Mitsubishi;L200/L300;;;4D56;;15W40;Universal;1.0;;;;filtro de óleo, oil filter;;yes
+Oil Filter Mitsubishi ME017242;Via Peças;lubricant;Filtration;ME017242;;;9800.0;1;Today;Mitsubishi;Canter/Fuso;;;4D33/4D34;;15W40;Universal;1.0;;;Truck;filtro de óleo, oil filter;;yes
+Brake Pads Mitsubishi MK528681;Via Peças;part;Brakes;MK528681;;;85000.0;1;Today;Mitsubishi;Canter;;;Various;;;;;;;Front Axle;pastilhas de travão, brake pads;;yes
+Arm Suspension Rear Mitsubishi MN102276;Via Peças;part;Suspension;MN102276;;;62000.0;1;Today;Mitsubishi;Lancer;2003;2007.0;Various;;;;;;;Suspension;braço suspensão tras, rear control arm;;yes
+Brake Bands Mitsubishi MN150861;Via Peças;part;Brakes;MN150861;;;38800.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;2.5/3.2;;;;;;;Original;cintas de travão, brake;;yes
+Brake Pads Mitsubishi MR407422;Via Peças;part;Brakes;MR407422;;;35700.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Lower;calços de travão, brake pads;;yes
+Brake Pads Mitsubishi MR510544;Via Peças;part;Brakes;MR510544;;;28500.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Braking;calços de travão, brake pads;;yes
+Fuel Filter Mitsubishi MR529135;Via Peças;part;Filtration;MR529135;;;17500.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Original;filtro de combustível, nan;;yes
+Filter of R Mitsubishi MR571476;Via Peças;part;Filtration;MR571476;;;8000.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Front Axle;filtro de r, air filter;;yes
+Shock Absorber Rear Mitsubishi MR992631;Via Peças;part;Suspension;MR992631;;;38900.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;2.5/3.2;;;;;;;Diesel;amortecedor trás, nan;;yes
+Bearing De Clutch Toyota NP-58SCRN37P;Via Peças;part;Mechanical;NP-58SCRN37P;;;2980.0;1;Today;Toyota;hilux;3.0 CRD;;Grand Cherokee;;;;;;;;rolamento de embreagem, rolamento;;yes
+Air Filter Ford Ranger R1107;Via Peças;part;Filtration;R1107;;;9800.0;1;Today;Ford Ranger;Various;;;;;;;;;;Braking;filtro de ar, air filter;;yes
+Cylinder Master Aftermarket RCP11003;Via Peças;part;Mechanical;RCP11003;;;;1;Today;Aftermarket;Various;;;;;;;;;;Brake/Clutch;cilindro mestre, master cylinder;;yes
+Oil of the engine SAS SAS100216;Via Peças;lubricant;Engine Oil;SAS100216;;;40000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Aftermarket;óleo do motor,  ;;yes
+Oil of the engine SAS SAS100222;Via Peças;lubricant;Engine Oil;SAS100222;;;40000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Aftermarket;óleo do motor,  ;;yes
+Oil of the engine SAS SAS105628;Via Peças;lubricant;Engine Oil;SAS105628;;;7000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Aftermarket;óleo do motor,  ;;yes
+Brake Disc Aftermarket SD1005;Via Peças;part;Brakes;SD1005;;;38800.0;1;Today;Aftermarket;Various;;;;;;;;;;Front Axle;disco de travão, brake disc;;yes
+Brake Pads Hi-Q (Sangsin) SP1107-FA;Via Peças;part;Brakes;SP1107-FA;;;25800.0;1;Today;Hi-Q (Sangsin);Hyundai;;;Various;;;;;;;Front;pastilhas de travão, brake pads;;yes
+Brake Pads Hi-Q (Sangsin) SP1377;Via Peças;part;Brakes;SP1377;;;23500.0;1;Today;Hi-Q (Sangsin);Hyundai;2013;2018.0;Santa Fe;;;;;;;Front;pastilhas de travão, brake pads;;yes
+Brake Pads Hi-Q (Sangsin) SP1392;Via Peças;part;Brakes;SP1392;;;24500.0;1;Today;Hi-Q (Sangsin);Kia;2009;2014.0;Sorento;;;;;;;Rear;pastilhas de travão, brake pads;;yes
+Oil of the engine SAS SAS100228;Via Peças;lubricant;Engine Oil;SAS100228;;;40000.0;1;Today;SAS;Hyundai/Kia;;;Various;;15W40;Universal;1.0;;;Aftermarket;óleo do motor,  ;;yes
+Oil of the engine SAS SAS100265;Via Peças;lubricant;Engine Oil;SAS100265;;;6000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Suspension;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS100266;Via Peças;lubricant;Engine Oil;SAS100266;;;7800.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Suspension;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS100568;Via Peças;lubricant;Engine Oil;SAS100568;;;900.0;1;Today;SAS;Toyota;Various;;Hilux;;15W40;Universal;1.0;;;Steering;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS100743;Via Peças;lubricant;Engine Oil;SAS100743;;;42000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Suspension;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS100868;Via Peças;lubricant;Engine Oil;SAS100868;;;9000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Steering;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS105024;Via Peças;lubricant;Engine Oil;SAS105024;;;9000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Steering;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS105628;Via Peças;lubricant;Engine Oil;SAS105628;;;7000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Steering;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS105706;Via Peças;lubricant;Engine Oil;SAS105706;;;7000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Suspension;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS105927;Via Peças;lubricant;Engine Oil;SAS105927;;;9000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Suspension;óleo do motor, óleo do motor;;yes
+Oil of the engine SAS SAS106941;Via Peças;lubricant;Engine Oil;SAS106941;;;40000.0;1;Today;SAS;Various;;;;;15W40;Universal;1.0;;;Suspension;óleo do motor, óleo do motor;;yes
+Brake Disc Aftermarket SD1005;Via Peças;part;Brakes;SD1005;;;38800.0;1;Today;Aftermarket;Various;;;;;;;;;;Front;disco de travão, brake disc;;yes
+Brake Disc Aftermarket SD1070;Via Peças;part;Brakes;SD1070;;;42500.0;1;Today;Aftermarket;Various;;;;;;;;;;Front;disco de travão, brake disc;;yes
+Brake Disc Aftermarket SD4635;Via Peças;part;Brakes;SD4635;;;29800.0;1;Today;Aftermarket;Various;;;;;;;;;;Rear;disco de travão, brake disc;;yes
+Oil Filter Aftermarket SH755;Via Peças;lubricant;Filtration;SH755;;;3700.0;1;Today;Aftermarket;Various;;;;;15W40;Universal;1.0;;;Cross Reference;filtro de óleo, oil filter;;yes
+Front Brake Pads Hi-Q SP1107-FA;Via Peças;part;Brakes;SP1107-FA;;;25800.0;1;Today;Hi-Q;Hyundai;Various;;Sonata/Azera;;;;;;;Ceramic/Semi-metallic;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Hi-Q SP1377;Via Peças;part;Brakes;SP1377;;;235000.0;1;Today;Hi-Q;Hyundai;2013;2018.0;Santa Fe;;;;;;;High Performance;pastilhas travão diant, front brake pads;;yes
+Brake Pads Rear Hi-Q SP1392;Via Peças;part;Brakes;SP1392;;;24500.0;1;Today;Hi-Q;Kia;2009;2014.0;Sorento;;;;;;;Rear Axle;pastilhas travão tras, rear brake pads;;yes
+Air Filter Chery F08-1109111H;Via Peças;part;Filtration;F08-1109111H;;;10500.0;1;Today;Chery;QQ/Face;2010;2015.0;1.1;;;;;;;Acteco Engine;filtro de ar, air filter;;yes
+Cabin Filter Chery F18-8107041;Via Peças;part;Filtration;F18-8107041;;;10500.0;1;Today;Chery;Tiggo;2009;2016.0;2.0;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Brake Pads Aftermarket FBP-1817;Via Peças;part;Brakes;FBP-1817;;;35800.0;1;Today;Aftermarket;Various;;;;;;;;;;Braking;pastilhas travão, brake pads;;yes
+Oil Filter Motorcraft FL-820S;Via Peças;lubricant;Filtration;FL-820S;;;;1;Today;Motorcraft;Ford;V8;;F-150/Mustang;;15W40;Universal;1.0;;;Original Ford;filtro de óleo, oil filter;;yes
+Limpeza of Engine Universal FLUSH;Via Peças;part;Engine;FLUSH;;;9000.0;1;Today;Universal;Various;;;;;;;;;;Aditivo 300ml;limpeza de motor, engine flush;;yes
+Filter Fuel Aftermarket GF-311AF;Via Peças;part;Filtration;GF-311AF;;;;1;Today;Aftermarket;Various;;;;;;;;;;Diesel/Petrol;filtro combustível, fuel filter;;yes
+Lubricating Grease Universal GREASE.;Via Peças;lubricant;Engine Oil;GREASE.;;;9800.0;1;Today;Universal;Various;;;;;15W40;Universal;1.0;;;Multi-purpose;massa lubrificante, grease;;yes
+U-Joint of Driveshaft GMB GUT-20;Via Peças;part;Mechanical;GUT-20;;;2780.0;1;Today;GMB;Toyota;Various;;Hilux;;;;;;;Transmission;cruzeta de cardan, universal joint;;yes
+Oil Filter Aftermarket J0-202;Via Peças;lubricant;Filtration;J0-202;;;278000.0;1;Today;Aftermarket;Various;;;;;15W40;Universal;1.0;;;Cross Reference;filtro de óleo, oil filter;;yes
+Arm Suspension Aftermarket HY-8-007;Via Peças;part;Suspension;HY-8-007;;;168500.0;1;Today;Aftermarket;Hyundai;;;Various;;;;;;;Suspension;braço suspensão, control arm;;yes
+Arm Suspension Aftermarket HY-8-008;Via Peças;part;Suspension;HY-8-008;;;1456000.0;1;Today;Aftermarket;Hyundai;;;Various;;;;;;;Suspension;braço suspensão, control arm;;yes
+Arm Suspension Aftermarket HY-8-035;Via Peças;part;Suspension;HY-8-035;;;175000.0;1;Today;Aftermarket;Hyundai;;;Various;;;;;;;Suspension;braço suspensão, control arm;;yes
+Wheel Hub Aftermarket IJ111003;Via Peças;part;Mechanical;IJ111003;;;38400.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Front;cubo de roda, wheel hub;;yes
+Wheel Hub Aftermarket IJ111010;Via Peças;part;Mechanical;IJ111010;;;38800.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Front;cubo de roda, wheel hub;;yes
+Wheel Hub Rear Aftermarket IJ211001;Via Peças;part;Mechanical;IJ211001;;;39800.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Rear;cubo de roda tras, rear wheel hub;;yes
+Wheel Bearing Aftermarket IJ710010;Via Peças;part;Mechanical;IJ710010;;;32500.0;1;Today;Aftermarket;Various;;;;;;;;;;Bearing;rolamento roda, wheel bearing;;yes
+Shock Absorber Aftermarket J5522018G;Via Peças;part;Suspension;J5522018G;;;57800.0;1;Today;Aftermarket;Various;;;;;;;;;;Suspension;amortecedor, shock absorber;;yes
+Shock Absorber Aftermarket JAPMM-80022;Via Peças;part;Suspension;JAPMM-80022;;;39800.0;1;Today;Aftermarket;Various;;;;;;;;;;Suspension;amortecedor, shock absorber;;yes
+Air Filter Aftermarket KA-04;Via Peças;part;Filtration;KA-04;;;27500.0;1;Today;Aftermarket;Kia;;;Various;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Aftermarket KA-07;Via Peças;part;Filtration;KA-07;;;31500.0;1;Today;Aftermarket;Kia;;;Various;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Aftermarket KA-11;Via Peças;part;Filtration;KA-11;;;29500.0;1;Today;Aftermarket;Kia;;;Various;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Aftermarket KA-2-07;Via Peças;part;Filtration;KA-2-07;;;24500.0;1;Today;Aftermarket;Kia;;;Various;;;;;;;Intake;filtro de ar, air filter;;yes
+Tensioner Belt Aftermarket KAUT02090;Via Peças;part;Mechanical;KAUT02090;;;;1;Today;Aftermarket;Various;;;;;;;;;;Timing;tensor correia, belt tensioner;;yes
+Kit Timing Aftermarket KAUT29296;Via Peças;part;Mechanical;KAUT29296;;;;1;Today;Aftermarket;Various;;;;;;;;;;Belt/Tensioners;kit distribuição, timing kit;;yes
+Pump of Water Aftermarket KAUT3501080;Via Peças;part;Engine;KAUT3501080;;;;1;Today;Aftermarket;Various;;;;;;;;;;Arrefecimento;bomba de água, water pump;;yes
+Kit Bearings Aftermarket KBS9922;Via Peças;part;Mechanical;KBS9922;;;39800.0;1;Today;Aftermarket;Various;;;;;;;;;;Wheel;kit rolamentos, bearing kit;;yes
+Air Filter Klaxcar KLAXCAR/FA18;Via Peças;part;Filtration;KLAXCAR/FA18;;;7800.0;1;Today;Klaxcar;Various;;;;;;;;;;Aftermarket;filtro de ar, air filter;;yes
+Rear Shock Absorber KYB KYB343287;Via Peças;part;Suspension;KYB343287;;;48000.0;1;Today;KYB;Toyota;2005;2015.0;Hilux;;;;;;;Excel-G (Gas);amortecedor tras, rear shock;;yes
+Rear Shock Absorber KYB KYB343408;Via Peças;part;Suspension;KYB343408;;;45200.0;1;Today;KYB;Mitsubishi;2005;2015.0;L200 Triton;;;;;;;Excel-G (Gas);amortecedor tras, rear shock;;yes
+Rear Shock Absorber KYB KYB349243;Via Peças;part;Suspension;KYB349243;;;39800.0;1;Today;KYB;Hyundai;2006;2012.0;Santa Fe;;;;;;;Excel-G (Gas);amortecedor tras, rear shock;;yes
+Bulb Universal L061;Via Peças;part;Mechanical;L061;;;;1;Today;Universal;Various;;;;;;;;;;P21W / Lighting;lâmpada, bulb;;yes
+Bulb Universal L129;Via Peças;part;Mechanical;L129;;;;1;Today;Universal;Various;;;;;;;;;;H7 / Lighting;lâmpada, bulb;;yes
+Covers of Connecting Rod Aftermarket M121H-STD;Via Peças;part;Mechanical;M121H-STD;;;75800.0;1;Today;Aftermarket;Mitsubishi;;;4D56;;;;;;;Standard;capas de biela, conrod bearings;;yes
+Main Bearing Set Aftermarket M736A-STD;Via Peças;part;Mechanical;M736A-STD;;;38500.0;1;Today;Aftermarket;Mitsubishi;;;4D56;;;;;;;Standard;capas de apoio, main bearings;;yes
+Oil Filter Mitsubishi MD069782;Via Peças;lubricant;Filtration;MD069782;;;7500.0;1;Today;Mitsubishi;L200;;;4D56;;15W40;Universal;1.0;;;Front;filtro de óleo, oil seal;;yes
+Oil Filter Mitsubishi ME017242;Via Peças;lubricant;Filtration;ME017242;;;9800.0;1;Today;Mitsubishi;Canter;;;4D33/4D34;;15W40;Universal;1.0;;;Truck;filtro de óleo, oil filter;;yes
+Air Filter Aftermarket MISM626;Via Peças;part;Filtration;MISM626;;;8500.0;1;Today;Aftermarket;Mitsubishi;;;Various;;;;;;;Intake;filtro de ar, air filter;;yes
+Kit Wheel Bearing Aftermarket WBK-10064;Via Peças;part;Mechanical;WBK-10064;;;28900.0;1;Today;Aftermarket;Hyundai/Kia;;;Various;;;;;;;Complete Kit;kit rolamento roda, wheel bearing kit;;yes
+Kit Wheel Bearing Aftermarket WBK-5516;Via Peças;part;Mechanical;WBK-5516;;;35500.0;1;Today;Aftermarket;Toyota;;;Various;;;;;;;Complete Kit;kit rolamento roda, wheel bearing kit;;yes
+Spark Plug Aftermarket XP5263;Via Peças;part;Engine;XP5263;;;15500.0;1;Today;Aftermarket;Various;;;;;;;;;;Intake;vela de ignição, vela;;yes
+Wrench of Box Yato YT-01234T;Via Peças;part;Mechanical;YT-01234T;;;9800.0;1;Today;Yato;Tool;;;;;;;;;;Workshop Accessory;chave de caixa, socket wrench;;yes
+Combination Wrench Yato YT-06876;Via Peças;part;Mechanical;YT-06876;;;13750.0;1;Today;Yato;Tool;;;;;;;;;;Workshop;chave de estrela, combination spanner;;yes
+Pump of Grease Yato YT-0705;Via Peças;part;Engine;YT-0705;;;17700.0;1;Today;Yato;Tool;;;;;;;;;;Lubrication;bomba de massa, grease gun;;yes
+Set of Wrenches Yato YT-1241;Via Peças;part;Mechanical;YT-1241;;;11550.0;1;Today;Yato;Tool;;;;;;;;;;Manual;jogo de chaves, socket set;;yes
+Wrench of Impact Yato YT-12651;Via Peças;part;Mechanical;YT-12651;;;71150.0;1;Today;Yato;Tool;;;;;;;;;;Pneumatic;chave de impacto, impact socket;;yes
+Wrench of Box Yato YT-12685;Via Peças;part;Mechanical;YT-12685;;;125300.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave de caixa, socket;;yes
+Adapter Yato YT-1345;Via Peças;part;Mechanical;YT-1345;;;24100.0;1;Today;Yato;Tool;;;;;;;;;;Manual;adaptador, adapter;;yes
+Adapter Yato YT-1348;Via Peças;part;Mechanical;YT-1348;;;21700.0;1;Today;Yato;Tool;;;;;;;;;;Manual;adaptador, adapter;;yes
+Wrench of Box Yato YT-1425;Via Peças;part;Mechanical;YT-1425;;;4900.0;1;Today;Yato;Tool;;;;;;;;;;"1/4""";chave de caixa, socket;;yes
+Jack Hydraulic Yato YT-17312;Via Peças;part;Mechanical;YT-17312;;;97650.0;1;Today;Yato;Equipment;;;;;;;;;;Lift;macaco hidráulico, bottle jack;;yes
+Pliers Universal Yato YT-1942;Via Peças;part;Mechanical;YT-1942;;;11050.0;1;Today;Yato;Tool;;;;;;;;;;Manual;alicate universal, combination pliers;;yes
+Pliers of Ends Yato YT-1946;Via Peças;part;Mechanical;YT-1946;;;7500.0;1;Today;Yato;Tool;;;;;;;;;;Manual;alicate de pontas, long nose pliers;;yes
+Flathead Screwdriver Yato YT-21650;Via Peças;part;Mechanical;YT-21650;;;4850.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave de fenda, screwdriver;;yes
+Flathead Screwdriver Yato YT-21651;Via Peças;part;Mechanical;YT-21651;;;4400.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave de fenda, screwdriver;;yes
+Flathead Screwdriver Yato YT-21652;Via Peças;part;Mechanical;YT-21652;;;8350.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave de fenda, screwdriver;;yes
+Wrench Phillips Yato YT-21653;Via Peças;part;Mechanical;YT-21653;;;11950.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave phillips, screwdriver ph;;yes
+Wrench Phillips Yato YT-21654;Via Peças;part;Mechanical;YT-21654;;;22400.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave phillips, screwdriver ph;;yes
+Hose Flexible Yato YT-2452;Via Peças;part;Mechanical;YT-2452;;;8850.0;1;Today;Yato;Tool;;;;;;;;;;Accessory;tubo flexível, flexible hose;;yes
+Set of Drill Bits Yato YT-25891;Via Peças;part;Mechanical;YT-25891;;;1900.0;1;Today;Yato;Consumable;;;;;;;;;;Metal/HSS;jogo de brocas, drill bit set;;yes
+Set of Drill Bits Yato YT-25892;Via Peças;part;Mechanical;YT-25892;;;2800.0;1;Today;Yato;Consumable;;;;;;;;;;Metal/HSS;jogo de brocas, drill bit set;;yes
+Set of Drill Bits Yato YT-25893;Via Peças;part;Mechanical;YT-25893;;;3850.0;1;Today;Yato;Consumable;;;;;;;;;;Metal/HSS;jogo de brocas, drill bit set;;yes
+Hole Saw Yato YT-25900;Via Peças;part;Mechanical;YT-25900;;;1850.0;1;Today;Yato;Consumable;;;;;;;;;;Metal;broca craniana, hole saw;;yes
+Drill Bit Yato YT-25934;Via Peças;part;Mechanical;YT-25934;;;4700.0;1;Today;Yato;Consumable;;;;;;;;;;Metal;broca, drill bit;;yes
+Drill Bit Yato YT-25965;Via Peças;part;Mechanical;YT-25965;;;12500.0;1;Today;Yato;Consumable;;;;;;;;;;Metal;broca, drill bit;;yes
+Drill Bit Yato YT-25971;Via Peças;part;Mechanical;YT-25971;;;6050.0;1;Today;Yato;Consumable;;;;;;;;;;Metal;broca, drill bit;;yes
+Drill Bit Yato YT-25982;Via Peças;part;Mechanical;YT-25982;;;27250.0;1;Today;Yato;Consumable;;;;;;;;;;Metal;broca, drill bit;;yes
+Voltage Tester Yato YT-2827;Via Peças;part;Mechanical;YT-2827;;;13750.0;1;Today;Yato;Tool;;;;;;;;;;Electric;busca-polos, voltage tester;;yes
+Tape Measuring Yato YT-2862;Via Peças;part;Mechanical;YT-2862;;;2650.0;1;Today;Yato;Tool;;;;;;;;;;Measurement;fita métrica, measuring tape;;yes
+Tape Measuring Yato YT-28631;Via Peças;part;Mechanical;YT-28631;;;4200.0;1;Today;Yato;Tool;;;;;;;;;;5 metros;fita métrica, measuring tape;;yes
+Wrench of Ratchet Yato YT-38791;Via Peças;part;Mechanical;YT-38791;;;149800.0;1;Today;Yato;Tool;;;;;;;;;;"1/2""";chave de roquete, ratchet handle;;yes
+Set of Tools Yato YT-38928;Via Peças;part;Mechanical;YT-38928;;;95900.0;1;Today;Yato;Equipment;;;;;;;;;;Complete Tool Set;jogo de ferramentas, tool set;;yes
+Flashlight of Work Yato YT-39280;Via Peças;part;Mechanical;YT-39280;;;69815.0;1;Today;Yato;Equipment;;;;;;;;;;LED/Workshop;lanterna de trabalho, work lamp;;yes
+Cabinet of Tools Yato YT-55570;Via Peças;part;Mechanical;YT-55570;;;139750.0;1;Today;Yato;Equipment;;;;;;;;;;Workshop;armário de ferramentas, tool cabinet;;yes
+Wrench of Handle Yato YT-5837;Via Peças;part;Mechanical;YT-5837;;;8850.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave de punho, t-handle wrench;;yes
+Hex Key Yato YT-58821;Via Peças;part;Mechanical;YT-58821;;;9300.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave sextavada, hex key;;yes
+Hex Key Yato YT-58825;Via Peças;part;Mechanical;YT-58825;;;10550.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave sextavada, hex key;;yes
+Hex Key Yato YT-58827;Via Peças;part;Mechanical;YT-58827;;;15200.0;1;Today;Yato;Tool;;;;;;;;;;Manual;chave sextavada, hex key;;yes
+Bench Vise Yato YT-6504;Via Peças;part;Mechanical;YT-6504;;;205250.0;1;Today;Yato;Equipment;;;;;;;;;;Workshop;torno de bancada, bench vice;;yes
+Gloves of Protection Yato YT-73091;Via Peças;part;Mechanical;YT-73091;;;49950.0;1;Today;Yato;EPI;;;;;;;;;;Protection;luvas de proteção, safety gloves;;yes
+X-Ato Yato YT-75071;Via Peças;part;Mechanical;YT-75071;;;2100.0;1;Today;Yato;Tool;;;;;;;;;;Manual;x-ato, cutter;;yes
+Drill of Impact Yato YT-82049;Via Peças;part;Mechanical;YT-82049;;;50150.0;1;Today;Yato;Electric;;;;;;;;;;Equipment;berbequim de impacto, impact drill;;yes
+Angle Grinder Yato YT-82110;Via Peças;part;Mechanical;YT-82110;;;146300.0;1;Today;Yato;Electric;;;;;;;;;;Equipment;rebarbadora, angle grinder;;yes
+Gun of Air Hot Yato YT-82293;Via Peças;part;Mechanical;YT-82293;;;45000.0;1;Today;Yato;Electric;;;;;;;;;;Equipment;pistola de ar quente, heat gun;;yes
+Rotary Hammer Yato YT-8272;Via Peças;part;Mechanical;YT-8272;;;13550.0;1;Today;Yato;Electric;;;;;;;;;;Equipment;martelo perfurador, rotary hammer;;yes
+Flashlight Rechargeable Yato YT-82760;Via Peças;part;Mechanical;YT-82760;;;20200.0;1;Today;Yato;Equipment;;;;;;;;;;LED;lanterna recarregável, flashlight;;yes
+Charger of Battery Yato YT-82784;Via Peças;part;Mechanical;YT-82784;;;174800.0;1;Today;Yato;Equipment;;;;;;;;;;18V;carregador de bateria, battery charger;;yes
+Battery Charger/Jump Starter Yato YT-83060;Via Peças;part;Mechanical;YT-83060;;;350000.0;1;Today;Yato;Equipment;;;;;;;;;;12V/24V;carregador/arrancador, battery charger;;yes
+Oil Filter Aftermarket Z452;Via Peças;lubricant;Filtration;Z452;;;3800.0;1;Today;Aftermarket;Various;;;;;15W40;Universal;1.0;;;Cross Reference;filtro de óleo, oil filter;;yes
+Oil Filter Aftermarket Z623;Via Peças;lubricant;Filtration;Z623;;;4500.0;1;Today;Aftermarket;Various;;;;;15W40;Universal;1.0;;;Cross Reference;filtro de óleo, oil filter;;yes
+Oil Filter Aftermarket Z642;Via Peças;lubricant;Filtration;Z642;;;4500.0;1;Today;Aftermarket;Various;;;;;15W40;Universal;1.0;;;Cross Reference;filtro de óleo, oil filter;;yes
+Gasket Cap Valves Toyota 11214-51010;Via Peças;part;Mechanical;11214-51010;;;15000.0;1;Today;Toyota;Land Cruiser;2007;2021.0;4.5 V8 (1VD-FTV);;;;;;;Front Axle;junta tampa válvulas, gasket, cylinder head cover;;yes
+Main Bearing Set (STD) Toyota 11701-67020;Via Peças;part;Mechanical;11701-67020;;;42500.0;1;Today;Toyota;Hilux/Prado;1993;2004.0;3.0 TD (1KZ-TE);;;;;;;Standard;capas de apoio (std), bearing, crankshaft;;yes
+Main Bearing Set (STD) Toyota 11702-54060;Via Peças;part;Mechanical;11702-54060;;;54000.0;1;Today;Toyota;Hiace/Hilux;1988;2005.0;2.4/2.8/3.0 (L/2L/3L/5L);;;;;;;Standard;capas de apoio (std), bearing, crankshaft;;yes
+Piston Ring Set Toyota 13011-30020;Via Peças;part;Mechanical;13011-30020;;;38800.0;1;Today;Toyota;Hilux;2005;2015.0;3.0 D4D (1KD-FTV);;;;;;;4 Cylinders;jogo de segmentos, piston ring set;;yes
+Valve of Exhaust Toyota 13202-54041;Via Peças;part;Mechanical;13202-54041;;;34500.0;1;Today;Toyota;Hilux/Hiace;1988;2005.0;2.4/2.8/3.0 (2L/3L/5L);;;;;;;L-Series Engine;válvula de escape, valve, exhaust;;yes
+Valve of Exhaust Toyota 13202-67030;Via Peças;part;Mechanical;13202-67030;;;35800.0;1;Today;Toyota;Prado/Hilux;1993;2004.0;3.0 TD (1KZ-TE);;;;;;;1KZ Engine;válvula de escape, valve, exhaust;;yes
+Air Filter Aftermarket 1327-2717;Via Peças;part;Filtration;1327-2717;;;8000.0;1;Today;Aftermarket;Various;;;;;;;;;;Cross Reference;filtro de ar, air filter;;yes
+Timing Belt Toyota 13568-19195;Via Peças;part;Mechanical;13568-19195;;;35800.0;1;Today;Toyota;Hilux/Prado;1993;2004.0;3.0 TD (1KZ-TE);;;;;;;119 teeth;correia distribuição, timing belt;;yes
+Timing Belt Toyota 13568-59106;Via Peças;part;Mechanical;13568-59106;;;35000.0;1;Today;Toyota;Hilux/Hiace;1988;2005.0;2.4/2.8/3.0 (2L/3L/5L);;;;;;;129 teeth;correia distribuição, timing belt;;yes
+Air Filter Suzuki 13780-53M00;Via Peças;part;Filtration;13780-53M00;;;7500.0;1;Today;Suzuki;Swift/Celerio;2010;2017.0;1.0/1.2;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-53M30;Via Peças;part;Filtration;13780-53M30;;;8000.0;1;Today;Suzuki;Celerio;2014;2019.0;1.0;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-53T50;Via Peças;part;Filtration;13780-53T50;;;8000.0;1;Today;Suzuki;Various;;;;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-62S00;Via Peças;part;Filtration;13780-62S00;;;8500.0;1;Today;Suzuki;Vitara/S-Cross;2015;2022.0;1.0/1.4 BoosterJet;;;;;;;Intake;filtro de ar, air filter;;yes
+Thermostat Perkins/Various 140517050;Via Peças;part;Mechanical;140517050;;;7500.0;1;Today;Perkins/Various;Tratores;;;Various;;;;;;;Industrial;termóstato, thermostat;;yes
+Air Filter Mitsubishi 1500A608;Via Peças;part;Filtration;1500A608;;;8500.0;1;Today;Mitsubishi;L200 Triton;2015;2023.0;2.4 Diesel;;;;;;;New Model;filtro de ar, air filter;;yes
+Oil Filter Nissan 15208-31U00;Via Peças;lubricant;Filtration;15208-31U00;;;3800.0;1;Today;Nissan;Maxima/Pathfinder;1995;2012.0;V6 Gasolina;;15W40;Universal;1.0;;;Armored;filtro de óleo, oil filter;;yes
+Oil Filter Nissan 15208-BN30A;Via Peças;lubricant;Filtration;15208-BN30A;;;6800.0;1;Today;Nissan;Almera/Micra;2003;2010.0;1.5 dCi;;15W40;Universal;1.0;;;Diesel;filtro de óleo, oil filter;;yes
+Pump of Water Toyota 16100-69357;Via Peças;part;Engine;16100-69357;;;80000.0;1;Today;Toyota;Hilux/Prado;1993;2004.0;3.0 TD (1KZ-TE);;;;;;;Arrefecimento;bomba de água, water pump;;yes
+Radiator of Water Toyota 16400-0L250;Via Peças;part;Mechanical;16400-0L250;;;95800.0;1;Today;Toyota;Hilux;2005;2015.0;2.5/3.0 D4D;;;;;;;KUN25/KUN26;radiador de água, radiator assy;;yes
+Oil Filter Suzuki 16510-65L10;Via Peças;lubricant;Filtration;16510-65L10;;;3800.0;1;Today;Suzuki;Swift/Baleno/Ignis;2016;2023.0;1.2;;15W40;Universal;1.0;;;Petrol;filtro de óleo, oil filter;;yes
+Air Filter Renault 16546-1599R;Via Peças;part;Filtration;16546-1599R;;;7500.0;1;Today;Renault;Duster/Oroch;2012;2020.0;1.6/2.0;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Nissan 16546-1LK0E;Via Peças;part;Filtration;16546-1LK0E;;;15000.0;1;Today;Nissan;Juke/Sentra;2011;2017.0;1.6 Turbo;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Renault 16546-9466R;Via Peças;part;Filtration;16546-9466R;;;7500.0;1;Today;Renault;Captur/Clio IV;2013;2019.0;0.9/1.2 TCe;;;;;;;Intake;filtro de ar, air filter;;yes
+Tensioner of Belt Toyota 16620-0S012;Via Peças;part;Mechanical;16620-0S012;;;130000.0;1;Today;Toyota;Tundra/Sequoia;2007;2021.0;5.7 V8 (3UR-FE);;;;;;;Accessories;tensor de correia, belt tensioner;;yes
+Tensioner of Belt Toyota 16620-30031;Via Peças;part;Mechanical;16620-30031;;;130000.0;1;Today;Toyota;Hilux/Prado;2005;2015.0;2.5/3.0 D4D;;;;;;;1KD/2KD Engine;tensor de correia, belt tensioner;;yes
+Cover of the Fan Toyota 16711-0L050;Via Peças;part;Mechanical;16711-0L050;;;40000.0;1;Today;Toyota;Hilux;2005;2015.0;2.5/3.0 D4D;;;;;;;Radiator;capa do ventilador, fan shroud;;yes
+Gasket of Turbo Toyota 17218-03009;Via Peças;part;Mechanical;17218-03009;;;7500.0;1;Today;Toyota;Various;;;;;;;;;;Exhaust;junta de turbo, turbocharger gasket;;yes
+Air Filter Toyota 17801-0C010;Via Peças;part;Filtration;17801-0C010;;;7500.0;1;Today;Toyota;Hilux/Fortuner;2005;2015.0;2.5/3.0 D4D;;;;;;;KUN25/KUN26;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-0Y040;Via Peças;part;Filtration;17801-0Y040;;;6500.0;1;Today;Toyota;Etios/Yaris;2013;2020.0;1.3/1.5;;;;;;;Intake;filtro de ar, air filter;;yes
+Set Gaskets Engine Toyota 04111-54220;Via Peças;part;Engine;04111-54220;;;110000.0;1;Today;Toyota;Hilux/Hiace;1998;2005.0;3.0 D (5L);;;;;;;Complete;jogo juntas motor, engine gasket kit;;yes
+Front Brake Pads Toyota 04465-06100;Via Peças;part;Brakes;04465-06100;;;26000.0;1;Today;Toyota;Camry/Aurion;2006;2011.0;V6;;;;;;;Front Axle;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Toyota 04465-0D160;Via Peças;part;Brakes;04465-0D160;;;25800.0;1;Today;Toyota;Yaris/Vitz;2011;2017.0;1.0/1.3;;;;;;;Front Axle;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Toyota 04465-0K020;Via Peças;part;Brakes;04465-0K020;;;25500.0;1;Today;Toyota;Hilux;2005;2011.0;2.5/3.0 D4D;;;;;;;Solid/Vented Disc;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Toyota 04465-0K240;Via Peças;part;Brakes;04465-0K240;;;26800.0;1;Today;Toyota;Hilux/Fortuner;2011;2015.0;Various;;;;;;;Front Axle;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Toyota 04465-26240;Via Peças;part;Brakes;04465-26240;;;27500.0;1;Today;Toyota;Hiace;1989;2004.0;Various;;;;;;;Front Axle;pastilhas travão diant, front brake pads;;yes
+Front Brake Pads Toyota 04465-60250;Via Peças;part;Brakes;04465-60250;;;34200.0;1;Today;Toyota;Land Cruiser/Prado;2002;2010.0;Various;;;;;;;Front Axle;pastilhas travão diant, front brake pads;;yes
+Air Filter Suzuki 13780-65L00;Via Peças;part;Filtration;13780-65L00;;;7800.0;1;Today;Suzuki;Swift;2010;2017.0;1.2;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-68P00;Via Peças;part;Filtration;13780-68P00;;;9800.0;1;Today;Suzuki;Vitara;2015;2020.0;1.6;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-72R00;Via Peças;part;Filtration;13780-72R00;;;9000.0;1;Today;Suzuki;Swift/Ignis;2017;2023.0;1.2 DualJet;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-74L00;Via Peças;part;Filtration;13780-74L00;;;7000.0;1;Today;Suzuki;Celerio;2014;2019.0;1.0;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Suzuki 13780-81A00;Via Peças;part;Filtration;13780-81A00;;;7000.0;1;Today;Suzuki;Jimny;1998;2018.0;1.3;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Mitsubishi 1500A098;Via Peças;part;Filtration;1500A098;;;7800.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;3.2 DID;;;;;;;Intake;filtro de ar, air filter;;yes
+Filter Oil (Element) Toyota 04152-YZZA5;Via Peças;lubricant;Filtration;04152-YZZA5;;;6000.0;1;Today;Toyota;Avalon/Rav4/Camry;2009;2018.0;2.5/3.5;;15W40;Universal;1.0;;;Cartridge;filtro óleo (elemento), oil filter (element);;yes
+Filter Oil (Element) Toyota 04152-YZZA6;Via Peças;lubricant;Filtration;04152-YZZA6;;;6000.0;1;Today;Toyota;Corolla;2009;2019.0;1.8/2.0;;15W40;Universal;1.0;;;Cartridge;filtro óleo (elemento), oil filter (element);;yes
+U-Joint of Driveshaft Toyota 04371-60070;Via Peças;part;Mechanical;04371-60070;;;32000.0;1;Today;Toyota;Hilux/Land Cruiser;;;Various;;;;;;;Transmission;cruzeta de cardan, universal joint;;yes
+Front Brake Pads Toyota 04465-04070;Via Peças;part;Brakes;04465-04070;;;29000.0;1;Today;Toyota;Tacoma/Hilux;2005;2015.0;Various;;;;;;;Front Axle;pastilhas travão diant, front brake pads;;yes
+Set Brake Shoes Rear Toyota 04495-52100;Via Peças;part;Mechanical;04495-52100;;;32500.0;1;Today;Toyota;Yaris;2005;2011.0;1.0/1.3;;;;;;;Rear Axle;jogo maxilas tras, rear brake shoe set;;yes
+Set Brake Shoes Rear Toyota 04495-60070;Via Peças;part;Mechanical;04495-60070;;;38800.0;1;Today;Toyota;Land Cruiser/Prado;1996;2002.0;Various;;;;;;;Rear Axle;jogo maxilas tras, rear brake shoe set;;yes
+Gasket Cap Valves Toyota 11213-30021;Via Peças;part;Mechanical;11213-30021;;;15000.0;1;Today;Toyota;Hilux/Prado;2005;2015.0;2.5/3.0 D4D (1KD/2KD);;;;;;;Rubber;junta tampa válvulas, cylinder head cover gasket;;yes
+Gasket Cap Valves Toyota 11213-54050;Via Peças;part;Mechanical;11213-54050;;;15000.0;1;Today;Toyota;Hilux/Hiace;1988;2005.0;2.4/2.8/3.0 (2L/3L/5L);;;;;;;Rubber;junta tampa válvulas, cylinder head cover gasket;;yes
+Gasket Cap Valves Toyota 11213-75041;Via Peças;part;Mechanical;11213-75041;;;15000.0;1;Today;Toyota;Hilux/Tacoma;2005;2020.0;2.7 (2TR-FE);;;;;;;Rubber;junta tampa válvulas, cylinder head cover gasket;;yes
+Gasket Cap Valves Toyota 11214-51010;Via Peças;part;Mechanical;11214-51010;;;15000.0;1;Today;Toyota;Land Cruiser;2007;2021.0;4.5 V8 (1VD-FTV);;;;;;;Outer Side;junta tampa válvulas, cylinder head cover gasket;;yes
+Valve of Exhaust Toyota 13202-54041;Via Peças;part;Mechanical;13202-54041;;;34500.0;1;Today;Toyota;Hilux/Hiace;1988;1997.0;2.4/2.8 (2L/3L);;;;;;;L-Series Engine;válvula de escape, exhaust valve;;yes
+Air Filter Aftermarket 1327-2717;Via Peças;part;Filtration;1327-2717;;;8000.0;1;Today;Aftermarket;Various;;;;;;;;;;Cross Reference;filtro de ar, air filter;;yes
+Wheel Bearing KBS 1727211/KBS;Via Peças;part;Mechanical;1727211/KBS;;;38900.0;1;Today;KBS;Various;;;;;;;;;;Aftermarket;rolamento de roda, wheel bearing;;yes
+Air Filter Toyota 17801-28010;Via Peças;part;Filtration;17801-28010;;;7000.0;1;Today;Toyota;Rav4/Previa;2000;2006.0;2.0/2.4;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-30040;Via Peças;part;Filtration;17801-30040;;;7800.0;1;Today;Toyota;Hilux/Prado;1996;2004.0;3.0 TD (1KZ-TE);;;;;;;Circular;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-30070;Via Peças;part;Filtration;17801-30070;;;8800.0;1;Today;Toyota;Hiace;2005;2018.0;2.5/3.0 D4D;;;;;;;Circular;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-31090;Via Peças;part;Filtration;17801-31090;;;7000.0;1;Today;Toyota;Land Cruiser/Prado;2003;2009.0;4.0 V6 (1GR-FE);;;;;;;Square;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-31120;Via Peças;part;Filtration;17801-31120;;;7000.0;1;Today;Toyota;Land Cruiser/Prado;2009;2020.0;4.0 V6;;;;;;;New Model;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-38050;Via Peças;part;Filtration;17801-38050;;;7000.0;1;Today;Toyota;Land Cruiser 200;2008;2015.0;4.5/4.7 V8;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-51020;Via Peças;part;Filtration;17801-51020;;;13500000.0;1;Today;Toyota;Land Cruiser 200;2008;2021.0;4.5 V8;;;;;;;Intake;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-54100;Via Peças;part;Filtration;17801-54100;;;24500.0;1;Today;Toyota;Hilux/Hiace;1988;1997.0;2.4/2.8 (2L/3L);;;;;;;Circular;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-61030;Via Peças;part;Filtration;17801-61030;;;7800.0;1;Today;Toyota;Land Cruiser;1984;2007.0;4.0/4.2;;;;;;;Series 60/70/80;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-77050;Via Peças;part;Filtration;17801-77050;;;7000.0;1;Today;Toyota;Various;;;;;;;;;;Japanese Reference;filtro de ar, air filter;;yes
+Air Filter Toyota 17801-BZ050;Via Peças;part;Filtration;17801-BZ050;;;8500.0;1;Today;Toyota;Avanza/Rush;2011;2020.0;1.3/1.5;;;;;;;Intake;filtro de ar, air filter;;yes
+Catalytic Converter/Component Toyota 18450-51041;Via Peças;part;Mechanical;18450-51041;;;40000.0;1;Today;Toyota;Land Cruiser;;;4.5 V8;;;;;;;Exhaust;catalisador/componente, converter/exhaust part;;yes
+Main Bearing Set (STD) Hyundai 21020-02805;Via Peças;part;Mechanical;21020-02805;;;26800.0;1;Today;Hyundai;Atos/i10;1998;2013.0;1.0/1.1;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Main Bearing Set (STD) Hyundai/Kia 21020-03000;Via Peças;part;Mechanical;21020-03000;;;27800.0;1;Today;Hyundai/Kia;i10/Picanto;2011;2017.0;1.0/1.2 Kappa;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Main Bearing Set (STD) Hyundai/Kia 21020-03020;Via Peças;part;Mechanical;21020-03020;;;28900.0;1;Today;Hyundai/Kia;i10/Picanto;2012;2019.0;1.0/1.2;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Main Bearing Set (STD) Hyundai 21020-03911;Via Peças;part;Mechanical;21020-03911;;;27800.0;1;Today;Hyundai;i10;2008;2013.0;1.1;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Main Bearing Set (STD) Hyundai/Kia 21020-2B000;Via Peças;part;Mechanical;21020-2B000;;;28000.0;1;Today;Hyundai/Kia;Accent/Rio;2006;2018.0;1.4/1.6 Gamma;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Main Bearing Set (STD) Hyundai/Kia 21020-2E000;Via Peças;part;Mechanical;21020-2E000;;;28900.0;1;Today;Hyundai/Kia;Elantra/Tucson;2011;2020.0;1.8/2.0 Nu;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Main Bearing Set (STD) Hyundai/Kia 21020-2G000;Via Peças;part;Mechanical;21020-2G000;;;35200.0;1;Today;Hyundai/Kia;Sonata/Santa Fe;2006;2015.0;2.0/2.4 Theta;;;;;;;Standard;capas de apoio (std), main bearing set;;yes
+Oil Pump Hyundai 21310-02550;Via Peças;lubricant;Engine Oil;21310-02550;;;37800.0;1;Today;Hyundai;Atos/i10;1998;2013.0;1.0/1.1;;15W40;Universal;1.0;;;G4HC/G4HG Engine;bomba de óleo, oil pump;;yes
+Oil Pump Hyundai/Kia 21310-03900;Via Peças;lubricant;Engine Oil;21310-03900;;;40200.0;1;Today;Hyundai/Kia;i10/Picanto;2011;2017.0;1.0/1.2;;15W40;Universal;1.0;;;Kappa Engine;bomba de óleo, oil pump;;yes
+Oil Pump Hyundai/Kia 21310-2G011;Via Peças;lubricant;Engine Oil;21310-2G011;;;98800.0;1;Today;Hyundai/Kia;Sonata/Optima;2009;2015.0;2.0/2.4;;15W40;Universal;1.0;;;Theta Engine;bomba de óleo, oil pump;;yes
+Gasket Pump Oil Hyundai/Kia 21352-3C700;Via Peças;lubricant;Engine Oil;21352-3C700;;;14500.0;1;Today;Hyundai/Kia;V6 3.3/3.8;;;;;15W40;Universal;1.0;;;Seal/Gasket;junta bomba óleo, oil pump gasket;;yes
+Seal Crankshaft Front Hyundai/Kia 21421-25002;Via Peças;part;Mechanical;21421-25002;;;14500.0;1;Today;Hyundai/Kia;Sonata/Santa Fe;2006;2015.0;2.0/2.4;;;;;;;Theta Engine;retentor cambota diant, front oil seal;;yes
+Seal Crankshaft Front Hyundai/Kia 21421-2B020;Via Peças;part;Mechanical;21421-2B020;;;15200.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;1.4/1.6;;;;;;;Gamma Engine;retentor cambota diant, front oil seal;;yes
+Seal Crankshaft Rear Hyundai/Kia 21443-2E110;Via Peças;part;Mechanical;21443-2E110;;;17800.0;1;Today;Hyundai/Kia;Tucson/Elantra;2011;2020.0;1.8/2.0;;;;;;;Nu Engine;retentor cambota tras, rear oil seal;;yes
+Valve of Intake Hyundai/Kia 22211-2B400;Via Peças;part;Mechanical;22211-2B400;;;25800.0;1;Today;Hyundai/Kia;Accent/Rio;2011;2017.0;1.4/1.6;;;;;;;Gamma Engine;válvula de admissão, intake valve;;yes
+Valve of Intake Hyundai/Kia 22211-2G000;Via Peças;part;Mechanical;22211-2G000;;;35800.0;1;Today;Hyundai/Kia;Sonata/Santa Fe;2006;2015.0;2.0/2.4;;;;;;;Theta Engine;válvula de admissão, intake valve;;yes
+Oil Filter Hyundai/Kia 26300-2Y500;Via Peças;lubricant;Filtration;26300-2Y500;;;3800.0;1;Today;Hyundai/Kia;Various;;;;;15W40;Universal;1.0;;;Armored;filtro de óleo, oil filter;;yes
+Oil Filter Hyundai/Kia 26300-35503;Via Peças;lubricant;Filtration;26300-35503;;;3800.0;1;Today;Hyundai/Kia;i10/i20/i30/Tucson;2000;2023.0;Various;;15W40;Universal;1.0;;;Armored (Standard);filtro de óleo, oil filter;;yes
+Oil Filter Hyundai 26300-42040;Via Peças;lubricant;Filtration;26300-42040;;;6500.0;1;Today;Hyundai;H100/H1;Various;;2.5 D;;15W40;Universal;1.0;;;Diesel;filtro de óleo, oil filter;;yes
+Oil Filter (Element) Hyundai/Kia 26320-2F000;Via Peças;lubricant;Filtration;26320-2F000;;;5500.0;1;Today;Hyundai/Kia;ix35/Sportage;2010;2020.0;2.0 Diesel;;15W40;Universal;1.0;;;R Engine;filtro de óleo (elemento), oil filter element;;yes
+Oil Filter (Element) Hyundai/Kia 26320-3A000;Via Peças;lubricant;Filtration;26320-3A000;;;6000.0;1;Today;Hyundai/Kia;Veracruz/Mohave;2007;2015.0;3.0 V6 Diesel;;15W40;Universal;1.0;;;S Engine;filtro de óleo (elemento), oil filter element;;yes
+Oil Filter (Element) Hyundai/Kia 26320-3C100;Via Peças;lubricant;Filtration;26320-3C100;;;5500.0;1;Today;Hyundai/Kia;Azera/Sorento;2006;2012.0;3.3/3.8 V6;;15W40;Universal;1.0;;;Lambda Engine;filtro de óleo (elemento), oil filter element;;yes
+Oil Filter (Element) Hyundai/Kia 26320-3C250;Via Peças;lubricant;Filtration;26320-3C250;;;6500.0;1;Today;Hyundai/Kia;Santa Fe/Sorento;2013;2018.0;3.3 V6;;15W40;Universal;1.0;;;Lambda Engine;filtro de óleo (elemento), oil filter element;;yes
+Oil Filter (Element) Hyundai/Kia 26320-3CAA0;Via Peças;lubricant;Filtration;26320-3CAA0;;;6500.0;1;Today;Hyundai/Kia;Genesis/Cadenza;2012;2020.0;3.3/3.8;;15W40;Universal;1.0;;;GDI;filtro de óleo (elemento), oil filter element;;yes
+Oil Filter (Element) Hyundai/Kia 26350-2J000;Via Peças;lubricant;Filtration;26350-2J000;;;8000.0;1;Today;Hyundai/Kia;Various;2018;2023.0;1.6 Diesel;;15W40;Universal;1.0;;;Smartstream Engine;filtro de óleo (elemento), oil filter element;;yes
+Oil Filter (Element) Hyundai/Kia 26350-2S000;Via Peças;lubricant;Filtration;26350-2S000;;;8000.0;1;Today;Hyundai/Kia;Tucson/Sportage;2020;2024.0;2.0/2.5;;15W40;Universal;1.0;;;Smartstream Engine;filtro de óleo (elemento), oil filter element;;yes
+Ignition Coil Hyundai/Kia 27300-3F100;Via Peças;part;Mechanical;27300-3F100;;;25500.0;1;Today;Hyundai/Kia;Genesis/Mohave;2009;2012.0;3.8/4.6;;;;;;;Electric;bobine de ignição, ignition coil;;yes
+Ignition Coil Hyundai/Kia 27301-2B010;Via Peças;part;Mechanical;27301-2B010;;;25000.0;1;Today;Hyundai/Kia;Accent/Rio/i30;2011;2017.0;1.4/1.6;;;;;;;Gamma Engine;bobine de ignição, ignition coil;;yes
+Ignition Coil Hyundai/Kia 27301-3C000;Via Peças;part;Mechanical;27301-3C000;;;25800.0;1;Today;Hyundai/Kia;Azera/Santa Fe/Sorento;2006;2012.0;3.3/3.8 V6;;;;;;;Lambda Engine;bobine de ignição, ignition coil;;yes
+Fuel Filter Hyundai/Kia 31910-2H000;Via Peças;part;Filtration;31910-2H000;;;13500.0;1;Today;Hyundai/Kia;i30/Elantra/Ceed;2007;2012.0;Various;;;;;;;Inside the Tank;filtro de combustível, fuel filter;;yes
+Filter Fuel Kia 31911-4D500;Via Peças;part;Filtration;31911-4D500;;;14500.0;1;Today;Kia;Sedona/Carnival;2006;2010.0;2.9 CRDi;;;;;;;Inside the Tank;filtro combustível, fuel filter;;yes
+Filter Fuel Hyundai 31920-66200;Via Peças;part;Filtration;31920-66200;;;29800.0;1;Today;Hyundai;H100/H1;1997;2004.0;2.5 D;;;;;;;Diesel (Armored);filtro combustível, fuel filter;;yes
+Filter Fuel Hyundai/Kia 31922-4H000;Via Peças;part;Filtration;31922-4H000;;;10500.0;1;Today;Hyundai/Kia;H1/Santa Fe/Sorento;2008;2020.0;2.5/2.2 CRDi;;;;;;;Diesel (Element);filtro combustível, fuel filter;;yes
+Head Filter Hyundai 31954-45000;Via Peças;part;Filtration;31954-45000;;;9800.0;1;Today;Hyundai;H100/County;;;Various;;;;;;;Bracket w/ Pump;cabeçote filtro, fuel filter head;;yes
+Sensor Temperatura Hyundai/Kia 39220-38030;Via Peças;part;Mechanical;39220-38030;;;28800.0;1;Today;Hyundai/Kia;Accent/Santa Fe/Rio;2001;2015.0;Various;;;;;;;Arrefecimento;sensor temperatura, coolant temp sensor;;yes
+Wheel Hub Rear Toyota 42450-60010;Via Peças;part;Mechanical;42450-60010;;;98800.0;1;Today;Toyota;Land Cruiser/Prado;1996;2002.0;Various;;;;;;;Series 90/95;cubo de roda tras, rear wheel hub;;yes
+Wheel Hub Rear Toyota 42450-60070;Via Peças;part;Mechanical;42450-60070;;;39800.0;1;Today;Toyota;Land Cruiser/Prado;2002;2010.0;Various;;;;;;;Series 120;cubo de roda tras, rear wheel hub;;yes
+Wheel Hub Front Toyota 42460-60030;Via Peças;part;Mechanical;42460-60030;;;25500.0;1;Today;Toyota;Land Cruiser/Prado;2002;2020.0;Various;;;;;;;Series 120/150;cubo de roda diant, front wheel hub;;yes
+Air Filter Renault 8200431051;Via Peças;part;Filtration;8200431051;;;7800.0;1;Today;Renault;Clio/Megane/Duster;2000;2015.0;1.6/2.0 16V;;;;;;;Original;filtro de ar, air filter;;yes
+Tip Renault 82011-08350;Via Peças;part;Mechanical;82011-08350;;;19800.0;1;Today;Renault;Various;;;;;;;;;;Handbrake;ponteira, brake cable;;yes
+Air Filter Renault 8201153808;Via Peças;part;Filtration;8201153808;;;7500.0;1;Today;Renault;Master III;2010;2022.0;2.3 dCi;;;;;;;Intake;filtro de ar, air filter;;yes
+Spark Plug NGK 8312;Via Peças;part;Engine;8312;;;3800.0;1;Today;NGK;Various;;;;;;;;;;Ref: BKR5E;vela de ignição, spark plug;;yes
+Spark Plug NGK 8316;Via Peças;part;Engine;8316;;;3800.0;1;Today;NGK;Various;;;;;;;;;;Ref: BKR6E;vela de ignição, spark plug;;yes
+Spark Plug NGK 8319;Via Peças;part;Engine;8319;;;3800.0;1;Today;NGK;Various;;;;;;;;;;Ref: BKR7E;vela de ignição, spark plug;;yes
+Sensor Level Fuel. Hyundai 94460-2S000;Via Peças;part;Mechanical;94460-2S000;;;23500.0;1;Today;Hyundai;ix35;2010;2015.0;Various;;;;;;;Fuel Level Sender;sensor nível comb., fuel level sensor;;yes
+Cabin Filter Suzuki 95860-63J10;Via Peças;part;Filtration;95860-63J10;;;7000.0;1;Today;Suzuki;Swift/Vitara;2005;2017.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Suzuki 95860-81A00;Via Peças;part;Filtration;95860-81A00;;;6500.0;1;Today;Suzuki;Jimny;1998;2018.0;1.3;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Kia 97133-07010;Via Peças;part;Filtration;97133-07010;;;4500.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai 97133-1J000;Via Peças;part;Filtration;97133-1J000;;;6700.0;1;Today;Hyundai;i20;2008;2014.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai 97133-2B005;Via Peças;part;Filtration;97133-2B005;;;7500.0;1;Today;Hyundai;Santa Fe;2006;2012.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai/Kia 97133-2E200;Via Peças;part;Filtration;97133-2E200;;;4500.0;1;Today;Hyundai/Kia;Tucson/Sportage;2004;2010.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Kia 97133-2F000;Via Peças;part;Filtration;97133-2F000;;;6800.0;1;Today;Kia;Cerato/Spectra;2004;2009.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai/Kia 97133-2H000;Via Peças;part;Filtration;97133-2H000;;;7500.0;1;Today;Hyundai/Kia;Elantra/Ceed;2006;2012.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai 97133-3J000;Via Peças;part;Filtration;97133-3J000;;;7500.0;1;Today;Hyundai;Veracruz;2007;2012.0;3.8;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai 97133-3K000;Via Peças;part;Filtration;97133-3K000;;;7000.0;1;Today;Hyundai;Sonata (NF);2005;2010.0;2.0/2.4;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai 97133-3M000;Via Peças;part;Filtration;97133-3M000;;;8500.0;1;Today;Hyundai;Genesis;2009;2014.0;3.8/4.6;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Cabin Filter Hyundai/Kia 97133-3SAA0;Via Peças;part;Filtration;97133-3SAA0;;;4500.0;1;Today;Hyundai/Kia;Sonata/Optima;2011;2015.0;Various;;;;;;;Air Conditioning;filtro habitáculo, cabin air filter;;yes
+Air Filter Hyundai 28113-L1000;Luanda Auto Parts;part;Filtration;28113-L1000;;;9800.0;1;Today;Hyundai;Sonata;2019;2023.0;2.5L;;;;;;;Panel;filtro de ar, air filter;;yes
+Air Filter Hyundai 28113-L1000;Via Peças;part;Filtration;28113-L1000;;;9800.0;1;Today;Hyundai;Elantra;2019;2023.0;2.5L;;;;;;;Panel;filtro de ar, air filter;;yes
+Brake Disc Toyota 43512-0K060;Angola Moto Parts;part;Brakes;43512-0K060;;;52500.0;1;Today;Toyota;Hilux;2005;2015.0;Various;;;;;;;Vented;disco de travão, front brake disc;;yes
+Brake Disc Toyota 43512-0K060;Via Peças;part;Brakes;43512-0K060;;;52500.0;1;Today;Toyota;Fortuner;2005;2015.0;Various;;;;;;;Vented;disco de travão, front brake disc;;yes
+Front Brake Pads Mitsubishi 4605A198;Import Car Parts;part;Brakes;4605A198;;;27800.0;1;Today;Mitsubishi;L200 Triton;2005;2015.0;Various;;;;;;;Akebono System;pastilhas travão diant, brake pad set;;yes
+Front Brake Pads Mitsubishi 4605A198;Via Peças;part;Brakes;4605A198;;;27800.0;1;Today;Mitsubishi;Pajero Sport;2005;2015.0;Various;;;;;;;Akebono System;pastilhas travão diant, brake pad set;;yes
+Oil Filter Perkins/Industrial 3886349-2125;Angola Moto Parts;lubricant;Filtration;3886349-2125;;;;1;Today;Perkins/Industrial;Geradores;;;;;15W40;Universal;1.0;;;Series 1100;filtro de óleo, oil filter;;yes
+Oil Filter Perkins/Industrial 3886349-2125;Via Peças;lubricant;Filtration;3886349-2125;;;;1;Today;Perkins/Industrial;Compressores;;;;;15W40;Universal;1.0;;;Series 1100;filtro de óleo, oil filter;;yes
+Brake Disc Kia 51712-07500;Luanda Auto Parts;part;Brakes;51712-07500;;;37800.0;1;Today;Kia;Picanto;2004;2011.0;1.0/1.1;;;;;;;Front;disco de travão, front brake disc;;yes
+Brake Disc Kia 51712-07500;Import Car Parts;part;Brakes;51712-07500;;;37800.0;1;Today;Hyundai;Atos;2004;2011.0;1.0/1.1;;;;;;;Front;disco de travão, front brake disc;;yes
