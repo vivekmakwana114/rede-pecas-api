@@ -59,7 +59,7 @@ export async function getOrCreateCustomer(phone: string): Promise<Customer | nul
  * Advances the profile-registration state machine one step (name → NIF →
  * NIF number → address → complete) based on the customer's current status and their latest reply.
  */
-export async function processCustomerRegistration(phone: string, customer: Customer, reply: string): Promise<boolean> {
+export async function processCustomerRegistration(phone: string, customer: Customer, reply: string, buttonReplyId?: string | null): Promise<boolean> {
   const messages = await resolveMessages(phone);
   const r = reply.trim();
   const status = customer.registration_status;
@@ -80,15 +80,18 @@ export async function processCustomerRegistration(phone: string, customer: Custo
     }
 
     await updateCustomer(phone, { name, registration_status: 'awaiting_nif' });
-    await sendReplyButtons(phone, messages.onboarding.askNifBody(name), messages.onboarding.askNifButtons);
+    await sendReplyButtons(phone, messages.onboarding.askNifBody(name), messages.onboarding.askNifButtons, ['nif_yes', 'nif_no']);
     return true;
   }
 
   if (status === 'awaiting_nif') {
     const rLower = r.toLowerCase();
+    // Button taps are matched by id first (authoritative — same pattern the
+    // admin-reply buttons already use) since it can't be thrown off by
+    // locale/wording; free-typed replies still fall back to the text checks.
     // \b-bounded "no" avoids false substring matches on words like "not" or
     // "know" — plain .includes('no') would wrongly treat those as declining.
-    const noNif = rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌')
+    const noNif = buttonReplyId === 'nif_no' || rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌')
       || /\bno\b/.test(rLower) || rLower.includes('nope') || rLower === 'n' || r === '2';
 
     if (noNif) {
@@ -168,7 +171,7 @@ export async function sendResumeRegistrationPrompt(phone: string, customer: Cust
     await sendReply(phone, messages.onboarding.askNameOnly());
   } else if (customer.registration_status === 'awaiting_nif') {
     const name = customer.name?.split(' ')[0] || 'Cliente';
-    await sendReplyButtons(phone, messages.onboarding.askNifBody(name), messages.onboarding.askNifButtons);
+    await sendReplyButtons(phone, messages.onboarding.askNifBody(name), messages.onboarding.askNifButtons, ['nif_yes', 'nif_no']);
   } else if (customer.registration_status === 'awaiting_nif_number') {
     await sendReply(phone, messages.onboarding.askNifNumber());
   } else if (customer.registration_status === 'awaiting_address') {

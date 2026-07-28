@@ -149,7 +149,7 @@ async function processMessageFlow(
 
   if (customer.registration_status !== 'complete') {
     if (!customerText) return;
-    const handled = await customerService.processCustomerRegistration(phone, customer, customerText);
+    const handled = await customerService.processCustomerRegistration(phone, customer, customerText, buttonReplyId);
     if (handled) return;
   }
 
