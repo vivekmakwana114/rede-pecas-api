@@ -12,6 +12,23 @@ const memoryCache = new Map<string, any[]>();
 const SESSION_TTL = 60 * 60 * 4;
 const VEHICLE_ID_CHOICE_TTL = SESSION_TTL;
 
+// Every session read/write below gates on `redisClient?.isOpen` to decide
+// Redis vs. in-memory-fallback — but right after process start, `isOpen` is
+// false for the whole span of the connect() attempt below, which looks
+// IDENTICAL to "Redis is down, use memory fallback" even though Redis is
+// about to come up fine and already holds real session data (e.g. a
+// customer's detected locale) from before this restart. A request handled
+// in that window would silently read from the fresh, empty in-memory Map
+// instead of waiting for the real Redis data, then diverge from a request
+// handled a moment later once Redis finishes connecting — this is exactly
+// what caused a courtesy message going out in both the customer's actual
+// (Redis-cached) locale and the DEFAULT_LOCALE fallback within the same
+// minute, once during dev-server hot-reload. `redisReady` exposes this
+// connect attempt as an awaitable so `index.ts` can hold off starting the
+// HTTP server / background sweeps until it settles, closing the window
+// entirely instead of requiring every function below to await it individually.
+export let redisReady: Promise<void> = Promise.resolve();
+
 if (config.redis.url) {
   try {
     redisClient = createClient({ url: config.redis.url });
@@ -20,7 +37,7 @@ if (config.redis.url) {
       useMemoryFallback = true;
     });
 
-    redisClient.connect().then(() => {
+    redisReady = redisClient.connect().then(() => {
       logger.info('Connected to Redis successfully for sessions');
     }).catch((err: any) => {
       logger.error('Failed to connect to Redis, using memory fallback', err);
