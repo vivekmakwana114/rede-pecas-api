@@ -549,8 +549,12 @@ export async function processAdminItemStockReply(adminPhone: string, buttonReply
   }
 
   await setOrderItemAvailability(orderNumber, itemId, action === 'confirm');
-  await sendWhatsAppMessage(adminPhone, action === 'confirm' ? t.admin.confirmedAck(orderNumber) : t.admin.unavailableAck(orderNumber));
+  // Finalize before acking the admin — sendWhatsAppMessage rethrows on
+  // failure (e.g. sandbox/rate-limit error), and if that happened first, the
+  // item would already be past 'pending' with no retry path left to ever
+  // trigger finalization. Same ordering as processAdminStockReply below.
   await finalizeMultiItemOrderIfComplete(orderNumber);
+  await sendWhatsAppMessage(adminPhone, action === 'confirm' ? t.admin.confirmedAck(orderNumber) : t.admin.unavailableAck(orderNumber));
   return true;
 }
 
