@@ -1,6 +1,7 @@
 import { db } from '../config/db.js';
 import { logger } from '../config/logger.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from './whatsapp.service.js';
+import { saveDocument } from './storage.service.js';
 import { sendReply, sendReplyButtons } from './reply.service.js';
 import { generateInvoicePDF, sendFinalInvoiceWhatsApp } from './pdf.service.js';
 import { extractPaymentProofData } from './ai.service.js';
@@ -224,6 +225,20 @@ export async function processPaymentProof(
   await updateOrderStatus(number, 'awaiting_proof_verification');
 
   const fileBase64 = await downloadWhatsAppMedia(mediaId);
+  if (fileBase64) {
+    // Persist the proof locally regardless of whether it validates below —
+    // never kept before this — so it's still reachable after Meta's ~30-day
+    // media id/URL expiry, without a second Graph API round trip.
+    await saveDocument(
+      phone,
+      'payment_proof',
+      Buffer.from(fileBase64, 'base64'),
+      mediaType === 'document' ? 'application/pdf' : 'image/jpeg',
+      number,
+      mediaId
+    );
+  }
+
   let extracted: Awaited<ReturnType<typeof extractPaymentProofData>> = null;
   if (fileBase64) {
     try {
@@ -368,11 +383,11 @@ export async function approveOrder(orderNumber: string, employeeId: number): Pro
         .filter((i: any) => i.availabilityStatus === 'available')
         .flatMap((i: any) => [
           { description: i.productName, reference: i.reference, price: Number(i.unitPrice) },
-          ...(i.serviceName ? [{ description: i.serviceName, reference: '—', price: Number(i.servicePrice || 0) }] : []),
+          ...(i.serviceName ? [{ description: i.serviceName, reference: '—', price: Number(i.servicePrice || 0), isService: true }] : []),
         ])
     : [
         { description: fullOrder.product_name || mc.defaultProductName, reference: fullOrder.reference || 'PEC-GEN', price: Number(fullOrder.unit_price) },
-        ...(fullOrder.service_price ? [{ description: fullOrder.service_name || 'Serviço', reference: '—', price: Number(fullOrder.service_price) }] : []),
+        ...(fullOrder.service_price ? [{ description: fullOrder.service_name || 'Serviço', reference: '—', price: Number(fullOrder.service_price), isService: true }] : []),
       ];
 
   const invoicePDF = await generateInvoicePDF(fullOrder, invoiceLineItems, locale);

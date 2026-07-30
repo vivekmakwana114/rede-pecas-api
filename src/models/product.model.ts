@@ -23,6 +23,7 @@ export interface Product {
   category?: string;
   subcategory?: string;
   service_category?: string;
+  product_type?: string | null;
   vehicle_make?: string;
   vehicle_model?: string | null;
   year_start?: number | null;
@@ -120,6 +121,7 @@ export async function searchProductsInInventory({
   vehicle,
   excludeProductIds,
   subcategory,
+  productType,
 }: {
   part: string;
   vehicle?: SearchVehicle | null;
@@ -133,6 +135,12 @@ export async function searchProductsInInventory({
   // The plain customer free-text search (searchAndRespond) never sets this
   // — a customer's own short query doesn't have this failure mode.
   subcategory?: string | null;
+  // The customer's order-wide part-type choice (OEM/Aftermarket/New/Second
+  // Hand — see the part-type selection step). Soft filter: a row with
+  // product_type IS NULL (every pre-existing catalog row, until re-imported
+  // with the new CSV column) still matches regardless of the customer's
+  // choice, so search never silently goes empty for un-backfilled catalog data.
+  productType?: string | null;
 }): Promise<Product[]> {
   const { rows } = await db.query(
     `
@@ -143,6 +151,7 @@ export async function searchProductsInInventory({
       ps.price,
       ps.quantity,
       p.service_category,
+      p.product_type,
       ps.supplier_id,
       s.name AS supplier,
       s.rating AS supplier_rating,
@@ -164,12 +173,13 @@ export async function searchProductsInInventory({
       AND p.search_vector @@ ${OR_TSQUERY}
       AND ($2::int[] IS NULL OR NOT (ps.id = ANY($2::int[])))
       AND ($3::text IS NULL OR p.subcategory = $3)
+      AND ($4::text IS NULL OR p.product_type IS NULL OR p.product_type = $4)
     ORDER BY
       ps.price ASC,
       s.rating DESC
     LIMIT ${SEARCH_CANDIDATE_LIMIT}
     `,
-    [part, excludeProductIds?.length ? excludeProductIds : null, subcategory ?? null]
+    [part, excludeProductIds?.length ? excludeProductIds : null, subcategory ?? null, productType ?? null]
   );
 
   const compatible = vehicle
@@ -194,6 +204,22 @@ export async function addToProductWaitlist(productId: number, phone: string): Pr
   );
 }
 
+/**
+ * Decrements a confirmed offer's on-hand quantity (`product_suppliers.quantity`,
+ * `offerId` being the `product_suppliers.id` an order's `product_id`/item
+ * `productId` actually references) by the ordered amount, floored at 0 so a
+ * race between two concurrent orders for the last unit can't go negative.
+ * Called once, at the moment admin confirms stock is actually available
+ * (`confirmStockAndFinalizeOrder` / `finalizeMultiItemOrder`) — not at order
+ * creation, since that's before anyone has physically checked the shelf.
+ */
+export async function decrementOfferStock(offerId: number, qty: number = 1): Promise<void> {
+  await db.query(
+    `UPDATE product_suppliers SET quantity = GREATEST(quantity - $2, 0), updated_at = NOW() WHERE id = $1`,
+    [offerId, qty]
+  );
+}
+
 const ADMIN_PRODUCT_SELECT = `
   SELECT
     ps.id,
@@ -206,6 +232,7 @@ const ADMIN_PRODUCT_SELECT = `
     p.category,
     p.subcategory,
     p.service_category,
+    p.product_type,
     fit.vehicle_make,
     fit.vehicle_model,
     fit.year_start,
@@ -386,8 +413,12 @@ export async function hardDeleteProduct(id: number): Promise<HardDeleteResult> {
  */
 export async function findZeroQuantityProductMatch({
   part,
+  productType,
 }: {
   part: string;
+  // Same soft filter as searchProductsInInventory — a NULL product_type row
+  // (pre-existing catalog data) still matches regardless of the customer's choice.
+  productType?: string | null;
 }): Promise<{ id: number; name: string } | null> {
   const { rows } = await db.query(
     `SELECT ps.id, p.name
@@ -397,9 +428,10 @@ export async function findZeroQuantityProductMatch({
        AND ps.active = true
        AND p.active = true
        AND p.search_vector @@ ${OR_TSQUERY}
+       AND ($2::text IS NULL OR p.product_type IS NULL OR p.product_type = $2)
      ORDER BY ps.updated_at DESC
      LIMIT 1`,
-    [part]
+    [part, productType ?? null]
   );
   return rows.length ? rows[0] : null;
 }

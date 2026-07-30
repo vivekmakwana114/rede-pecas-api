@@ -36,8 +36,9 @@ Table products {
   category_keywords text [note: 'free text for search']
   description text [not null]
   category text [not null, note: 'part | lubricant']
-  subcategory text [not null, note: 'Brakes, Engine, Filtration, Mechanical, Steering, Suspension, Transmission, Engine Oil']
-  service_category text [not null, note: 'derived from subcategory via SUBCATEGORY_TO_SERVICE_CATEGORY; join key against services.service_category']
+  subcategory text [not null, note: 'Brakes, Engine, Filtration, Mechanical, Steering, Suspension, Transmission, Engine Oil — free text, no allow-list']
+  service_category text [not null, note: 'same vocabulary as subcategory (set equal to it) — join key against services.service_category']
+  product_type text [note: 'OEM | Aftermarket | New | Second Hand — free text, no allow-list; nullable — NULL treated as wildcard by search']
   viscosity text [note: 'lubricant-only']
   engine_type text [note: 'lubricant-only']
   volume_liters numeric(5,2) [note: 'lubricant-only']
@@ -106,7 +107,7 @@ Table services {
   id serial [pk]
   provider_id int [not null, ref: > service_providers.id]
   service_name text [not null]
-  service_category text [not null, note: 'maintenance | general_mechanics | diagnostics']
+  service_category text [not null, note: 'same vocabulary as products.subcategory (e.g. Brakes, Engine) — direct join, no 3-bucket grouping']
   service_base_price numeric(12,2) [not null]
   service_duration_h numeric(4,2) [not null]
   available_at_home boolean [not null, default: false]
@@ -160,6 +161,7 @@ Table orders {
   stock_confirmation_admin_reminder_sent boolean [default: false, note: '15-min admin-reminder WhatsApp nudge sent once']
   admin_hidden boolean [default: false, note: 'admin-grid-only soft delete, approved orders only (DELETE /admin/orders/:number) — never touches the real order/customer, no notification sent']
   items jsonb [note: 'multi-product "basket" orders only (2026-07-27) — NULL for legacy single-product orders. Array of {itemId, productId, productName, reference, supplierId, supplierName, quantity, unitPrice, serviceName, servicePrice, availabilityStatus}, one entry per product; product_id/unit_price/service_name/service_price above stay NULL when this is set']
+  part_type text [note: 'OEM | Aftermarket | New | Second Hand — one choice per order, asked once before search, applies to every item']
   created_at timestamptz [default: `NOW()`]
   updated_at timestamptz [default: `NOW()`]
 
@@ -192,7 +194,7 @@ Table order_counters {
 
 Table admin_alerts {
   id serial [pk]
-  type text [not null, note: 'payment_proof | in_person_payment']
+  type text [not null, note: 'payment_proof | in_person_payment | order_status_request']
   order_number text [ref: > orders.number]
   message text [not null]
   read_at timestamptz
@@ -218,10 +220,11 @@ Table sync_logs {
 Table customers {
   phone text [pk, note: 'WhatsApp number']
   name text
-  nif text [note: 'Angolan tax ID']
-  address text
+  nif text [note: 'Angolan tax ID — last known value, captured per-order via orderProfile flow, not at registration']
+  address text [note: 'last known value, captured per-order via orderProfile flow, not at registration']
+  customer_type text [note: 'individual | company — last known value, captured per-order via orderProfile flow']
   email text
-  registration_status text [default: 'new', note: 'new → awaiting_name → awaiting_nif → awaiting_nif_number → awaiting_address → awaiting_vehicle_id → complete']
+  registration_status text [default: 'new', note: 'new → awaiting_name → complete (NIF/address/customer_type moved out of registration entirely — see orderProfile flow; vehicle ID tracked independently via vehicles table)']
   first_contact_at timestamptz [default: `NOW()`]
   last_contact_at timestamptz [default: `NOW()`]
   registered_at timestamptz
@@ -261,4 +264,22 @@ Table vehicles {
   }
 
   Note: 'Per-customer identified vehicle — merged from the former vehicle_sessions + manual_vehicle_collections'
+}
+
+Table customer_documents {
+  id serial [pk]
+  phone text [not null, ref: > customers.phone]
+  kind text [not null, note: 'vehicle_photo | payment_proof | proforma_pdf | invoice_pdf']
+  order_number text [ref: > orders.number, note: 'NULL for vehicle_photo']
+  media_id text [note: 'originating WhatsApp media id, when the file came from an inbound message']
+  file_path text [not null, note: 'local path, e.g. storage/<phone>/<kind>-<timestamp>.<ext>']
+  mime_type text
+  created_at timestamptz [default: `NOW()`]
+
+  indexes {
+    phone
+    order_number
+  }
+
+  Note: 'Durable local copy of every customer-submitted or generated file, so the app never has to re-hit Meta Graph API (whose media URLs expire after ~30 days) to re-read a file it already has'
 }

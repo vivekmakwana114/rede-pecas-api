@@ -79,6 +79,17 @@ function stripNeutralSegments(text: string): string {
   return text.replace(/\*[^*]*\*/g, ' ').replace(/\d+/g, ' ');
 }
 
+// Portuguese-only diacritics — genuine English prose essentially never
+// contains these, unlike "no"/"as"/"do" which collide with PT_PROSE_WORDS
+// and would false-positive on ordinary English sentences if used the same
+// way. This exists because detectProseLocale is a majority vote: a single
+// PT interjection ("Ótimo!") dropped into an otherwise-English rewrite gets
+// outvoted by the surrounding English function words and passes through
+// undetected — this is a sharper, one-directional signal for exactly that
+// leak (there's no equivalent character-based tell for EN bleeding into a
+// PT-targeted rewrite, so this only guards the locale === 'en' case).
+const PT_ONLY_CHARS = /[áâãàéêíóôõúüçÁÂÃÀÉÊÍÓÔÕÚÜÇ]/;
+
 /**
  * Detects whether a full AI-generated message reads as Portuguese or English,
  * for this safety check specifically — see the word-list comment above for
@@ -134,6 +145,10 @@ function validate(original: string, candidate: string, opts: HumanizeOptions): V
   const detectedLocale = detectProseLocale(out);
   if (detectedLocale && detectedLocale !== opts.locale) {
     return { ok: false, reason: `wrong-language (detected ${detectedLocale}, expected ${opts.locale})` };
+  }
+
+  if (opts.locale === 'en' && PT_ONLY_CHARS.test(stripNeutralSegments(out))) {
+    return { ok: false, reason: 'pt-characters-in-english-output' };
   }
 
   const limit = opts.maxLength ?? TEXT_BODY_LIMIT;

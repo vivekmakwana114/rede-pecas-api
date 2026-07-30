@@ -88,12 +88,13 @@ const ITEMS_SUPPLIER_CASE_SQL = `CASE WHEN o.items IS NOT NULL THEN (o.items->0-
 export async function createOrder(
   orderNumber: string,
   phone: string,
-  item: Product
+  item: Product,
+  partType: string | null = null
 ): Promise<void> {
   await db.query(
-    `INSERT INTO orders (number, customer_phone, product_id, supplier_id, quantity, unit_price, status, created_at)
-     VALUES ($1, $2, $3, $4, 1, $5, 'awaiting_payment', NOW())`,
-    [orderNumber, phone, item.id, item.supplier_id, item.price]
+    `INSERT INTO orders (number, customer_phone, product_id, supplier_id, quantity, unit_price, part_type, status, created_at)
+     VALUES ($1, $2, $3, $4, 1, $5, $6, 'awaiting_payment', NOW())`,
+    [orderNumber, phone, item.id, item.supplier_id, item.price, partType]
   );
 }
 
@@ -113,7 +114,8 @@ export interface MultiItemDraft {
 export async function createMultiItemOrder(
   orderNumber: string,
   phone: string,
-  items: MultiItemDraft[]
+  items: MultiItemDraft[],
+  partType: string | null = null
 ): Promise<void> {
   const entries: OrderItemEntry[] = items.map((draft, i) => ({
     itemId: i + 1,
@@ -130,9 +132,9 @@ export async function createMultiItemOrder(
   }));
 
   await db.query(
-    `INSERT INTO orders (number, customer_phone, items, status, created_at)
-     VALUES ($1, $2, $3, 'awaiting_payment', NOW())`,
-    [orderNumber, phone, JSON.stringify(entries)]
+    `INSERT INTO orders (number, customer_phone, items, part_type, status, created_at)
+     VALUES ($1, $2, $3, $4, 'awaiting_payment', NOW())`,
+    [orderNumber, phone, JSON.stringify(entries), partType]
   );
 }
 

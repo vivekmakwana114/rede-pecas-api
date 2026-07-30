@@ -8,7 +8,15 @@ const app = express();
 
 app.use(express.json());
 
-app.use(cors());
+// origin:true reflects the request's actual Origin header back (instead of
+// the previous bare wildcard '*') and credentials:true sends
+// Access-Control-Allow-Credentials — browsers reject a wildcard origin
+// outright whenever the request is made with credentials (cookies /
+// `withCredentials`/`credentials:'include'`), which is a common default in
+// frontend HTTP clients even when not strictly needed. Reflecting the
+// origin is a strict superset of the old behavior for any non-credentialed
+// request, so nothing that worked before stops working.
+app.use(cors({ origin: true, credentials: true }));
 
 app.use('/v1', routes);
 

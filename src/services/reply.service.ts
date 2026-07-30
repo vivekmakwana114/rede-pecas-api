@@ -34,16 +34,20 @@ export async function sendReply(phone: string, text: string, opts?: ReplyOptions
 
 /**
  * Sends a WhatsApp interactive button message to a customer, humanizing
- * the body first, and remembers the sent message's id as the active prompt for this phone.
+ * the body first, and remembers the sent message's id as the active prompt
+ * for this phone. `media` optionally attaches an image/document header
+ * (e.g. the final invoice PDF alongside the Order Status button) without
+ * bypassing the dedupe/active-prompt tracking a raw whatsapp.service.ts call would.
  */
 export async function sendReplyButtons(
   phone: string,
   body: string,
   buttons: string[],
   ids?: string[],
+  media?: { type: 'image' | 'document'; id: string; filename?: string },
   opts?: ReplyOptions
 ): Promise<any> {
-  const res = await sendWhatsAppButtons(phone, await rewrite(phone, body, INTERACTIVE_BODY_LIMIT, opts), buttons, ids);
+  const res = await sendWhatsAppButtons(phone, await rewrite(phone, body, INTERACTIVE_BODY_LIMIT, opts), buttons, ids, media);
   await saveActivePromptId(phone, res?.messages?.[0]?.id);
   return res;
 }

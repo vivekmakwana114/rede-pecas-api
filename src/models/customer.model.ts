@@ -5,6 +5,9 @@ export interface Customer {
   name: string | null;
   nif: string | null;
   address: string | null;
+  // Last known values, captured per-order via the orderProfile flow (not at
+  // registration) — see the customers table comment in db/schema.sql.
+  customer_type: string | null;
   email: string | null;
   registration_status: string;
   first_contact_at: Date;

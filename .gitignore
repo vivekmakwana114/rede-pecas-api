@@ -32,5 +32,10 @@ coverage/
 *.txt
 *.docx
 
+# Durable per-customer document storage (vehicle photos, payment proofs,
+# generated proforma/invoice PDFs) — see storage.service.ts. Needs a
+# persistent volume/mount in production; not meant to be version-controlled.
+storage/
+
 # generated scripts
 scripts/

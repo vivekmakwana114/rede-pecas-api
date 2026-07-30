@@ -6,6 +6,9 @@ import { config } from '../config/config.js';
 import { logger } from '../config/logger.js';
 import { formatPrice } from '../utils/helpers.js';
 import { getMessages, DEFAULT_LOCALE } from '../i18n/messages.js';
+import { sendWhatsAppMessage } from './whatsapp.service.js';
+import { sendReplyButtons } from './reply.service.js';
+import { db } from '../config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,11 +30,32 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
+/**
+ * Tracks a generated PDF's durable on-disk location in `customer_documents`
+ * (see storage.service.ts) so it never needs to be re-rendered or
+ * re-fetched from Meta once already generated.
+ */
+async function recordGeneratedDocument(
+  phone: string,
+  kind: 'proforma_pdf' | 'invoice_pdf',
+  filePath: string,
+  orderNumber: string
+): Promise<void> {
+  await db.query(
+    `INSERT INTO customer_documents (phone, kind, order_number, file_path, mime_type) VALUES ($1, $2, $3, $4, 'application/pdf')`,
+    [phone, kind, orderNumber, filePath]
+  );
+}
+
 export interface ProformaLineItem {
   description: string;
   reference: string;
   price: number;
   supplierNote?: string | null;
+  // True for an attached installation-style service line (see
+  // orders.service_name/items[].serviceName) — rendered in a distinct
+  // "Services" section below the products table, not interleaved with them.
+  isService?: boolean;
 }
 
 /**
@@ -50,11 +74,11 @@ export async function generateProformaPDF(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const tempDir = path.join(__dirname, '../../temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    const customerDir = path.join(__dirname, '../../storage', phone);
+    if (!fs.existsSync(customerDir)) {
+      fs.mkdirSync(customerDir, { recursive: true });
     }
-    const filePath = path.join(tempDir, `${orderNumber}.pdf`);
+    const filePath = path.join(customerDir, `proforma-${orderNumber}.pdf`);
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
@@ -80,6 +104,9 @@ export async function generateProformaPDF(
       .text(pc.whatsappLabel(phone), 50, 178)
       .text(pc.clientDataNote, 50, 193);
 
+    const products = lineItems.filter((line) => !line.isService);
+    const services = lineItems.filter((line) => line.isService);
+
     const tY = 240;
     const ROW_HEIGHT = 36;
     doc.rect(50, tY, 495, 28).fillColor('#1A3A5C').fill();
@@ -90,7 +117,7 @@ export async function generateProformaPDF(
       .text(pc.tableUnitPrice, 420, tY + 9, { width: 80, align: 'right' })
       .text(pc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
 
-    lineItems.forEach((line, i) => {
+    products.forEach((line, i) => {
       const iY = tY + 28 + i * ROW_HEIGHT;
       doc.rect(50, iY, 495, ROW_HEIGHT).fillColor('#F5F7FA').fill();
       doc.fontSize(10).fillColor('#333333').font('Helvetica')
@@ -104,12 +131,44 @@ export async function generateProformaPDF(
       }
     });
 
-    const tableBodyHeight = lineItems.length * ROW_HEIGHT;
+    const tableBodyHeight = products.length * ROW_HEIGHT;
     doc.rect(50, tY, 495, 28 + tableBodyHeight).strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+
+    let contentEndY = tY + 28 + tableBodyHeight;
+
+    if (services.length > 0) {
+      const SERVICE_ROW_HEIGHT = 28;
+      const svcHeaderLabelY = contentEndY + 20;
+      doc.fontSize(11).fillColor('#1A3A5C').font('Helvetica-Bold').text(pc.servicesHeader(), 50, svcHeaderLabelY);
+
+      const svcHeaderY = svcHeaderLabelY + 18;
+      doc.rect(50, svcHeaderY, 495, 24).fillColor('#2E6DA4').fill();
+      doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
+        .text(pc.tableDescription, 60, svcHeaderY + 7)
+        .text(pc.tableTotal, 480, svcHeaderY + 7, { width: 60, align: 'right' });
+
+      services.forEach((line, i) => {
+        const iY = svcHeaderY + 24 + i * SERVICE_ROW_HEIGHT;
+        doc.rect(50, iY, 495, SERVICE_ROW_HEIGHT).fillColor('#EAF1F8').fill();
+        doc.fontSize(10).fillColor('#333333').font('Helvetica')
+          .text(line.description, 60, iY + 8, { width: 350 })
+          .text(formatPrice(line.price), 480, iY + 8, { width: 60, align: 'right' });
+      });
+
+      const svcBodyHeight = services.length * SERVICE_ROW_HEIGHT;
+      doc.rect(50, svcHeaderY, 495, 24 + svcBodyHeight).strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+
+      const servicesTotal = services.reduce((sum, line) => sum + line.price, 0);
+      const svcTotalY = svcHeaderY + 24 + svcBodyHeight + 6;
+      doc.fontSize(9).fillColor('#1A3A5C').font('Helvetica-Bold')
+        .text(`${pc.servicesTotal()}: ${formatPrice(servicesTotal)}`, 50, svcTotalY, { width: 495, align: 'right' });
+
+      contentEndY = svcTotalY + 14;
+    }
 
     const total = lineItems.reduce((sum, line) => sum + line.price, 0);
 
-    const totalY = tY + 28 + tableBodyHeight + 36;
+    const totalY = contentEndY + 36;
     doc.rect(350, totalY, 195, 28).fillColor('#1A3A5C').fill();
     doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(pc.totalDue, 360, totalY + 8)
@@ -133,7 +192,14 @@ export async function generateProformaPDF(
       .text(pc.footer, 50, 768, { align: 'center', width: 495 });
 
     doc.end();
-    stream.on('finish', () => resolve(filePath));
+    stream.on('finish', async () => {
+      try {
+        await recordGeneratedDocument(phone, 'proforma_pdf', filePath, orderNumber);
+      } catch (err) {
+        logger.error(`Error recording generated proforma PDF for order ${orderNumber}`, err);
+      }
+      resolve(filePath);
+    });
     stream.on('error', (err) => reject(err));
   });
 }
@@ -230,39 +296,19 @@ export async function sendFinalInvoiceWhatsApp(
 
     const { id: mediaId } = await uploadRes.json() as any;
 
-    await fetch(`${API_URL}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'text',
-        text: {
-          body: getMessages(locale).pdf.finalInvoice.notification(customerName),
-        },
-      }),
-    });
+    const mc = getMessages(locale).pdf.finalInvoice;
+    await sendWhatsAppMessage(phone, mc.notification(customerName));
 
-    await fetch(`${API_URL}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'document',
-        document: {
-          id: mediaId,
-          filename: `Factura_${orderNumber}.pdf`,
-          caption: getMessages(locale).pdf.finalInvoice.documentCaption(orderNumber),
-        },
-      }),
-    });
+    // The invoice document and the Order Status button ride in the same
+    // interactive message — sendReplyButtons (not a raw whatsapp.service.ts
+    // call) so the button inherits the standard active-prompt dedupe.
+    await sendReplyButtons(
+      phone,
+      mc.documentCaption(orderNumber),
+      [mc.orderStatusButtonLabel()],
+      [`order_status_${orderNumber}`],
+      { type: 'document', id: mediaId, filename: `Factura_${orderNumber}.pdf` }
+    );
 
     logger.info(`Final invoice PDF sent successfully to ${phone}`);
   } catch (error: any) {
@@ -285,11 +331,11 @@ export async function generateInvoicePDF(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const tempDir = path.join(__dirname, '../../temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    const customerDir = path.join(__dirname, '../../storage', order.customer_phone);
+    if (!fs.existsSync(customerDir)) {
+      fs.mkdirSync(customerDir, { recursive: true });
     }
-    const filePath = path.join(tempDir, `FACTURA_${order.number}.pdf`);
+    const filePath = path.join(customerDir, `invoice-${order.number}.pdf`);
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
@@ -324,7 +370,10 @@ export async function generateInvoicePDF(
 
     const ROW_HEIGHT = 36;
 
-    lineItems.forEach((line, i) => {
+    const products = lineItems.filter((line) => !line.isService);
+    const services = lineItems.filter((line) => line.isService);
+
+    products.forEach((line, i) => {
       const iY = tY + 28 + i * ROW_HEIGHT;
       doc.rect(50, iY, 495, ROW_HEIGHT).fillColor('#F1F8E9').fill();
       doc.fontSize(10).fillColor('#333333').font('Helvetica')
@@ -335,9 +384,39 @@ export async function generateInvoicePDF(
         .text(formatPrice(line.price), 480, iY + 12, { width: 60, align: 'right' });
     });
 
+    let contentEndY = tY + 28 + products.length * ROW_HEIGHT;
+
+    if (services.length > 0) {
+      const SERVICE_ROW_HEIGHT = 28;
+      const svcHeaderLabelY = contentEndY + 20;
+      doc.fontSize(11).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.servicesHeader(), 50, svcHeaderLabelY);
+
+      const svcHeaderY = svcHeaderLabelY + 18;
+      doc.rect(50, svcHeaderY, 495, 24).fillColor('#2E7D32').fill();
+      doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
+        .text(mc.tableDescription, 60, svcHeaderY + 7)
+        .text(mc.tableTotal, 480, svcHeaderY + 7, { width: 60, align: 'right' });
+
+      services.forEach((line, i) => {
+        const iY = svcHeaderY + 24 + i * SERVICE_ROW_HEIGHT;
+        doc.rect(50, iY, 495, SERVICE_ROW_HEIGHT).fillColor('#F1F8E9').fill();
+        doc.fontSize(10).fillColor('#333333').font('Helvetica')
+          .text(line.description, 60, iY + 8, { width: 350 })
+          .text(formatPrice(line.price), 480, iY + 8, { width: 60, align: 'right' });
+      });
+
+      const svcBodyHeight = services.length * SERVICE_ROW_HEIGHT;
+      const servicesTotal = services.reduce((sum, line) => sum + line.price, 0);
+      const svcTotalY = svcHeaderY + 24 + svcBodyHeight + 6;
+      doc.fontSize(9).fillColor('#2E7D32').font('Helvetica-Bold')
+        .text(`${mc.servicesTotal()}: ${formatPrice(servicesTotal)}`, 50, svcTotalY, { width: 495, align: 'right' });
+
+      contentEndY = svcTotalY + 14;
+    }
+
     const total = lineItems.reduce((sum, line) => sum + line.price, 0);
 
-    const totalY = tY + 28 + lineItems.length * ROW_HEIGHT + 36;
+    const totalY = contentEndY + 36;
     doc.rect(350, totalY, 195, 28).fillColor('#2E7D32').fill();
     doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(mc.totalPaid, 360, totalY + 8)
@@ -347,7 +426,14 @@ export async function generateInvoicePDF(
       .text(mc.agtStamp, 50, totalY + 120);
 
     doc.end();
-    stream.on('finish', () => resolve(filePath));
+    stream.on('finish', async () => {
+      try {
+        await recordGeneratedDocument(order.customer_phone, 'invoice_pdf', filePath, order.number);
+      } catch (err) {
+        logger.error(`Error recording generated invoice PDF for order ${order.number}`, err);
+      }
+      resolve(filePath);
+    });
     stream.on('error', (err) => reject(err));
   });
 }

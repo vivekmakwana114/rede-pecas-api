@@ -1,6 +1,5 @@
 import Joi from 'joi';
 import { ValidationSchema } from '../middlewares/validate.js';
-import { SERVICE_CATEGORIES } from '../constants/serviceCategory.js';
 
 export const serviceIdParams: ValidationSchema = {
   params: Joi.object().keys({
@@ -15,7 +14,8 @@ export const serviceUpdate: ValidationSchema = {
   body: Joi.object()
     .keys({
       service_name: Joi.string(),
-      service_category: Joi.string().valid(...SERVICE_CATEGORIES),
+      // Free text — no allow-list against a fixed set of values.
+      service_category: Joi.string(),
       service_base_price: Joi.number().min(0),
       service_duration_h: Joi.number().min(0),
       available_at_home: Joi.boolean(),
@@ -40,7 +40,7 @@ const importServiceItemSchema = Joi.object({
   rating: Joi.number().min(0).max(5),
   responseTime: Joi.string().allow(''),
   serviceName: Joi.string().required(),
-  serviceCategory: Joi.string().valid(...SERVICE_CATEGORIES).required(),
+  serviceCategory: Joi.string().required(),
   serviceBasePrice: Joi.number().min(0).required(),
   serviceDurationH: Joi.number().min(0).required(),
   availableAtHome: Joi.boolean(),
