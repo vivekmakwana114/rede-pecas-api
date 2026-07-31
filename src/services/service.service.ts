@@ -1,6 +1,5 @@
 import * as XLSX from 'xlsx';
 import { ApiError } from '../utils/ApiError.js';
-import { SERVICE_CATEGORIES } from '../constants/serviceCategory.js';
 import { importServicesBatch, ImportServiceItem } from '../models/service.model.js';
 
 export interface ServiceImportResult {
@@ -49,8 +48,9 @@ function getMissingRequiredColumns(headerRow: unknown[]): string[] {
 
 /**
  * Validates and normalizes a single services-spreadsheet row into an
- * ImportServiceItem, resolving header aliases and checking the service
- * category against the known list, or returns the validation failure reasons.
+ * ImportServiceItem, resolving header aliases, or returns the validation
+ * failure reasons. serviceCategory is free text — only checked for
+ * presence, not against any allow-list.
  */
 function validateServiceRow(row: Record<string, any>, rowNumber: number): { item: ImportServiceItem } | { reasons: string[] } {
   const lowerRow = Object.fromEntries(Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]));
@@ -75,9 +75,6 @@ function validateServiceRow(row: Record<string, any>, rowNumber: number): { item
 
   const serviceCategory = pick('serviceCategory');
   if (!serviceCategory) reasons.push('Service Category is required.');
-  else if (!SERVICE_CATEGORIES.includes(String(serviceCategory) as any)) {
-    reasons.push(`Unknown Service Category "${serviceCategory}" — must be one of ${SERVICE_CATEGORIES.join(', ')}.`);
-  }
 
   const priceRaw = pick('serviceBasePrice');
   const price = Number(priceRaw);

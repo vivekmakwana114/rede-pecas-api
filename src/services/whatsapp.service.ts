@@ -120,11 +120,11 @@ export async function sendWhatsAppButtons(
   body: string,
   buttons: string[],
   ids?: string[],
-  media?: { type: 'image' | 'document'; id: string }
+  media?: { type: 'image' | 'document'; id: string; filename?: string }
 ): Promise<any> {
   const header = media
     ? media.type === 'document'
-      ? { type: 'document', document: { id: media.id, filename: 'payment-proof.pdf' } }
+      ? { type: 'document', document: { id: media.id, filename: media.filename ?? 'payment-proof.pdf' } }
       : { type: 'image', image: { id: media.id } }
     : undefined;
 

@@ -4,7 +4,6 @@ import { ApiError } from '../utils/ApiError.js';
 import * as productService from '../services/product.service.js';
 import { getAllProducts, getProductByIdAnyStatus, updateProduct, hardDeleteProduct, Product } from '../models/product.model.js';
 import { resolveSupplierForProductEdit } from '../models/supplier.model.js';
-import { SUBCATEGORY_TO_SERVICE_CATEGORY } from '../constants/serviceCategory.js';
 
 /**
  * Backs the admin product-list endpoint — returns every product row (any
@@ -58,6 +57,7 @@ export const updateProductHandler = catchAsync(async (req: Request, res: Respons
     active,
     category,
     subcategory,
+    product_type,
     vehicle_make,
     vehicle_model,
     year_start,
@@ -87,11 +87,12 @@ export const updateProductHandler = catchAsync(async (req: Request, res: Respons
   if (active !== undefined) fields.active = active;
   if (category !== undefined) fields.category = category;
   if (subcategory !== undefined) {
-    const mapped = SUBCATEGORY_TO_SERVICE_CATEGORY[subcategory];
-    if (!mapped) throw new ApiError(400, `Unknown subcategory "${subcategory}" — no service_category mapping exists for it.`);
+    // service_category tracks subcategory directly (see db/schema.sql's
+    // products table comment) — no more subcategory→bucket mapping.
     fields.subcategory = subcategory;
-    fields.service_category = mapped;
+    fields.service_category = subcategory;
   }
+  if (product_type !== undefined) fields.product_type = product_type || null;
   if (vehicle_make !== undefined) fields.vehicle_make = vehicle_make;
   if (vehicle_model !== undefined) fields.vehicle_model = vehicle_model;
   if (year_start !== undefined) fields.year_start = year_start;
@@ -169,8 +170,9 @@ export const deleteProductHandler = catchAsync(async (req: Request, res: Respons
 });
 
 /**
- * Backs `POST /v1/admin/inventory/upload` — maps each item's subcategory to its
- * service category, then upserts the batch (JSON body of items) into `products` via `importInventoryBatch`.
+ * Backs `POST /v1/admin/inventory/upload` — derives each item's service
+ * category from its subcategory (they share the same vocabulary now), then
+ * upserts the batch (JSON body of items) into `products` via `importInventoryBatch`.
  */
 export const importProductsBatchHandler = catchAsync(async (req: Request, res: Response) => {
   const { supplierId, items } = req.body;
@@ -179,13 +181,7 @@ export const importProductsBatchHandler = catchAsync(async (req: Request, res: R
     throw new ApiError(400, 'Invalid parameters. items is required.');
   }
 
-  const itemsWithServiceCategory = items.map((item: any) => {
-    const serviceCategory = SUBCATEGORY_TO_SERVICE_CATEGORY[item.subcategory];
-    if (!serviceCategory) {
-      throw new ApiError(400, `Unknown subcategory "${item.subcategory}" — no service_category mapping exists for it.`);
-    }
-    return { ...item, serviceCategory };
-  });
+  const itemsWithServiceCategory = items.map((item: any) => ({ ...item, serviceCategory: item.subcategory }));
 
   const result = await productService.importInventoryBatch(itemsWithServiceCategory, supplierId ? Number(supplierId) : null);
 

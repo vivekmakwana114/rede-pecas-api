@@ -47,6 +47,8 @@ const TABLES = [
   'order_counters',
   'products',
   'suppliers',
+  'service_providers',
+  'services',
   'customers',
   ...(includeAdmins ? ['admin_users'] : []),
 ];

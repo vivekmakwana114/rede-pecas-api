@@ -3,6 +3,8 @@ import { logger } from '../config/logger.js';
 import * as customerService from '../services/customer.service.js';
 import * as vehicleService from '../services/vehicle.service.js';
 import * as productService from '../services/product.service.js';
+import * as orderProfileService from '../services/orderProfile.service.js';
+import * as orderStatusService from '../services/orderStatus.service.js';
 import * as paymentService from '../services/payment.service.js';
 import * as sessionService from '../services/session.service.js';
 import { extractProductNames } from '../services/ai.service.js';
@@ -15,6 +17,8 @@ import { GREETING_PATTERN, detectMessageLocale } from '../utils/greeting.js';
 const HUMAN_HANDOFF_PATTERN = /\b(atendente|humano|falar com (algu[eé]m|pessoa)|operador|suporte humano|human|agent|representative)\b/i;
 
 const ACKNOWLEDGMENT_PATTERN = /^(ok(ay)?|k+|t[áa]\s*bem|obrigad[oa]s?|valeu|thanks?|thank\s*you|cool|perfeito|beleza|👍+|🙏+|✅+)[.!?\s]*$/i;
+
+const ORDER_STATUS_PATTERN = /\b(estado do (meu )?pedido|onde est[áa] (o meu )?pedido|order status|where('?s| is) my order)\b/i;
 
 /**
  * Backs the GET webhook verification handshake required by Meta — echoes back
@@ -84,9 +88,18 @@ async function processMessageFlow(
   const admin = await getAdminByPhone(phone);
   if (admin) {
     logger.debug(`[ADMIN] Inbound message from admin ${phone} (${admin.name}) routed to admin handler, buttonReplyId=${buttonReplyId}`);
-    if (buttonReplyId?.startsWith('admin_approve_payment_') || buttonReplyId?.startsWith('admin_reject_payment_')) {
+    // The entire admin reply surface is button-driven (stock confirm/
+    // unavailable, payment approve/reject, item stock) — there's no
+    // free-text admin flow. Without this guard, any plain message an admin
+    // sends (e.g. testing with "hi", no pending order at all) fell through
+    // to processAdminStockReply's default branch and got the confusing
+    // "use the buttons on the stock-confirmation message" nudge regardless
+    // of whether one was ever sent.
+    if (!buttonReplyId) return;
+
+    if (buttonReplyId.startsWith('admin_approve_payment_') || buttonReplyId.startsWith('admin_reject_payment_')) {
       await paymentService.processAdminPaymentReply(phone, buttonReplyId);
-    } else if (buttonReplyId?.startsWith('admin_item_')) {
+    } else if (buttonReplyId.startsWith('admin_item_')) {
       await productService.processAdminItemStockReply(phone, buttonReplyId);
     } else {
       await productService.processAdminStockReply(phone, buttonReplyId);
@@ -145,6 +158,11 @@ async function processMessageFlow(
       await sendReply(phone, messages.common.alreadyAnswered());
       return;
     }
+  }
+
+  if (buttonReplyId?.startsWith('order_status_')) {
+    await orderStatusService.processOrderStatusButton(phone, buttonReplyId);
+    return;
   }
 
   if (customer.registration_status !== 'complete') {
@@ -213,9 +231,21 @@ async function processMessageFlow(
     if (handled) return;
   }
 
+  const pendingPartTypeChoice = await sessionService.getPendingPartTypeChoice(phone);
+  if (pendingPartTypeChoice) {
+    const handled = await productService.processPartTypeChoice(phone, listReplyId, pendingPartTypeChoice);
+    if (handled) return;
+  }
+
   const pendingWaitlistOffer = await sessionService.getPendingWaitlistOffer(phone);
   if (pendingWaitlistOffer) {
     const handled = await productService.processWaitlistOptIn(phone, customerText, pendingWaitlistOffer);
+    if (handled) return;
+  }
+
+  const pendingBasketWaitlistOffer = await sessionService.getPendingBasketWaitlistOffer(phone);
+  if (pendingBasketWaitlistOffer) {
+    const handled = await productService.processBasketWaitlistOptIn(phone, customerText, pendingBasketWaitlistOffer);
     if (handled) return;
   }
 
@@ -232,13 +262,16 @@ async function processMessageFlow(
     if (handled) return;
   }
 
-  const basketConfirmShown = await sessionService.wasBasketConfirmShown(phone);
-  if (basketConfirmShown) {
-    const basket = await sessionService.getPendingBasket(phone);
-    if (basket) {
-      const handled = await productService.processBasketConfirmation(phone, customerText, basket);
-      if (handled) return;
-    }
+  const pendingOrderProfileShortcut = await sessionService.getPendingOrderProfileShortcut(phone);
+  if (pendingOrderProfileShortcut) {
+    const handled = await orderProfileService.processProfileShortcutReply(phone, buttonReplyId, pendingOrderProfileShortcut);
+    if (handled) return;
+  }
+
+  const orderProfileStage = await sessionService.getOrderProfileStage(phone);
+  if (orderProfileStage) {
+    const handled = await orderProfileService.processOrderProfileStep(phone, customerText, buttonReplyId, orderProfileStage);
+    if (handled) return;
   }
 
   const pendingRestockOrderOffer = await sessionService.getPendingRestockOrderOffer(phone);
@@ -296,10 +329,10 @@ async function processMessageFlow(
       if (handled) return;
     } else {
       const basket = await sessionService.getPendingBasket(phone);
-      const handled = basket
-        ? await productService.processBasketProductSelection(phone, customerText, listReplyId, pendingProductOptions, basket)
-        : await productService.processProductSelection(phone, customerText, listReplyId, pendingProductOptions);
-      if (handled) return;
+      if (basket) {
+        const handled = await productService.processBasketProductSelection(phone, customerText, listReplyId, pendingProductOptions, basket);
+        if (handled) return;
+      }
     }
   }
 
@@ -314,11 +347,16 @@ async function processMessageFlow(
     return;
   }
 
-  const productNames = await extractProductNames(customerText);
-  if (productNames && productNames.length > 1) {
-    await productService.startBasketSearch(phone, productNames, firstName);
+  if (ORDER_STATUS_PATTERN.test(customerText.trim())) {
+    await orderStatusService.handleOrderStatusRequest(phone, customer);
     return;
   }
 
-  await productService.searchAndRespond(phone, customerText, firstName);
+  const productNames = await extractProductNames(customerText);
+  await sessionService.savePendingPartTypeChoice(phone, {
+    productNames: productNames && productNames.length > 1 ? productNames : null,
+    customerText,
+    customerName: firstName,
+  });
+  await productService.sendPartTypePrompt(phone, productNames);
 }

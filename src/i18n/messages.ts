@@ -14,10 +14,6 @@ interface Messages {
     welcomeBack: (name: string) => string;
     resumeRegistration: () => string;
     askNameOnly: () => string;
-    askNifBody: (name: string) => string;
-    askNifButtons: [string, string];
-    askNifNumber: () => string;
-    askAddress: (name:string) => string;
     askVehicleIdBody: (name: string) => string;
     askVehicleIdButtons: [string, string, string];
     resumeVehicleIdBody: (name: string) => string;
@@ -69,6 +65,10 @@ interface Messages {
     checkingStock: () => string;
     noStockFound: () => string;
     noStockFoundButtons: [string, string];
+    // Used (instead of noStockFound) when nothing at all matched the
+    // search — not even an out-of-stock listing — so there's no real
+    // product to attach a waitlist request to. No question, no promise.
+    noStockFoundNoWaitlist: () => string;
     optionNotFound: () => string;
     serviceUnavailable: () => string;
     waitlistConfirmed: (productName: string) => string;
@@ -93,18 +93,54 @@ interface Messages {
     stockUnavailableButtons: [string, string];
     basketRequestSummary: (productNames: string[], name: string) => string;
     basketSummaryBody: (items: { description: string; price: string }[], name: string, total: string) => string;
-    basketConfirmButtons: [string, string];
-    basketCancelled: () => string;
     basketPartialAvailability: (availableNames: string[], unavailableNames: string[]) => string;
     basketNoneAvailableYet: (unavailableNames: string[]) => string;
     basketAllUnavailable: () => string;
     basketDeclinedNotice: (declinedNames: string[]) => string;
+    // Search-time (pre-order) equivalents — sent once, after every queued
+    // part in a multi-item search came back with no in-stock match, instead
+    // of a repeated per-item "not in stock" message. Distinct from
+    // basketNoneAvailableYet/basketAllUnavailable above, which cover the
+    // unrelated post-order admin-rejects-stock flow.
+    basketSearchAllUnavailableWaitlistOffer: () => string;
+    basketSearchAllUnavailableNoWaitlist: () => string;
+    basketWaitlistConfirmed: () => string;
+    basketSearchPartialNotice: (missingNames: string[]) => string;
     alternativesListBody: (productName: string, count: number) => string;
     alternativeSkipOption: () => string;
     noAlternativesFound: (productName: string) => string;
+    askPartTypeBody: (count: number) => string;
+    askPartTypeButton: () => string;
+    partTypeRows: { id: string; title: string; description: string }[];
+    partTypeNotUnderstood: () => string;
   };
   order: {
     rejected: (orderNumber: string) => string;
+    statusRequestAck: () => string;
+    statusNotFound: () => string;
+  };
+  /**
+   * Individual/company + NIF + address capture, asked once per order right
+   * after the order bucket is confirmed, before stock is checked — replaces
+   * the old onboarding NIF/address registration-time prompts.
+   */
+  orderProfile: {
+    askCustomerTypeBody: (name: string) => string;
+    askCustomerTypeButtons: [string, string];
+    askCompanyNifBody: () => string;
+    askCompanyNifInvalid: () => string;
+    askCompanyAddressBody: (name: string) => string;
+    askIndividualAddressBody: (name: string) => string;
+    askIndividualNifBody: () => string;
+    askIndividualNifButtons: [string, string];
+    askIndividualNifNumberBody: () => string;
+    addressSaved: () => string;
+    nifSaved: () => string;
+    allSet: () => string;
+    savedProfileSummary: (name: string, address: string, customerType: 'individual' | 'company', nif: string | null) => string;
+    savedProfileUseButton: () => string;
+    savedProfileEditButton: () => string;
+    savedProfileNotUnderstood: () => string;
   };
   payment: {
     methods: {
@@ -141,6 +177,8 @@ interface Messages {
       tableTotal: string;
       supplierLabel: (supplier: string) => string;
       totalDue: string;
+      servicesHeader: () => string;
+      servicesTotal: () => string;
       paymentInstructionsHeader: string;
       bankLine: string;
       multicaixaLine: string;
@@ -155,6 +193,7 @@ interface Messages {
     finalInvoice: {
       notification: (customerName: string) => string;
       documentCaption: (orderNumber: string) => string;
+      orderStatusButtonLabel: () => string;
     };
     invoice: {
       headerTitle: string;
@@ -173,6 +212,8 @@ interface Messages {
       tableTotal: string;
       defaultProductName: string;
       totalPaid: string;
+      servicesHeader: () => string;
+      servicesTotal: () => string;
       agtStamp: string;
     };
   };
@@ -202,6 +243,9 @@ interface Messages {
     reminderBody: (customerName: string, productName: string, orderNumber: string) => string;
     confirmedAck: (orderNumber: string) => string;
     unavailableAck: (orderNumber: string) => string;
+    itemRecordedWaitingOnOthers: (orderNumber: string) => string;
+    itemRecordedAlternativeSearch: (orderNumber: string) => string;
+    itemRecordedAllUnavailable: (orderNumber: string) => string;
     alreadyHandled: (orderNumber: string) => string;
     useButtonsPrompt: () => string;
     approvePaymentButtonLabel: () => string;
@@ -222,6 +266,16 @@ interface Messages {
       amount: string,
       customerName: string,
       customerPhone: string
+    ) => string;
+    orderStatusRequested: (
+      orderNumber: string,
+      placedDate: string,
+      status: string,
+      partsSummary: string,
+      amountPaid: string,
+      customerName: string,
+      customerPhone: string,
+      address: string
     ) => string;
   };
 }
@@ -256,17 +310,6 @@ const pt: Messages = {
     resumeRegistration: () =>
       `👋 Vamos continuar o teu registo!`,
     askNameOnly: () => `*Como te chamas?* 👇`,
-    askNifBody: (name) =>
-      `Prazer, *${name}*! 🤝\n\n` +
-      `Tens *NIF* para incluir nas facturas?\n` +
-      `_(útil se comprares em nome de empresa)_`,
-    askNifButtons: ['✅ Sim, tenho NIF', '❌ Não, obrigado'],
-    askNifNumber: () =>
-      `Perfeito! Escreve o teu *número de NIF* 👇`,
-    askAddress: (name) =>
-      `Entendido! Qual é o teu *endereço de entrega* preferido, *${name}*?\n\n` +
-      `Exemplo: _Bairro Morro Bento, Rua da Samba, Nº 12, Luanda_\n\n` +
-      `_(responde "saltar" se preferires indicar no momento do pedido)_`,
     askVehicleIdBody: (name) =>
       `✅ *Perfil criado com sucesso, ${name}!*\n\n` +
       `Da próxima vez que nos contactares já te reconheço. 😊\n\n` +
@@ -409,6 +452,8 @@ const pt: Messages = {
       `Posso registar-te na lista de espera e avisar-te assim que estiver disponível.\n\n` +
       `Queres que eu faça isso?`,
     noStockFoundButtons: ['✅ Sim, avisa-me', '❌ Não, obrigado'],
+    noStockFoundNoWaitlist: () =>
+      `Infelizmente não encontrei essa peça, nem nada parecido, no nosso catálogo neste momento. 😔`,
     optionNotFound: () =>
       `Não consegui identificar a opção escolhida. Por favor responde com o número (ex: 1, 2 ou 3).`,
     serviceUnavailable: () =>
@@ -458,9 +503,7 @@ const pt: Messages = {
     basketSummaryBody: (items, name, total) =>
       `Aqui está o que selecionaste, ${name}: 🛒\n\n` +
       items.map((i, idx) => `${idx + 1}. ${i.description} — ${i.price}`).join('\n') +
-      `\n\n*Total: ${total}*\n\nPosso avançar com a proforma?`,
-    basketConfirmButtons: ['✅ Sim, confirmar', '❌ Não, cancelar'],
-    basketCancelled: () => `Sem problema, cancelei este pedido. 👍 Diz-me quando quiseres procurar outra peça.`,
+      `\n\n*Total: ${total}*`,
     basketPartialAvailability: (availableNames, unavailableNames) =>
       `Boas notícias — ${availableNames.join(', ')} ${availableNames.length > 1 ? 'estão' : 'está'} disponíve${availableNames.length > 1 ? 'is' : 'l'}! ✅\n\n` +
       `⚠️ Infelizmente ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? 'não estão' : 'não está'} disponíve${unavailableNames.length > 1 ? 'is' : 'l'} no momento. Vou procurar alternativas para ti.`,
@@ -470,6 +513,16 @@ const pt: Messages = {
       `Desculpa. 😔\n\nO fornecedor confirmou que nenhum dos itens deste pedido está disponível no momento.\n\nNão foi cobrado nenhum pagamento — não há nada com que te preocupares. 👍`,
     basketDeclinedNotice: (declinedNames) =>
       `Sem problema — segui em frente sem ${declinedNames.join(', ')}. 👍`,
+    basketSearchAllUnavailableWaitlistOffer: () =>
+      `Procurei por todo o lado mas não encontrei essas peças em stock neste momento. 😔\n\n` +
+      `Posso registar-te na lista de espera e avisar-te assim que estiverem disponíveis.\n\n` +
+      `Queres que eu faça isso?`,
+    basketSearchAllUnavailableNoWaitlist: () =>
+      `Procurei por todo o lado mas não encontrei nenhuma dessas peças — nem nada parecido — no nosso catálogo neste momento. 😔`,
+    basketWaitlistConfirmed: () =>
+      `Perfeito, ficaste registado! 🎉 Aviso-te assim que alguma dessas peças voltar a estar disponível.`,
+    basketSearchPartialNotice: (missingNames) =>
+      `_Já agora — não encontrei ${missingNames.join(', ')}, por isso ${missingNames.length > 1 ? 'não ficaram' : 'não ficou'} no teu pedido abaixo._`,
     alternativesListBody: (productName, count) =>
       `Encontrei ${count} alternativa${count > 1 ? 's' : ''} para *${productName}*. Qual preferes? 👇`,
     alternativeSkipOption: () => `Nenhuma, seguir sem este item`,
@@ -484,6 +537,17 @@ const pt: Messages = {
     searchListBodyForVehicle: (count, part, make, model, year, name) =>
       `Boas notícias, ${name}! 🙌 Encontrei ${count} opção(ões) de *${part}* para o teu *${make} ${model} ${year}*. Escolhe uma abaixo 👇`,
     searchListButton: () => 'Ver opções',
+    askPartTypeBody: (count) =>
+      `Antes de procurar — que tipo de peça${count > 1 ? 's' : ''} preferes?` +
+      (count > 1 ? `\n\n_Aplica-se a${count > 1 ? 's' : ''} ${count} peças do teu pedido._` : ''),
+    askPartTypeButton: () => 'Escolher tipo de peça',
+    partTypeRows: [
+      { id: 'oem', title: 'OEM', description: 'Peça original do fabricante' },
+      { id: 'aftermarket', title: 'Aftermarket', description: 'Peça compatível, outras marcas' },
+      { id: 'new', title: 'Nova', description: 'Nova, nunca usada' },
+      { id: 'second_hand', title: 'Usada', description: 'Usada, testada, preço mais baixo' },
+    ],
+    partTypeNotUnderstood: () => 'Por favor toca no botão acima e escolhe um dos quatro tipos. 👇',
   },
   /**
    * Order-level customer notices, currently just the payment-rejection
@@ -494,6 +558,47 @@ const pt: Messages = {
       `Infelizmente não conseguimos confirmar o teu pagamento para o pedido ${orderNumber}. 😔\n\n` +
       `Isto pode acontecer se o comprovativo estava pouco nítido ou a referência de pagamento estava em falta.\n\n` +
       `Se achas que isto é um erro, responde aqui e um dos nossos colaboradores vai ajudar-te a resolver isso já. 👇`,
+    statusRequestAck: () =>
+      `Obrigado! 🙏\n\nA nossa equipa de suporte vai contactar-te em breve com a informação mais recente sobre o teu pedido.\n\nGeralmente respondemos em poucos minutos durante o horário de funcionamento (Seg–Sáb, 8h–18h).`,
+    statusNotFound: () =>
+      `Ainda não encontrei nenhum pedido pago associado ao teu número. Se achas que isto é um erro, responde aqui e um dos nossos colaboradores vai ajudar-te. 👇`,
+  },
+  orderProfile: {
+    askCustomerTypeBody: (name) =>
+      `Boa, ${name}! Só mais uma coisa antes de verificar a disponibilidade.\n\n` +
+      `Compras como *particular* ou para uma *empresa*?`,
+    askCustomerTypeButtons: ['👤 Particular', '🏢 Empresa'],
+    askCompanyNifBody: () =>
+      `Perfeito. Para facturas de empresa preciso do teu *NIF* — é obrigatório por lei para a factura.\n\n` +
+      `Escreve o teu número de NIF abaixo. 👇`,
+    askCompanyNifInvalid: () =>
+      `Isso não parece um NIF válido. 🤔\n\n` +
+      `O NIF é obrigatório para facturas de empresa — verifica o número e escreve novamente abaixo.`,
+    askCompanyAddressBody: (name) =>
+      `NIF guardado ✅\n\n` +
+      `E qual é o *endereço de entrega*, ${name}?\n` +
+      `Exemplo: _Bairro Morro Bento, Rua da Samba, Nº 12, Luanda_`,
+    askIndividualAddressBody: (name) =>
+      `Entendido! Qual é o teu *endereço de entrega* preferido, ${name}?\n` +
+      `Exemplo: _Bairro Morro Bento, Rua da Samba, Nº 12, Luanda_`,
+    askIndividualNifBody: () =>
+      `Endereço guardado ✅\n\n` +
+      `Tens *NIF* (número de contribuinte) para a factura?\n` +
+      `_É opcional para particulares._`,
+    askIndividualNifButtons: ['✅ Sim, tenho NIF', '❌ Não, obrigado'],
+    askIndividualNifNumberBody: () =>
+      `Óptimo! Escreve o teu *número de NIF* abaixo. 👇`,
+    addressSaved: () => `Endereço guardado ✅`,
+    nifSaved: () => `NIF guardado ✅`,
+    allSet: () =>
+      `Perfeito, está tudo pronto! ✅\n\nVou confirmar a disponibilidade com os fornecedores agora... ⏳`,
+    savedProfileSummary: (name, address, customerType, nif) =>
+      `Entregar no teu endereço habitual, ${name}?\n\n` +
+      `📍 ${address}\n` +
+      (customerType === 'company' ? `🏢 Empresa${nif ? ` · NIF ${nif}` : ''}` : `👤 Particular${nif ? ` · NIF ${nif}` : ''}`),
+    savedProfileUseButton: () => '✅ Sim, usar este',
+    savedProfileEditButton: () => '✏️ Actualizar dados',
+    savedProfileNotUnderstood: () => 'Por favor toca num dos botões acima. 👇',
   },
   /**
    * Payment flow — per-method instructions (bank transfer/deposit,
@@ -595,6 +700,8 @@ const pt: Messages = {
       tableTotal: 'Total',
       supplierLabel: (supplier) => `Fornecedor: ${supplier}`,
       totalDue: 'TOTAL A PAGAR:',
+      servicesHeader: () => 'Serviços',
+      servicesTotal: () => 'Total dos serviços',
       paymentInstructionsHeader: 'INSTRUÇÕES DE PAGAMENTO',
       bankLine: '• Transferência bancária: IBAN AO06 0040 0000 XXXX XXXX XXXX X',
       multicaixaLine: '• Multicaixa Express: +244 900 000 000',
@@ -615,6 +722,7 @@ const pt: Messages = {
         `Obrigado por escolheres a Rede Peças.\n` +
         `Esperamos ver-te em breve! 🙏 🚗`,
       documentCaption: (orderNumber) => `Factura Comercial Nº ${orderNumber} — Rede Peças`,
+      orderStatusButtonLabel: () => '📦 Estado do pedido',
     },
     invoice: {
       headerTitle: 'REDE PEÇAS - FACTURA',
@@ -633,6 +741,8 @@ const pt: Messages = {
       tableTotal: 'Total',
       defaultProductName: 'Peça Automóvel',
       totalPaid: 'TOTAL PAGO:',
+      servicesHeader: () => 'Serviços',
+      servicesTotal: () => 'Total dos serviços',
       agtStamp: 'Processado por computador. Emitido de acordo com as regras de facturação da AGT Angola.',
     },
   },
@@ -688,6 +798,12 @@ const pt: Messages = {
       `Por favor confirma ou recusa o mais rápido possível na plataforma admin da Rede Peças.`,
     confirmedAck: (orderNumber) => `✅ Confirmado! Factura proforma enviada ao cliente do pedido *${orderNumber}*.`,
     unavailableAck: (orderNumber) => `⚠️ Pedido *${orderNumber}* marcado como indisponível. Cliente foi notificado.`,
+    itemRecordedWaitingOnOthers: (orderNumber) =>
+      `✅ Registado para o pedido *${orderNumber}*. Ainda a aguardar a tua confirmação sobre os outros artigos deste pedido — nada foi enviado ao cliente ainda.`,
+    itemRecordedAlternativeSearch: (orderNumber) =>
+      `✅ Registado para o pedido *${orderNumber}*. O cliente está agora a escolher uma alternativa para o(s) artigo(s) indisponível(eis) — a proforma só será enviada depois disso.`,
+    itemRecordedAllUnavailable: (orderNumber) =>
+      `⚠️ Todos os artigos do pedido *${orderNumber}* ficaram indisponíveis. Cliente foi notificado — nenhuma proforma foi enviada.`,
     alreadyHandled: (orderNumber) => `O pedido *${orderNumber}* já foi tratado — nada a fazer.`,
     useButtonsPrompt: () => `Por favor usa os botões na mensagem de confirmação de stock. 👆`,
     approvePaymentButtonLabel: () => '✅ Aprovar',
@@ -712,6 +828,16 @@ const pt: Messages = {
       `Revê o comprovativo em anexo e depois:\n` +
       `✅ Aprovar e Emitir Fatura\n` +
       `❌ Rejeitar — Pagamento Inválido`,
+    orderStatusRequested: (orderNumber, placedDate, status, partsSummary, amountPaid, customerName, customerPhone, address) =>
+      `📦 *PEDIDO DE ESTADO DO PEDIDO*\n\n` +
+      `Por favor contacta este cliente — quer uma actualização sobre o pedido.\n\n` +
+      `Pedido: *${orderNumber}*\n` +
+      `Efectuado: ${placedDate}\n` +
+      `Estado: ${status}\n\n` +
+      `Peças:\n${partsSummary}\n\n` +
+      `Valor pago: ${amountPaid}\n` +
+      `Cliente: ${customerName} · ${customerPhone}\n` +
+      `Endereço: ${address}`,
   },
 };
 
@@ -745,17 +871,6 @@ const en: Messages = {
     resumeRegistration: () =>
       `👋 Let's continue your registration!`,
     askNameOnly: () => `*What's your name?* 👇`,
-    askNifBody: (name) =>
-      `Nice to meet you, *${name}*! 🤝\n\n` +
-      `Do you have a NIF (tax ID) for invoices?\n` +
-      `_(This is useful if you're buying for a company.)_`,
-    askNifButtons: ['✅ Yes, I have a NIF', '❌ No, thanks'],
-    askNifNumber: () =>
-      `Great! Type your *NIF number*`,
-    askAddress: (name) =>
-      `Got it! What's your preferred delivery address, *${name}*?\n\n` +
-      `Example: _Bairro Morro Bento, Rua da Samba, Nº 12, Luanda_\n\n` +
-      `_(Reply "skip" to provide it later when placing an order)_`,
     askVehicleIdBody: (name) =>
       `✅ *You're all set, ${name}!*\n\n` +
       `Next time you message us, I'll already know who you are. 😊\n\n` +
@@ -900,6 +1015,8 @@ const en: Messages = {
       `I can add you to the waiting list and message you the moment it becomes available.\n\n` +
       `Want me to do that?`,
     noStockFoundButtons: ['✅ Yes, notify me', '❌ No, thanks'],
+    noStockFoundNoWaitlist: () =>
+      `I searched everywhere but couldn't find that part, or anything similar, in our catalog right now. 😔`,
     optionNotFound: () =>
       `I couldn't identify which option you chose. Please reply with the number (e.g. 1, 2, or 3).`,
     serviceUnavailable: () =>
@@ -949,9 +1066,7 @@ const en: Messages = {
     basketSummaryBody: (items, name, total) =>
       `Here's what you've selected, ${name}: 🛒\n\n` +
       items.map((i, idx) => `${idx + 1}. ${i.description} — ${i.price}`).join('\n') +
-      `\n\n*Total: ${total}*\n\nShall I move forward with the proforma?`,
-    basketConfirmButtons: ['✅ Yes, confirm', '❌ No, cancel'],
-    basketCancelled: () => `No problem, I've cancelled this order. 👍 Let me know whenever you'd like to search for something else.`,
+      `\n\n*Total: ${total}*`,
     basketPartialAvailability: (availableNames, unavailableNames) =>
       `Good news — ${availableNames.join(', ')} ${availableNames.length > 1 ? 'are' : 'is'} available! ✅\n\n` +
       `⚠️ Unfortunately ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? "aren't" : "isn't"} available right now. Let me find some alternatives for you.`,
@@ -961,6 +1076,16 @@ const en: Messages = {
       `I'm sorry. 😔\n\nThe supplier confirmed that none of the items on this order are available right now.\n\nNo payment was taken — so there's nothing to worry about. 👍`,
     basketDeclinedNotice: (declinedNames) =>
       `No problem — I've moved forward without ${declinedNames.join(', ')}. 👍`,
+    basketSearchAllUnavailableWaitlistOffer: () =>
+      `I searched everywhere but couldn't find those parts in stock right now. 😔\n\n` +
+      `I can add you to the waiting list and message you the moment they become available.\n\n` +
+      `Want me to do that?`,
+    basketSearchAllUnavailableNoWaitlist: () =>
+      `I searched everywhere but couldn't find any of those parts — not even similar ones — in our catalog right now. 😔`,
+    basketWaitlistConfirmed: () =>
+      `Perfect, you're all set! 🎉 I'll message you the moment any of those come back in stock.`,
+    basketSearchPartialNotice: (missingNames) =>
+      `_Quick note — I couldn't find ${missingNames.join(', ')}, so ${missingNames.length > 1 ? "they're" : "it's"} not included in your order below._`,
     alternativesListBody: (productName, count) =>
       `Found ${count} alternative${count > 1 ? 's' : ''} for *${productName}*. Which one works for you? 👇`,
     alternativeSkipOption: () => `None of these, skip this item`,
@@ -975,6 +1100,17 @@ const en: Messages = {
     searchListBodyForVehicle: (count, part, make, model, year, name) =>
       `Good news, ${name}! 🙌 I found ${count} option(s) for *${part}* for your *${make} ${model} ${year}*. Which one works best for you? 👇`,
     searchListButton: () => 'View options',
+    askPartTypeBody: (count) =>
+      `Before I search — what type of part${count > 1 ? 's' : ''} would you like?` +
+      (count > 1 ? `\n\n_This applies to all ${count} parts in your list._` : ''),
+    askPartTypeButton: () => 'Choose part type',
+    partTypeRows: [
+      { id: 'oem', title: 'OEM', description: 'Original manufacturer part' },
+      { id: 'aftermarket', title: 'Aftermarket', description: 'Compatible part, other brands' },
+      { id: 'new', title: 'New', description: 'Brand new, unused' },
+      { id: 'second_hand', title: 'Second Hand', description: 'Used, tested, lower price' },
+    ],
+    partTypeNotUnderstood: () => 'Please tap the button above and choose one of the four types. 👇',
   },
   /**
    * Order-level customer notices, currently just the payment-rejection
@@ -985,6 +1121,47 @@ const en: Messages = {
       `Unfortunately we weren't able to confirm your payment for order ${orderNumber}. 😔\n\n` +
       `This can happen if the proof was unclear or the payment reference was missing.\n\n` +
       `If you think this is a mistake, just reply here and one of our team members will help you sort it out right away. 👇`,
+    statusRequestAck: () =>
+      `Thanks! 🙏\n\nOur support team will contact you shortly with the latest update on your order.\n\nThey're usually back within a few minutes during business hours (Mon–Sat, 8h–18h).`,
+    statusNotFound: () =>
+      `I couldn't find a paid order on file for your number yet. If you think this is a mistake, just reply here and one of our team members will help you out. 👇`,
+  },
+  orderProfile: {
+    askCustomerTypeBody: (name) =>
+      `Great, ${name}! One quick thing before I check availability.\n\n` +
+      `Are you buying as an *individual* or for a *company*?`,
+    askCustomerTypeButtons: ['👤 Individual', '🏢 Company'],
+    askCompanyNifBody: () =>
+      `Perfect. For company invoices I'll need your *NIF* (tax ID) — it's required by law for the invoice.\n\n` +
+      `Type your NIF number below. 👇`,
+    askCompanyNifInvalid: () =>
+      `That doesn't look like a valid NIF. 🤔\n\n` +
+      `A NIF is required for company invoices — please check the number and type it again below.`,
+    askCompanyAddressBody: (name) =>
+      `NIF saved ✅\n\n` +
+      `And what's the *delivery address*, ${name}?\n` +
+      `Example: _Bairro Morro Bento, Rua da Samba, Nº 12, Luanda_`,
+    askIndividualAddressBody: (name) =>
+      `Got it! What's your preferred *delivery address*, ${name}?\n` +
+      `Example: _Bairro Morro Bento, Rua da Samba, Nº 12, Luanda_`,
+    askIndividualNifBody: () =>
+      `Address saved ✅\n\n` +
+      `Do you have a *NIF* (tax ID) for the invoice?\n` +
+      `_It's optional for individuals._`,
+    askIndividualNifButtons: ['✅ Yes, I have a NIF', '❌ No, thanks'],
+    askIndividualNifNumberBody: () =>
+      `Great! Type your *NIF number* below. 👇`,
+    addressSaved: () => `Address saved ✅`,
+    nifSaved: () => `NIF saved ✅`,
+    allSet: () =>
+      `Perfect, you're all set! ✅\n\nLet me confirm availability with the suppliers now... ⏳`,
+    savedProfileSummary: (name, address, customerType, nif) =>
+      `Delivering to your saved address, ${name}?\n\n` +
+      `📍 ${address}\n` +
+      (customerType === 'company' ? `🏢 Company${nif ? ` · NIF ${nif}` : ''}` : `👤 Individual${nif ? ` · NIF ${nif}` : ''}`),
+    savedProfileUseButton: () => '✅ Yes, use this',
+    savedProfileEditButton: () => '✏️ Update details',
+    savedProfileNotUnderstood: () => 'Please tap one of the buttons above. 👇',
   },
   /**
    * Payment flow — per-method instructions (bank transfer/deposit,
@@ -1086,6 +1263,8 @@ const en: Messages = {
       tableTotal: 'Total',
       supplierLabel: (supplier) => `Supplier: ${supplier}`,
       totalDue: 'TOTAL DUE:',
+      servicesHeader: () => 'Services',
+      servicesTotal: () => 'Services total',
       paymentInstructionsHeader: 'PAYMENT INSTRUCTIONS',
       bankLine: '• Bank transfer: IBAN AO06 0040 0000 XXXX XXXX XXXX X',
       multicaixaLine: '• Multicaixa Express: +244 900 000 000',
@@ -1106,6 +1285,7 @@ const en: Messages = {
         `Thank you for choosing Rede Peças.\n` +
         `We hope to see you again soon! 🙏 🚗`,
       documentCaption: (orderNumber) => `Commercial Invoice No. ${orderNumber} — Rede Peças`,
+      orderStatusButtonLabel: () => '📦 Order status',
     },
     invoice: {
       headerTitle: 'REDE PEÇAS - INVOICE',
@@ -1124,6 +1304,8 @@ const en: Messages = {
       tableTotal: 'Total',
       defaultProductName: 'Auto Part',
       totalPaid: 'TOTAL PAID:',
+      servicesHeader: () => 'Services',
+      servicesTotal: () => 'Services total',
       agtStamp: 'Computer-processed. Issued in accordance with AGT Angola billing rules.',
     },
   },
@@ -1179,6 +1361,12 @@ const en: Messages = {
       `Please confirm or decline ASAP on the Rede Peças admin platform.`,
     confirmedAck: (orderNumber) => `✅ Confirmed! Proforma sent to the customer for order *${orderNumber}*.`,
     unavailableAck: (orderNumber) => `⚠️ Order *${orderNumber}* marked unavailable. Customer has been notified.`,
+    itemRecordedWaitingOnOthers: (orderNumber) =>
+      `✅ Recorded for order *${orderNumber}*. Still waiting on your call on the other item(s) in this order — nothing has been sent to the customer yet.`,
+    itemRecordedAlternativeSearch: (orderNumber) =>
+      `✅ Recorded for order *${orderNumber}*. The customer is now picking an alternative for the unavailable item(s) — the proforma will only go out after that.`,
+    itemRecordedAllUnavailable: (orderNumber) =>
+      `⚠️ Every item on order *${orderNumber}* turned out unavailable. Customer has been notified — no proforma was sent.`,
     alreadyHandled: (orderNumber) => `Order *${orderNumber}* was already handled — nothing to do.`,
     useButtonsPrompt: () => `Please use the buttons on the stock-confirmation message. 👆`,
     approvePaymentButtonLabel: () => '✅ Approve',
@@ -1203,6 +1391,16 @@ const en: Messages = {
       `Review the attached proof, then:\n` +
       `✅ Approve & Issue Invoice\n` +
       `❌ Reject — Invalid Payment`,
+    orderStatusRequested: (orderNumber, placedDate, status, partsSummary, amountPaid, customerName, customerPhone, address) =>
+      `📦 *ORDER STATUS REQUEST*\n\n` +
+      `Please contact this customer — they want an update on their order.\n\n` +
+      `Order: *${orderNumber}*\n` +
+      `Placed: ${placedDate}\n` +
+      `Status: ${status}\n\n` +
+      `Parts:\n${partsSummary}\n\n` +
+      `Amount paid: ${amountPaid}\n` +
+      `Customer: ${customerName} · ${customerPhone}\n` +
+      `Address: ${address}`,
   },
 };
 

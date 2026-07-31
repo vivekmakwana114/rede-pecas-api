@@ -114,9 +114,24 @@ export interface BasketItemDraft {
   service: { name: string; price: number } | null;
 }
 
+export interface UnmatchedBasketItem {
+  query: string;                  // the raw phrase that didn't match any in-stock product
+  candidateId: number | null;     // an out-of-stock (zero-qty) product that matched, if any — waitlist-eligible
+  candidateName: string | null;
+}
+
 export interface PendingBasket {
   queue: string[];           // product-name phrases not yet searched/resolved
   items: BasketItemDraft[];  // resolved so far
+  // The one part-type choice (OEM/Aftermarket/New/Second Hand) for this
+  // order, asked once before search and applied to every item in it — never
+  // asked again per item. Empty string until the part-type step resolves it.
+  partType: string;
+  // Phrases that found no in-stock match while working through the queue —
+  // accumulated silently (no per-item message) so the customer gets one
+  // consolidated notice/waitlist-offer once the whole queue is drained,
+  // instead of a repeated back-and-forth per failed item.
+  unmatched: UnmatchedBasketItem[];
 }
 
 const basketCache = new Map<string, PendingBasket>();
@@ -179,54 +194,58 @@ export async function clearPendingBasket(phone: string): Promise<void> {
   }
 }
 
-const basketConfirmSessions = new Map<string, number>();
+export interface PendingPartTypeChoice {
+  productNames: string[] | null; // null/single-item search vs. a multi-item basket request
+  customerText: string;          // original free text, re-used to run the search once resolved
+  customerName: string;
+}
+
+const partTypeChoiceCache = new Map<string, PendingPartTypeChoice>();
 
 /**
- * Marks that the basket summary + Sim/Não confirmation buttons were just
- * shown to this phone, gating the confirm-reply matcher.
+ * Stores the identified part(s) awaiting a one-time-per-order part-type
+ * choice (OEM/Aftermarket/New/Second Hand) before any search runs.
  */
-export async function markBasketConfirmShown(phone: string): Promise<void> {
-  const key = `basketConfirm:${phone}`;
-  basketConfirmSessions.set(key, Date.now() + VEHICLE_ID_CHOICE_TTL * 1000);
+export async function savePendingPartTypeChoice(phone: string, pending: PendingPartTypeChoice): Promise<void> {
+  const key = `partTypeChoice:${phone}`;
+  partTypeChoiceCache.set(key, pending);
 
   if (useMemoryFallback || !redisClient?.isOpen) {
     return;
   }
 
   try {
-    await redisClient.setEx(key, VEHICLE_ID_CHOICE_TTL, '1');
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(pending));
   } catch (err) {
-    logger.error('Error marking basket-confirm choice shown in Redis', err);
+    logger.error('Error saving pending part-type choice to Redis', err);
   }
 }
 
 /**
- * Reports whether the basket summary + Sim/Não confirmation buttons were
- * shown to this phone within the current session.
+ * Retrieves the pending part-type choice for a phone, if one is still
+ * awaiting a reply.
  */
-export async function wasBasketConfirmShown(phone: string): Promise<boolean> {
-  const key = `basketConfirm:${phone}`;
+export async function getPendingPartTypeChoice(phone: string): Promise<PendingPartTypeChoice | null> {
+  const key = `partTypeChoice:${phone}`;
   if (useMemoryFallback || !redisClient?.isOpen) {
-    const expiresAt = basketConfirmSessions.get(key);
-    return !!expiresAt && expiresAt >= Date.now();
+    return partTypeChoiceCache.get(key) || null;
   }
 
   try {
-    const exists = await redisClient.exists(key);
-    return exists === 1;
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
   } catch (err) {
-    logger.error('Error checking basket-confirm choice state in Redis', err);
-    const expiresAt = basketConfirmSessions.get(key);
-    return !!expiresAt && expiresAt >= Date.now();
+    logger.error('Error fetching pending part-type choice from Redis', err);
+    return partTypeChoiceCache.get(key) || null;
   }
 }
 
 /**
- * Clears the basket-confirm buttons' shown flag for this phone.
+ * Removes the pending part-type choice for a phone once resolved.
  */
-export async function clearBasketConfirmShown(phone: string): Promise<void> {
-  const key = `basketConfirm:${phone}`;
-  basketConfirmSessions.delete(key);
+export async function clearPendingPartTypeChoice(phone: string): Promise<void> {
+  const key = `partTypeChoice:${phone}`;
+  partTypeChoiceCache.delete(key);
 
   if (useMemoryFallback || !redisClient?.isOpen) {
     return;
@@ -235,7 +254,145 @@ export async function clearBasketConfirmShown(phone: string): Promise<void> {
   try {
     await redisClient.del(key);
   } catch (err) {
-    logger.error('Error clearing basket-confirm choice in Redis', err);
+    logger.error('Error deleting pending part-type choice from Redis', err);
+  }
+}
+
+export interface PendingOrderProfileShortcut {
+  orderNumber: string;
+}
+
+const orderProfileShortcutCache = new Map<string, PendingOrderProfileShortcut>();
+
+/**
+ * Stores which order is waiting on a returning customer's "use my saved
+ * details" reply (individual/company + NIF + address already on file).
+ */
+export async function savePendingOrderProfileShortcut(phone: string, pending: PendingOrderProfileShortcut): Promise<void> {
+  const key = `orderProfileShortcut:${phone}`;
+  orderProfileShortcutCache.set(key, pending);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(pending));
+  } catch (err) {
+    logger.error('Error saving pending order-profile shortcut to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the pending order-profile shortcut for a phone, if one is still
+ * awaiting a reply.
+ */
+export async function getPendingOrderProfileShortcut(phone: string): Promise<PendingOrderProfileShortcut | null> {
+  const key = `orderProfileShortcut:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return orderProfileShortcutCache.get(key) || null;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    logger.error('Error fetching pending order-profile shortcut from Redis', err);
+    return orderProfileShortcutCache.get(key) || null;
+  }
+}
+
+/**
+ * Removes the pending order-profile shortcut for a phone once resolved.
+ */
+export async function clearPendingOrderProfileShortcut(phone: string): Promise<void> {
+  const key = `orderProfileShortcut:${phone}`;
+  orderProfileShortcutCache.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing pending order-profile shortcut in Redis', err);
+  }
+}
+
+export type OrderProfileStageName =
+  | 'awaiting_type'
+  | 'awaiting_company_nif'
+  | 'awaiting_company_address'
+  | 'awaiting_individual_address'
+  | 'awaiting_individual_nif_choice'
+  | 'awaiting_individual_nif_number';
+
+export interface OrderProfileStage {
+  orderNumber: string;
+  stage: OrderProfileStageName;
+  // Accumulated across steps, only committed to `customers` on the final
+  // step — an abandoned wizard never leaves a half-updated profile.
+  customerType?: 'individual' | 'company';
+  nif?: string | null;
+  address?: string | null;
+}
+
+const orderProfileStageCache = new Map<string, OrderProfileStage>();
+
+/**
+ * Stores the in-progress individual/company + NIF + address wizard for an
+ * order, one step at a time.
+ */
+export async function saveOrderProfileStage(phone: string, stage: OrderProfileStage): Promise<void> {
+  const key = `orderProfileStage:${phone}`;
+  orderProfileStageCache.set(key, stage);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(stage));
+  } catch (err) {
+    logger.error('Error saving order-profile stage to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the in-progress order-profile wizard stage for a phone, if one
+ * is still active.
+ */
+export async function getOrderProfileStage(phone: string): Promise<OrderProfileStage | null> {
+  const key = `orderProfileStage:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return orderProfileStageCache.get(key) || null;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    logger.error('Error fetching order-profile stage from Redis', err);
+    return orderProfileStageCache.get(key) || null;
+  }
+}
+
+/**
+ * Removes the order-profile wizard stage for a phone once it completes.
+ */
+export async function clearOrderProfileStage(phone: string): Promise<void> {
+  const key = `orderProfileStage:${phone}`;
+  orderProfileStageCache.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing order-profile stage in Redis', err);
   }
 }
 
@@ -678,6 +835,70 @@ export async function clearPendingWaitlistOffer(phone: string): Promise<void> {
   }
 }
 
+export interface PendingBasketWaitlistOffer {
+  candidates: { productId: number; productName: string }[];
+}
+
+const basketWaitlistOfferCache = new Map<string, PendingBasketWaitlistOffer>();
+
+/**
+ * Stores the set of out-of-stock products a customer was just offered a
+ * single consolidated waitlist opt-in for, after every item in a multi-part
+ * search came back unavailable — see product.service.ts's advanceBasket.
+ */
+export async function savePendingBasketWaitlistOffer(phone: string, offer: PendingBasketWaitlistOffer): Promise<void> {
+  const key = `basketWaitlist:${phone}`;
+  basketWaitlistOfferCache.set(key, offer);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.setEx(key, SESSION_TTL, JSON.stringify(offer));
+  } catch (err) {
+    logger.error('Error saving pending basket waitlist offer to Redis', err);
+  }
+}
+
+/**
+ * Retrieves the pending consolidated basket-waitlist offer for a phone, if
+ * one is still awaiting a reply.
+ */
+export async function getPendingBasketWaitlistOffer(phone: string): Promise<PendingBasketWaitlistOffer | null> {
+  const key = `basketWaitlist:${phone}`;
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return basketWaitlistOfferCache.get(key) || null;
+  }
+
+  try {
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    logger.error('Error fetching pending basket waitlist offer from Redis', err);
+    return basketWaitlistOfferCache.get(key) || null;
+  }
+}
+
+/**
+ * Removes the pending consolidated basket-waitlist offer for a phone once
+ * the customer has replied.
+ */
+export async function clearPendingBasketWaitlistOffer(phone: string): Promise<void> {
+  const key = `basketWaitlist:${phone}`;
+  basketWaitlistOfferCache.delete(key);
+
+  if (useMemoryFallback || !redisClient?.isOpen) {
+    return;
+  }
+
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    logger.error('Error clearing pending basket waitlist offer in Redis', err);
+  }
+}
+
 const restockOrderOfferCache = new Map<string, { productId: number; productName: string }>();
 
 /**
@@ -741,9 +962,13 @@ export async function clearPendingRestockOrderOffer(phone: string): Promise<void
 }
 
 export interface PendingServiceOffer {
-  // Absent while building a multi-product basket (no order exists yet) —
-  // processServiceSelection branches on this to append to the basket instead
-  // of attaching the service directly to an order.
+  // Set when the order already exists (the restock-reorder path, which
+  // creates its order immediately since the product was already fully
+  // resolved by the earlier restock notification — see
+  // product.service.ts's startOrderForProduct/processRestockOrderChoice).
+  // Absent while building a search-results-driven basket (single- or
+  // multi-item — see PendingBasket), where no order exists yet and a
+  // selection is appended to the basket instead.
   orderNumber?: string;
   product: Product;
   services: Service[];
@@ -1432,16 +1657,16 @@ export interface ChatLogEntry {
   at: string;
 }
 
-const CHAT_LOG_TTL = 60 * 60 * 24;
+const CHAT_LOG_TTL = 60 * 60 * 25;
 const chatLogSessions = new Map<string, { messages: ChatLogEntry[]; expiresAt: number }>();
 
 /**
  * Appends a message (inbound customer text or outbound bot reply) to the
- * phone's chat transcript. The 24h TTL is a fixed window from the FIRST
+ * phone's chat transcript. The 25h TTL is a fixed window from the FIRST
  * message that started it, not a sliding one — later messages in the same
  * window are appended without touching the expiry, so the whole log expires
- * exactly 24h after it started regardless of how active the conversation
- * stays. Once it expires, the next message starts a brand-new 24h window.
+ * exactly 25h after it started regardless of how active the conversation
+ * stays. Once it expires, the next message starts a brand-new 25h window.
  */
 export async function appendChatMessage(phone: string, direction: 'in' | 'out', text: string): Promise<void> {
   const key = `chatlog:${phone}`;
@@ -1482,7 +1707,7 @@ export async function appendChatMessage(phone: string, direction: 'in' | 'out', 
 }
 
 /**
- * Retrieves the phone's rolling 24h chat transcript, oldest first, or an
+ * Retrieves the phone's rolling 25h chat transcript, oldest first, or an
  * empty array if there's none yet or it's expired.
  */
 export async function getChatLog(phone: string): Promise<ChatLogEntry[]> {

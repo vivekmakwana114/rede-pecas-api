@@ -93,14 +93,22 @@ CREATE TABLE IF NOT EXISTS products (
 
   -- Catalog classification. `subcategory` is the fine-grained catalog value
   -- (Brakes, Engine, Filtration, Mechanical, Steering, Suspension,
-  -- Transmission, Engine Oil); `service_category` is a derived grouping
-  -- (maintenance | general_mechanics | diagnostics, see
-  -- SUBCATEGORY_TO_SERVICE_CATEGORY in src/constants/serviceCategory.ts) that
-  -- is the literal join key against services.service_category — "which
-  -- services are relevant to this product" is a plain equality match on it.
+  -- Transmission, Engine Oil, ...) — free text, no allow-list at the DB or
+  -- app layer. `service_category` is no longer a derived 3-bucket grouping —
+  -- it carries the same subcategory-vocabulary values directly (e.g.
+  -- "Brakes"), because that's the literal join key against
+  -- services.service_category — "which services are relevant to this
+  -- product" is a plain equality match on it. In practice this column is
+  -- set equal to `subcategory` at import/edit time.
   category         TEXT NOT NULL,               -- 'part' | 'lubricant'
   subcategory      TEXT NOT NULL,
   service_category TEXT NOT NULL,
+  -- Part condition/origin, from the products CSV — free text (e.g. 'OEM',
+  -- 'Aftermarket', 'New', 'Second Hand'), no allow-list. Nullable: existing
+  -- catalog rows predate this column and stay NULL until re-imported;
+  -- search treats NULL as a wildcard
+  -- (see searchProductsInInventory) rather than excluding them.
+  product_type     TEXT,
 
   -- Lubricant-only specs (populated only when category = 'lubricant') —
   -- describe the product itself (e.g. "5W-30 synthetic"), not a specific
@@ -232,6 +240,7 @@ ALTER TABLE products DROP COLUMN IF EXISTS service_price;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS service_category TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS viscosity TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS engine_type TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS volume_liters NUMERIC(5,2);
@@ -245,7 +254,10 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;
 UPDATE products SET
   category         = COALESCE(category, 'part'),
   subcategory      = COALESCE(subcategory, 'Mechanical'),
-  service_category = COALESCE(service_category, 'general_mechanics'),
+  -- service_category tracks subcategory directly (see the column comment
+  -- above) — fall back to whatever subcategory just got backfilled, not the
+  -- old 3-bucket 'general_mechanics' default.
+  service_category = COALESCE(service_category, subcategory, 'Mechanical'),
   synonyms         = COALESCE(synonyms, ''),
   description      = COALESCE(description, name)
 WHERE category IS NULL OR subcategory IS NULL OR service_category IS NULL
@@ -400,7 +412,11 @@ CREATE TABLE IF NOT EXISTS services (
   id                    SERIAL PRIMARY KEY,
   provider_id           INT NOT NULL REFERENCES service_providers(id),
   service_name          TEXT NOT NULL,
-  service_category      TEXT NOT NULL,          -- maintenance | general_mechanics | diagnostics
+  -- Same vocabulary as products.subcategory (e.g. "Brakes", "Engine") — no
+  -- longer the old maintenance/general_mechanics/diagnostics 3-bucket
+  -- scheme. Existing rows imported under the old scheme must be re-imported/
+  -- edited to the new vocabulary or they'll stop matching any product.
+  service_category      TEXT NOT NULL,
   service_base_price    NUMERIC(12,2) NOT NULL,
   service_duration_h    NUMERIC(4,2) NOT NULL,
   available_at_home     BOOLEAN NOT NULL DEFAULT false,
@@ -502,6 +518,9 @@ CREATE TABLE IF NOT EXISTS orders (
   -- "multi-item" precisely when items IS NOT NULL, the only signal the code
   -- needs anywhere to pick between the legacy single-product path and this one.
   items                   JSONB,
+  -- One part-type choice (OEM/Aftermarket/New/Second Hand) per order, asked
+  -- once before search and applied to every part in it — not per line item.
+  part_type               TEXT,
   created_at              TIMESTAMPTZ DEFAULT NOW(),
   updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
@@ -514,6 +533,9 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_hidden BOOLEAN DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_confirmation_courtesy_sent BOOLEAN DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_confirmation_admin_reminder_sent BOOLEAN DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB;
+-- One part-type choice (OEM/Aftermarket/New/Second Hand) per order, asked
+-- once before search and applied to every part in it — not per line item.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS part_type TEXT;
 
 -- Retarget orders.product_id's FK from products(id) to product_suppliers(id)
 -- on an existing database — see the column comment above. Guarded so a
@@ -596,7 +618,7 @@ END $$;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS admin_alerts (
   id            SERIAL PRIMARY KEY,
-  type          TEXT NOT NULL,              -- 'payment_proof' | 'in_person_payment'
+  type          TEXT NOT NULL,              -- 'payment_proof' | 'in_person_payment' | 'order_status_request'
   order_number  TEXT REFERENCES orders(number),
   message       TEXT NOT NULL,
   read_at       TIMESTAMPTZ,
@@ -672,10 +694,18 @@ CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users (email);
 CREATE TABLE IF NOT EXISTS customers (
   phone                TEXT PRIMARY KEY,
   name                 TEXT,
+  -- nif/address/customer_type used to be collected during registration
+  -- (awaiting_nif/awaiting_nif_number/awaiting_address). As of the deferred-
+  -- profile-capture change, they're captured per order (see
+  -- orderProfile.service.ts), right after the order bucket is confirmed and
+  -- before stock is checked — these columns now hold the customer's *last
+  -- known* values, overwritten on every order, reused as a one-tap "use my
+  -- saved details" shortcut for returning customers.
   nif                  TEXT,                    -- Angolan tax ID
   address              TEXT,
+  customer_type        TEXT,                    -- 'individual' | 'company'
   email                TEXT,
-  registration_status  TEXT DEFAULT 'new',      -- new, awaiting_name, awaiting_nif, awaiting_nif_number, awaiting_address, complete (profile only — vehicle ID is tracked independently via the `vehicles` table)
+  registration_status  TEXT DEFAULT 'new',      -- new, awaiting_name, complete (profile only — vehicle ID is tracked independently via the `vehicles` table; NIF/address/customer_type are tracked per-order, not here)
   first_contact_at     TIMESTAMPTZ DEFAULT NOW(),
   last_contact_at      TIMESTAMPTZ DEFAULT NOW(),
   registered_at        TIMESTAMPTZ,
@@ -698,6 +728,7 @@ ALTER TABLE customers DROP COLUMN IF EXISTS locale;
 -- also need an explicit ALTER for installs that predate this change.
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS needs_review BOOLEAN DEFAULT false;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS needs_review_reason TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS customer_type TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_customers_status ON customers (registration_status);
 CREATE INDEX IF NOT EXISTS idx_customers_last_contact ON customers (last_contact_at);
@@ -761,5 +792,55 @@ END $$;
 -- registration_status value. Idempotent: a no-op once every row has been migrated.
 UPDATE customers SET registration_status = 'complete' WHERE registration_status = 'awaiting_vehicle_id';
 
+-- NIF/address/customer_type moved out of registration into the per-order
+-- orderProfile flow (see the customers table comment above) — a customer
+-- caught mid-way through the old awaiting_nif/awaiting_nif_number/
+-- awaiting_address stages at deploy time is force-completed here rather than
+-- left stuck on a stage that no longer exists. Idempotent: a no-op once every
+-- row has been migrated.
+UPDATE customers SET registration_status = 'complete'
+WHERE registration_status IN ('awaiting_nif', 'awaiting_nif_number', 'awaiting_address');
+
 DROP TABLE IF EXISTS vehicle_sessions;
 DROP TABLE IF EXISTS manual_vehicle_collections;
+
+-- ============================================================
+-- CUSTOMER_DOCUMENTS — durable local copy of every file we ever receive
+-- from (or generate for) a customer over WhatsApp: vehicle-ID photos,
+-- payment-proof photos/PDFs, and generated proforma/invoice PDFs. Exists so
+-- the app never has to re-hit Meta's Graph API to re-read a file it already
+-- has, and so a file stays reachable past Meta's ~30-day media URL/id expiry
+-- (previously a latent bug — nothing persisted bytes anywhere). Bytes live
+-- on disk under storage/<phone>/ (see storage.service.ts); this table only
+-- tracks where. Not a replacement for orders.payment_proof_media_id/
+-- payment_proof_media_type (kept as-is) — those record the *original* Meta
+-- media identity, this records our own durable copy of the bytes.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS customer_documents (
+  id            SERIAL PRIMARY KEY,
+  phone         TEXT NOT NULL REFERENCES customers(phone),
+  kind          TEXT NOT NULL,     -- 'vehicle_photo' | 'payment_proof' | 'proforma_pdf' | 'invoice_pdf'
+  order_number  TEXT REFERENCES orders(number),  -- NULL for vehicle_photo (not order-scoped)
+  media_id      TEXT,              -- originating WhatsApp media id, when the file came from an inbound message
+  file_path     TEXT NOT NULL,     -- local path, e.g. storage/<phone>/<kind>-<timestamp>.<ext>
+  mime_type     TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_documents_phone ON customer_documents (phone);
+CREATE INDEX IF NOT EXISTS idx_customer_documents_order ON customer_documents (order_number);
+
+-- ============================================================
+-- PRODUCT_SUBCATEGORIES / PRODUCT_TYPES were a brief experiment (FK-backed
+-- lookup tables for products.subcategory/service_category/product_type,
+-- services.service_category, orders.part_type) — reverted: those columns
+-- are plain free-text again, no allow-list at either the DB or app layer.
+-- Idempotent teardown for any database that already picked up the FKs/tables.
+-- ============================================================
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_subcategory_fkey;
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_service_category_fkey;
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_product_type_fkey;
+ALTER TABLE services DROP CONSTRAINT IF EXISTS services_service_category_fkey;
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_part_type_fkey;
+DROP TABLE IF EXISTS product_subcategories;
+DROP TABLE IF EXISTS product_types;

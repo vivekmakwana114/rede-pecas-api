@@ -13,6 +13,7 @@ import {
   saveNhtsaVehicle,
 } from '../models/vehicle.model.js';
 import { downloadWhatsAppMedia, sendWhatsAppButtons } from './whatsapp.service.js';
+import { saveDocument } from './storage.service.js';
 import { sendReply, sendReplyButtons } from './reply.service.js';
 import { extractDataWithClaudeVision, VisionData } from './ai.service.js';
 import { completeOnboardingIfNeeded, resolveMessages, Customer } from './customer.service.js';
@@ -410,6 +411,13 @@ export async function processManualCollectionStep(
       engine_number: engineNumber,
     }, collection.id);
 
+    // Unlike the VIN/photo paths, manual entry completes directly with no
+    // Sim/Não confirm step (where saveChosenVehicle is normally called) — so
+    // without this, a customer adding a 2nd+ vehicle via manual entry kept
+    // searching against whichever vehicle was chosen before, not the one
+    // they just finished adding.
+    await saveChosenVehicle(phone, collection.id);
+
     const summary = [
       `🚗 *${collection.make} ${collection.model} ${collection.year}*`,
       engineNumber ? messages.manual.engineLabel(engineNumber) : null,
@@ -552,6 +560,11 @@ export async function processVehicleDocument(phone: string, mediaId: string): Pr
     await sendRetryOrManualPrompt(phone, messages.document.downloadFailed());
     return;
   }
+
+  // Persist the photo locally (never kept before this) so it's still
+  // reachable after Meta's ~30-day media id/URL expiry, without a second
+  // Graph API round trip. WhatsApp photo uploads are always JPEG.
+  await saveDocument(phone, 'vehicle_photo', Buffer.from(imageBase64, 'base64'), 'image/jpeg', null, mediaId);
 
   let extracted: VisionData | null;
   try {

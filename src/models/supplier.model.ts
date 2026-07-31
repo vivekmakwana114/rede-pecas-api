@@ -18,6 +18,7 @@ export interface ImportItem {
   category: string;
   subcategory: string;
   serviceCategory: string;
+  productType?: string;
   vehicleMake: string;
   vehicleModel?: string;
   yearStart?: number;
@@ -99,10 +100,10 @@ export async function importProductsBatch(
         const productResult = await client.query(
           `INSERT INTO products (
              reference, name, brand, oem_reference, synonyms, description,
-             category, subcategory, service_category, viscosity, engine_type,
+             category, subcategory, service_category, product_type, viscosity, engine_type,
              volume_liters, specification, interval_km, image_url, active, updated_at
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, NOW())
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, true, NOW())
            ON CONFLICT (reference)
            DO UPDATE SET
              name = EXCLUDED.name,
@@ -113,6 +114,7 @@ export async function importProductsBatch(
              category = EXCLUDED.category,
              subcategory = EXCLUDED.subcategory,
              service_category = EXCLUDED.service_category,
+             product_type = EXCLUDED.product_type,
              viscosity = EXCLUDED.viscosity,
              engine_type = EXCLUDED.engine_type,
              volume_liters = EXCLUDED.volume_liters,
@@ -132,6 +134,7 @@ export async function importProductsBatch(
             item.category,
             item.subcategory,
             item.serviceCategory,
+            item.productType ?? null,
             item.viscosity ?? null,
             item.engineType ?? null,
             item.volumeLiters ?? null,

@@ -24,6 +24,7 @@ import { setOrderItemAvailability } from '../models/order.model.js';
 import { resolveMessages } from '../services/customer.service.js';
 import { downloadWhatsAppMedia } from '../services/whatsapp.service.js';
 import { sendReply } from '../services/reply.service.js';
+import { getDocument, saveDocument } from '../services/storage.service.js';
 
 /**
  * Backs `GET /v1/admin/orders` — fetches pending, approved, rejected, and
@@ -217,9 +218,26 @@ export const getPaymentProofHandler = catchAsync(async (req: Request, res: Respo
   if (!order) throw new ApiError(404, `Order ${number} not found`);
   if (!order.payment_proof_media_id) throw new ApiError(404, `Order ${number} has no payment proof on file`);
 
+  const contentType = order.payment_proof_media_type === 'document' ? 'application/pdf' : 'image/jpeg';
+
+  // Check our own durable copy first (saved when the proof first came in —
+  // see payment.service.ts's processPaymentProof) so viewing a proof
+  // repeatedly from the admin panel never re-hits Meta's Graph API, and
+  // still works after Meta's ~30-day media id/URL expiry. Only a proof
+  // received before this caching existed falls through to Meta.
+  const cached = await getDocument(order.customer_phone, 'payment_proof', order.payment_proof_media_id);
+  if (cached) {
+    res.set('Content-Type', contentType);
+    res.send(cached);
+    return;
+  }
+
   const fileBase64 = await downloadWhatsAppMedia(order.payment_proof_media_id);
   if (!fileBase64) throw new ApiError(502, `Could not fetch payment proof for order ${number} from WhatsApp`);
 
-  res.set('Content-Type', order.payment_proof_media_type === 'document' ? 'application/pdf' : 'image/jpeg');
-  res.send(Buffer.from(fileBase64, 'base64'));
+  const buffer = Buffer.from(fileBase64, 'base64');
+  await saveDocument(order.customer_phone, 'payment_proof', buffer, contentType, number, order.payment_proof_media_id);
+
+  res.set('Content-Type', contentType);
+  res.send(buffer);
 });

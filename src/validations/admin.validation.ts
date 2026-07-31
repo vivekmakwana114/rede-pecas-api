@@ -1,6 +1,5 @@
 import Joi from 'joi';
 import { ValidationSchema } from '../middlewares/validate.js';
-import { SUBCATEGORY_TO_SERVICE_CATEGORY } from '../constants/serviceCategory.js';
 
 export const orderListQuery: ValidationSchema = {
   query: Joi.object().keys({
@@ -99,7 +98,9 @@ export const productUpdate: ValidationSchema = {
       quantity: Joi.number().integer().min(0),
       active: Joi.boolean(),
       category: Joi.string(),
-      subcategory: Joi.string().valid(...Object.keys(SUBCATEGORY_TO_SERVICE_CATEGORY)),
+      // Free text — no allow-list against a fixed set of values.
+      subcategory: Joi.string(),
+      product_type: Joi.string().allow('', null),
       vehicle_make: Joi.string(),
       vehicle_model: Joi.string().allow('', null),
       year_start: Joi.number().integer().allow(null),
@@ -134,7 +135,8 @@ const importItemSchema = Joi.object({
   supplierAddress: Joi.string().allow(''),
   supplierPhone: Joi.string().allow(''),
   category: Joi.string().required(),
-  subcategory: Joi.string().valid(...Object.keys(SUBCATEGORY_TO_SERVICE_CATEGORY)).required(),
+  subcategory: Joi.string().required(),
+  productType: Joi.string().allow(''),
   vehicleMake: Joi.string().required(),
   vehicleModel: Joi.string().allow(''),
   yearStart: Joi.number().integer(),
