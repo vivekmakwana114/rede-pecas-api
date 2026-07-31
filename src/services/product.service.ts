@@ -689,6 +689,26 @@ export async function finalizeMultiItemOrderIfComplete(orderNumber: string): Pro
   const items: OrderItemEntry[] = order.items;
   if (items.some((i) => i.availabilityStatus === 'pending')) return;
 
+  // No item is 'pending', but one can still be 'unavailable' while genuinely
+  // awaiting the CUSTOMER's own alternative pick, not the admin — e.g. two
+  // items were rejected in the same round; the admin has just confirmed the
+  // first swapped-in alternative while the second item's alternatives list
+  // is still sitting unanswered in the customer's WhatsApp. Re-running
+  // finalizeMultiItemOrder here would treat that leftover 'unavailable' item
+  // as a brand-new rejection and kick off a second, duplicate alternative
+  // search for it, silently overwriting the list the customer already has in
+  // front of them. Bail out and let the in-flight resolution finish on its
+  // own — advanceAlternativeResolution calls back into this function once
+  // every item is truly settled (see below).
+  const [resolution, offer] = await Promise.all([
+    getPendingAlternativeResolution(order.customer_phone),
+    getPendingAlternativeOffer(order.customer_phone),
+  ]);
+  const resolutionInProgress =
+    (resolution?.orderNumber === orderNumber && resolution.queue.length > 0) ||
+    offer?.orderNumber === orderNumber;
+  if (resolutionInProgress) return;
+
   await finalizeMultiItemOrder(orderNumber, items);
 }
 
@@ -721,6 +741,19 @@ async function finalizeMultiItemOrder(orderNumber: string, items: OrderItemEntry
         ? messages.agent.basketPartialAvailability(available.map((i) => i.productName), unavailable.map((i) => i.productName))
         : messages.agent.basketNoneAvailableYet(unavailable.map((i) => i.productName))
     );
+    // Every currently-known item has an admin decision, but the order isn't
+    // actually done — it's waiting on the customer to pick a substitute (or
+    // skip) for each unavailable item. Moving off 'awaiting_stock_confirmation'
+    // here means a stray duplicate WhatsApp button tap for an already-decided
+    // item correctly gets "already handled" from processAdminItemStockReply's
+    // status check, instead of silently re-recording it. The order stays
+    // visible in the admin panel's stock-confirmation view either way —
+    // getOrdersPendingStockConfirmation fetches both statuses — just rendered
+    // as "waiting on customer" instead of actionable (see the frontend fix in
+    // rede-pecas-admin). Moves back to 'awaiting_stock_confirmation' once a
+    // swapped-in alternative needs its own admin confirmation (see
+    // processAlternativeSelection below).
+    await updateOrderStatus(orderNumber, 'awaiting_alternative_resolution');
     await savePendingAlternativeResolution(phone, { orderNumber, queue: unavailable.map((i) => i.itemId) });
     await searchAlternativesForNextItem(orderNumber, phone);
     return;
@@ -896,6 +929,12 @@ export async function processAlternativeSelection(
   const items: OrderItemEntry[] = order?.items || [];
   const item = items.find((i) => i.itemId === offer.itemId);
   if (item) {
+    // The swapped-in alternative is 'pending' again and needs its own admin
+    // confirmation — move the order back to 'awaiting_stock_confirmation' so
+    // it re-enters the admin queue and so processAdminItemStockReply's
+    // "already handled" guard (which checks this exact status) doesn't
+    // reject the admin's upcoming Confirm/Unavailable tap for it.
+    await updateOrderStatus(offer.orderNumber, 'awaiting_stock_confirmation');
     const customer = await getCustomerByPhone(phone);
     const customerName = customer?.name?.split(' ')[0] || 'Cliente';
     await notifyAdminsForItem(offer.orderNumber, phone, customerName, item);

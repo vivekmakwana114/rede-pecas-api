@@ -406,6 +406,12 @@ export async function getOrdersPendingApproval(): Promise<OrderInfo[]> {
 /**
  * Fetches `orders` awaiting stock confirmation, oldest first, joined with
  * product/supplier details and including each order's waiting time in minutes.
+ * Also includes basket orders sitting at `awaiting_alternative_resolution`
+ * (every currently-known item decided, but waiting on the customer to pick a
+ * substitute for whatever was unavailable) — these stay visible in the admin
+ * grid's stock-confirmation view (the frontend renders them as "waiting on
+ * customer" via each item's `availabilityStatus`, not as actionable) rather
+ * than disappearing from the admin's view entirely while nothing is pending.
  */
 export async function getOrdersPendingStockConfirmation(): Promise<any[]> {
   const { rows } = await db.query(`
@@ -424,7 +430,7 @@ export async function getOrdersPendingStockConfirmation(): Promise<any[]> {
     LEFT JOIN product_suppliers ps ON ps.id = o.product_id
     LEFT JOIN products p ON p.id = ps.product_id
     LEFT JOIN suppliers s ON s.id = o.supplier_id
-    WHERE o.status = 'awaiting_stock_confirmation'
+    WHERE o.status IN ('awaiting_stock_confirmation', 'awaiting_alternative_resolution')
     ORDER BY o.created_at ASC
   `);
   return rows;
