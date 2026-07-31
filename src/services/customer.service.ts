@@ -5,6 +5,7 @@ import {
   Customer
 } from '../models/customer.model.js';
 import { sendReply, sendReplyButtons } from './reply.service.js';
+import { extractBoldTerms } from './humanize.service.js';
 import { sendWhatsAppMessage } from './whatsapp.service.js';
 import {
   markSessionActive,
@@ -99,7 +100,8 @@ export async function sendResumeRegistrationPrompt(phone: string, customer: Cust
   await sendReply(phone, messages.onboarding.resumeRegistration());
 
   if (customer.registration_status === 'awaiting_name') {
-    await sendReply(phone, messages.onboarding.askNameOnly());
+    const askName = messages.onboarding.askNameOnly();
+    await sendReply(phone, askName, { preserve: extractBoldTerms(askName) });
   }
 }
 

@@ -15,6 +15,7 @@ import {
 import { downloadWhatsAppMedia, sendWhatsAppButtons } from './whatsapp.service.js';
 import { saveDocument } from './storage.service.js';
 import { sendReply, sendReplyButtons } from './reply.service.js';
+import { extractBoldTerms } from './humanize.service.js';
 import { extractDataWithClaudeVision, VisionData } from './ai.service.js';
 import { completeOnboardingIfNeeded, resolveMessages, Customer } from './customer.service.js';
 import {
@@ -273,7 +274,8 @@ export async function processVehicleIdOptionChoice(phone: string, reply: string)
   if (r.includes('manual')) {
     await clearVehicleIdChoiceShown(phone);
     await startManualCollection(phone, 'awaiting_make');
-    await sendReply(phone, messages.manual.askMakePrompt());
+    const askMake = messages.manual.askMakePrompt();
+    await sendReply(phone, askMake, { preserve: extractBoldTerms(askMake) });
     return true;
   }
 
@@ -338,7 +340,8 @@ export async function processManualCollectionStep(
     }
 
     await updateManualCollection(collection.id, { make, status: 'awaiting_model' });
-    await sendReply(phone, messages.manual.askModel(make));
+    const askModel = messages.manual.askModel(make);
+    await sendReply(phone, askModel, { preserve: extractBoldTerms(askModel) });
     return true;
   }
 
@@ -358,7 +361,8 @@ export async function processManualCollectionStep(
     }
 
     await updateManualCollection(collection.id, { model, status: 'awaiting_year' });
-    await sendReply(phone, messages.manual.askYear(collection.make, model));
+    const askYear = messages.manual.askYear(collection.make, model);
+    await sendReply(phone, askYear, { preserve: extractBoldTerms(askYear) });
     return true;
   }
 
@@ -371,7 +375,8 @@ export async function processManualCollectionStep(
     }
 
     await updateManualCollection(collection.id, { year: yearClean, status: 'awaiting_engine_number' });
-    await sendReply(phone, messages.manual.askEngineNumber(collection.make, collection.model, yearClean));
+    const askEngine = messages.manual.askEngineNumber(collection.make, collection.model, yearClean);
+    await sendReply(phone, askEngine, { preserve: extractBoldTerms(askEngine) });
     return true;
   }
 
@@ -519,7 +524,8 @@ export async function processVinDecodeFailedChoice(phone: string, reply: string)
     await clearVinDecodeFailedChoice(phone);
     await clearVehicleIdChoiceShown(phone);
     await startManualCollection(phone, 'awaiting_make', attemptedVin);
-    await sendReply(phone, messages.manual.askMakePrompt());
+    const askMake = messages.manual.askMakePrompt();
+    await sendReply(phone, askMake, { preserve: extractBoldTerms(askMake) });
     return true;
   }
 
@@ -677,7 +683,8 @@ export async function processDocumentRetryChoice(phone: string, reply: string): 
     await clearDocumentRetryChoice(phone);
     await clearVehicleIdChoiceShown(phone);
     await startManualCollection(phone, 'awaiting_make');
-    await sendReply(phone, messages.manual.askMakePrompt());
+    const askMake = messages.manual.askMakePrompt();
+    await sendReply(phone, askMake, { preserve: extractBoldTerms(askMake) });
     return true;
   }
 
@@ -735,7 +742,8 @@ export async function processVehicleConfirmation(phone: string, reply: string, c
     await clearVehicleConfirmShown(phone);
 
     await startManualCollection(phone, 'awaiting_make');
-    await sendReply(phone, messages.manual.askMakePrompt());
+    const askMake = messages.manual.askMakePrompt();
+    await sendReply(phone, askMake, { preserve: extractBoldTerms(askMake) });
     return true;
   }
 

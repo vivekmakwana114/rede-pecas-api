@@ -1,5 +1,6 @@
 import { getCustomerByPhone, updateCustomer } from '../models/customer.model.js';
 import { sendReply, sendReplyButtons } from './reply.service.js';
+import { extractBoldTerms } from './humanize.service.js';
 import { resolveMessages } from './customer.service.js';
 import { requestStockConfirmation } from './product.service.js';
 import {
@@ -135,12 +136,14 @@ export async function processOrderProfileStep(
       const customer = await getCustomerByPhone(phone);
       const firstName = customer?.name?.split(' ')[0] || 'Cliente';
       await saveOrderProfileStage(phone, { ...stage, stage: 'awaiting_individual_address', customerType: 'individual' });
-      await sendReply(phone, messages.orderProfile.askIndividualAddressBody(firstName));
+      const askIndividualAddress = messages.orderProfile.askIndividualAddressBody(firstName);
+      await sendReply(phone, askIndividualAddress, { preserve: extractBoldTerms(askIndividualAddress) });
       return true;
     }
     if (buttonReplyId === 'customer_type_company') {
       await saveOrderProfileStage(phone, { ...stage, stage: 'awaiting_company_nif', customerType: 'company' });
-      await sendReply(phone, messages.orderProfile.askCompanyNifBody());
+      const askCompanyNif = messages.orderProfile.askCompanyNifBody();
+      await sendReply(phone, askCompanyNif, { preserve: extractBoldTerms(askCompanyNif) });
       return true;
     }
     await sendReplyButtons(phone, messages.common.notUnderstood(), messages.orderProfile.askCustomerTypeButtons, ['customer_type_individual', 'customer_type_company']);
@@ -163,7 +166,8 @@ export async function processOrderProfileStep(
     const customer = await getCustomerByPhone(phone);
     const firstName = customer?.name?.split(' ')[0] || 'Cliente';
     await saveOrderProfileStage(phone, { ...stage, stage: 'awaiting_company_address', nif });
-    await sendReply(phone, messages.orderProfile.askCompanyAddressBody(firstName));
+    const askCompanyAddress = messages.orderProfile.askCompanyAddressBody(firstName);
+    await sendReply(phone, askCompanyAddress, { preserve: extractBoldTerms(askCompanyAddress) });
     return true;
   }
 
@@ -212,7 +216,8 @@ export async function processOrderProfileStep(
     }
     if (yesNif) {
       await saveOrderProfileStage(phone, { ...stage, stage: 'awaiting_individual_nif_number' });
-      await sendReply(phone, messages.orderProfile.askIndividualNifNumberBody());
+      const askIndividualNifNumber = messages.orderProfile.askIndividualNifNumberBody();
+      await sendReply(phone, askIndividualNifNumber, { preserve: extractBoldTerms(askIndividualNifNumber) });
       return true;
     }
     await sendReplyButtons(phone, messages.common.notUnderstood(), messages.orderProfile.askIndividualNifButtons, ['order_nif_yes', 'order_nif_no']);

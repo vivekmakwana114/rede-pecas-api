@@ -42,6 +42,24 @@ function quotedLiterals(text: string): string[] {
   return (text.match(/"([^"\n]{1,20})"/g) ?? []).map((q) => q.slice(1, -1).trim()).filter(Boolean);
 }
 
+/**
+ * Extracts the inner text of every *bold*-wrapped span in a string. Callers
+ * that ask for a single, state-machine-critical fact (e.g. "what's the
+ * *make* of the vehicle?") should pass this as `opts.preserve` so a rewrite
+ * that silently swaps the requested field (a real incident: a rejected-VIN
+ * retry asking for "make" got rewritten into asking for a "plate number"
+ * instead — nothing in `validate()` checks for that kind of meaning drift,
+ * only language/length/numeric/quoted-literal preservation) fails validation
+ * and falls back to the original, correct wording instead of misleading the
+ * customer into supplying the wrong field. Not applied by default to every
+ * humanize() call — most bolded spans are decorative emphasis, not the sole
+ * fact being requested, and forcing verbatim preservation there would just
+ * suppress the rewrite's tone for no safety benefit.
+ */
+export function extractBoldTerms(text: string): string[] {
+  return (text.match(/\*([^*\n]+)\*/g) ?? []).map((m) => m.slice(1, -1).trim()).filter(Boolean);
+}
+
 // Common function words that show up in almost any full sentence. The
 // customer-message locale detector (greeting.ts) deliberately keeps its word
 // list narrow/topic-focused, since a tie there means "don't guess, leave the
