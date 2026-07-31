@@ -106,7 +106,21 @@ const CUSTOMER_STATS_JOIN = `
   LEFT JOIN LATERAL (
     SELECT
       COUNT(*)::int AS orders_count,
-      COALESCE(SUM(unit_price + COALESCE(service_price, 0)) FILTER (WHERE status = 'approved'), 0) AS total_spent
+      -- Multi-item "basket" orders keep unit_price/service_price NULL and
+      -- store their line items in items instead (see order.model.ts's
+      -- ITEMS_PRICE_CASE_SQL) — summing the raw columns directly here would
+      -- silently contribute $0 for every approved basket order, undercounting
+      -- a customer whose orders are entirely basket-type.
+      COALESCE(SUM(
+        CASE
+          WHEN o.items IS NOT NULL THEN (
+            SELECT COALESCE(SUM((elem->>'unitPrice')::numeric + COALESCE((elem->>'servicePrice')::numeric, 0)), 0)
+            FROM jsonb_array_elements(o.items) elem
+            WHERE elem->>'availabilityStatus' = 'available'
+          )
+          ELSE (o.unit_price + COALESCE(o.service_price, 0))
+        END
+      ) FILTER (WHERE o.status = 'approved'), 0) AS total_spent
     FROM orders o
     WHERE o.customer_phone = c.phone
   ) order_stats ON true
