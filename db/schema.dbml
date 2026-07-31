@@ -148,7 +148,7 @@ Table orders {
   supplier_id int [ref: > suppliers.id]
   quantity int [default: 1]
   unit_price numeric(12,2)
-  status text [default: 'awaiting_payment', note: 'awaiting_payment (placeholder while service decision pending) → awaiting_stock_confirmation (admin panel) → stock_unavailable (terminal) | awaiting_payment_method → awaiting_bank_subtype (transfer/deposit only) → awaiting_payment_proof | awaiting_agent_confirmation → payment_proof_received → approved | rejected. cancelled: legacy value, no longer set by any code path — see admin_hidden']
+  status text [default: 'awaiting_payment', note: 'awaiting_payment (placeholder while service decision pending) → awaiting_stock_confirmation (admin panel) → stock_unavailable (terminal) | awaiting_alternative_resolution (basket orders only — every known item decided, waiting on customer to pick a substitute for whatever was unavailable; still shown in the admin stock-confirmation view, just non-actionable; returns to awaiting_stock_confirmation once a swap needs admin confirmation) | awaiting_payment_method → awaiting_bank_subtype (transfer/deposit only) → awaiting_payment_proof | awaiting_agent_confirmation → payment_proof_received → approved | rejected. cancelled: legacy value, no longer set by any code path — see admin_hidden']
   payment_method text [note: 'bank_transfer | bank_deposit | multicaixa_express | mobile_pos']
   approved_by text
   approved_at timestamptz

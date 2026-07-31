@@ -463,7 +463,17 @@ CREATE TABLE IF NOT EXISTS orders (
   -- still deciding on an attached service, if any — see product.service.ts)
   -- → awaiting_stock_confirmation (admin confirms availability with the
   -- supplier via the admin panel, not WhatsApp) → stock_unavailable (terminal,
-  -- admin declines) | awaiting_payment_method → awaiting_bank_subtype (bank
+  -- admin declines) | awaiting_alternative_resolution (basket orders only,
+  -- 2026-07-31: set when at least one item came back unavailable but not
+  -- every item did — every currently-known item has an admin decision and
+  -- it's the customer's turn to pick a substitute per rejected item, so the
+  -- courtesy/admin-reminder sweeps (gated on awaiting_stock_confirmation)
+  -- stop nagging; the order stays visible in the admin panel's
+  -- stock-confirmation view either way, just rendered as "waiting on
+  -- customer" rather than actionable; goes back to awaiting_stock_confirmation
+  -- once a swapped-in alternative needs its own admin confirmation, see
+  -- finalizeMultiItemOrder/processAlternativeSelection
+  -- in product.service.ts) | awaiting_payment_method → awaiting_bank_subtype (bank
   -- transfer/deposit only — Multicaixa Express and Mobile POS confirm directly,
   -- no subtype step) → awaiting_payment_proof → awaiting_proof_verification
   -- (transient, set for the duration of the Claude Vision validation call in
@@ -513,7 +523,7 @@ CREATE TABLE IF NOT EXISTS orders (
   -- entry per product: { itemId (1-based, stable for the order's lifetime —
   -- used in admin WhatsApp button ids), productId, productName, reference,
   -- supplierId, supplierName, quantity, unitPrice, serviceName, servicePrice,
-  -- availabilityStatus ('pending' | 'available' | 'unavailable') }. NULL for
+  -- availabilityStatus ('pending' | 'available' | 'unavailable' | 'declined') }. NULL for
   -- every single-product order (the overwhelming majority) — an order is
   -- "multi-item" precisely when items IS NOT NULL, the only signal the code
   -- needs anywhere to pick between the legacy single-product path and this one.
