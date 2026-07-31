@@ -59,8 +59,6 @@ import {
   savePendingBasket,
   getPendingBasket,
   clearPendingBasket,
-  markBasketConfirmShown,
-  clearBasketConfirmShown,
   savePendingAlternativeOffer,
   getPendingAlternativeOffer,
   clearPendingAlternativeOffer,
@@ -138,9 +136,9 @@ export async function searchAndRespond(phone: string, customerText: string, cust
 
   await savePendingOptions(phone, options);
   // A single-product search still goes through the basket mechanism (with an
-  // already-empty queue) so its selection is confirmed/cancelled through the
-  // exact same order-bucket summary as a multi-item basket — see
-  // processBasketProductSelection/processBasketConfirmation below.
+  // already-empty queue) so its selection is summarized and turned into an
+  // order through the exact same path as a multi-item basket — see
+  // processBasketProductSelection/advanceBasket below.
   await savePendingBasket(phone, { queue: [], items: [], partType, unmatched: [] });
 
   const body = vehicle
@@ -341,27 +339,26 @@ function summarizeBasket(basket: PendingBasket): { lines: { description: string;
 }
 
 /**
- * Sends the basket summary + Sim/Não confirmation buttons and marks them shown.
+ * Sends the basket summary (products + total) as a plain informational
+ * message — no confirm/cancel step; the order is created and NIF/address
+ * capture starts right after this, in the same turn.
  */
 async function sendBasketSummary(phone: string, basket: PendingBasket, customerName: string): Promise<void> {
   const messages = await resolveMessages(phone);
   const { lines, total } = summarizeBasket(basket);
-  await sendReplyButtons(
-    phone,
-    messages.agent.basketSummaryBody(lines, customerName, formatPrice(total)),
-    messages.agent.basketConfirmButtons
-  );
+  await sendReply(phone, messages.agent.basketSummaryBody(lines, customerName, formatPrice(total)));
 }
 
 /**
  * Moves the basket forward once a product (and its service decision) has
  * just been resolved: searches the next queued product name, or — once the
- * queue is empty — either sends the full basket summary with a Sim/Não
- * confirmation (if at least one item matched), or, when every single item
- * came back unmatched, skips the (nonsensical, empty) cart summary
- * entirely and instead sends one consolidated notice — a waitlist offer
- * covering every unmatched item that has a real out-of-stock product
- * behind it, or a plain "couldn't find any of these" otherwise.
+ * queue is empty — either creates the order and moves straight into
+ * NIF/address capture (if at least one item matched — no confirm/cancel
+ * step, per 2026-07-31 product decision), or, when every single item came
+ * back unmatched, skips the (nonsensical, empty) cart summary entirely and
+ * instead sends one consolidated notice — a waitlist offer covering every
+ * unmatched item that has a real out-of-stock product behind it, or a plain
+ * "couldn't find any of these" otherwise.
  */
 async function advanceBasket(phone: string): Promise<void> {
   const basket = await getPendingBasket(phone);
@@ -401,52 +398,20 @@ async function advanceBasket(phone: string): Promise<void> {
   }
 
   await sendBasketSummary(phone, basket, customerName);
-  await markBasketConfirmShown(phone);
-}
 
-/**
- * Handles the customer's Sim/Não reply to the basket summary: on yes,
- * creates a single multi-item order for every product in the basket and
- * kicks off stock confirmation exactly like a single-product order; on no,
- * cancels the basket; on anything else, re-sends the summary + buttons.
- */
-export async function processBasketConfirmation(
-  phone: string,
-  reply: string,
-  basket: PendingBasket
-): Promise<boolean> {
-  const messages = await resolveMessages(phone);
-
-  if (isAffirmativeReply(reply)) {
-    await clearPendingBasket(phone);
-    await clearBasketConfirmShown(phone);
-
-    const orderNumber = await generateOrderNumber();
-    const partType = basket.partType || null;
-    if (basket.items.length === 1) {
-      const only = basket.items[0];
-      await createOrder(orderNumber, phone, only.product, partType);
-      if (only.service) {
-        await addServiceToOrder(orderNumber, only.service.name, only.service.price);
-      }
-    } else {
-      await createMultiItemOrder(orderNumber, phone, basket.items, partType);
+  await clearPendingBasket(phone);
+  const orderNumber = await generateOrderNumber();
+  const partType = basket.partType || null;
+  if (basket.items.length === 1) {
+    const only = basket.items[0];
+    await createOrder(orderNumber, phone, only.product, partType);
+    if (only.service) {
+      await addServiceToOrder(orderNumber, only.service.name, only.service.price);
     }
-    await startOrderProfileCapture(phone, orderNumber);
-    return true;
+  } else {
+    await createMultiItemOrder(orderNumber, phone, basket.items, partType);
   }
-
-  if (isNegativeReply(reply)) {
-    await clearPendingBasket(phone);
-    await clearBasketConfirmShown(phone);
-    await sendReply(phone, messages.agent.basketCancelled());
-    return true;
-  }
-
-  const customer = await getCustomerByPhone(phone);
-  const customerName = customer?.name?.split(' ')[0] || 'Cliente';
-  await sendBasketSummary(phone, basket, customerName);
-  return true;
+  await startOrderProfileCapture(phone, orderNumber);
 }
 
 /**

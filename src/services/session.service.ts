@@ -396,66 +396,6 @@ export async function clearOrderProfileStage(phone: string): Promise<void> {
   }
 }
 
-const basketConfirmSessions = new Map<string, number>();
-
-/**
- * Marks that the basket summary + Sim/Não confirmation buttons were just
- * shown to this phone, gating the confirm-reply matcher.
- */
-export async function markBasketConfirmShown(phone: string): Promise<void> {
-  const key = `basketConfirm:${phone}`;
-  basketConfirmSessions.set(key, Date.now() + VEHICLE_ID_CHOICE_TTL * 1000);
-
-  if (useMemoryFallback || !redisClient?.isOpen) {
-    return;
-  }
-
-  try {
-    await redisClient.setEx(key, VEHICLE_ID_CHOICE_TTL, '1');
-  } catch (err) {
-    logger.error('Error marking basket-confirm choice shown in Redis', err);
-  }
-}
-
-/**
- * Reports whether the basket summary + Sim/Não confirmation buttons were
- * shown to this phone within the current session.
- */
-export async function wasBasketConfirmShown(phone: string): Promise<boolean> {
-  const key = `basketConfirm:${phone}`;
-  if (useMemoryFallback || !redisClient?.isOpen) {
-    const expiresAt = basketConfirmSessions.get(key);
-    return !!expiresAt && expiresAt >= Date.now();
-  }
-
-  try {
-    const exists = await redisClient.exists(key);
-    return exists === 1;
-  } catch (err) {
-    logger.error('Error checking basket-confirm choice state in Redis', err);
-    const expiresAt = basketConfirmSessions.get(key);
-    return !!expiresAt && expiresAt >= Date.now();
-  }
-}
-
-/**
- * Clears the basket-confirm buttons' shown flag for this phone.
- */
-export async function clearBasketConfirmShown(phone: string): Promise<void> {
-  const key = `basketConfirm:${phone}`;
-  basketConfirmSessions.delete(key);
-
-  if (useMemoryFallback || !redisClient?.isOpen) {
-    return;
-  }
-
-  try {
-    await redisClient.del(key);
-  } catch (err) {
-    logger.error('Error clearing basket-confirm choice in Redis', err);
-  }
-}
-
 export interface PendingAlternativeOffer {
   orderNumber: string;
   itemId: number;

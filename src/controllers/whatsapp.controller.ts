@@ -262,15 +262,6 @@ async function processMessageFlow(
     if (handled) return;
   }
 
-  const basketConfirmShown = await sessionService.wasBasketConfirmShown(phone);
-  if (basketConfirmShown) {
-    const basket = await sessionService.getPendingBasket(phone);
-    if (basket) {
-      const handled = await productService.processBasketConfirmation(phone, customerText, basket);
-      if (handled) return;
-    }
-  }
-
   const pendingOrderProfileShortcut = await sessionService.getPendingOrderProfileShortcut(phone);
   if (pendingOrderProfileShortcut) {
     const handled = await orderProfileService.processProfileShortcutReply(phone, buttonReplyId, pendingOrderProfileShortcut);

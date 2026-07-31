@@ -93,8 +93,6 @@ interface Messages {
     stockUnavailableButtons: [string, string];
     basketRequestSummary: (productNames: string[], name: string) => string;
     basketSummaryBody: (items: { description: string; price: string }[], name: string, total: string) => string;
-    basketConfirmButtons: [string, string];
-    basketCancelled: () => string;
     basketPartialAvailability: (availableNames: string[], unavailableNames: string[]) => string;
     basketNoneAvailableYet: (unavailableNames: string[]) => string;
     basketAllUnavailable: () => string;
@@ -505,9 +503,7 @@ const pt: Messages = {
     basketSummaryBody: (items, name, total) =>
       `Aqui está o que selecionaste, ${name}: 🛒\n\n` +
       items.map((i, idx) => `${idx + 1}. ${i.description} — ${i.price}`).join('\n') +
-      `\n\n*Total: ${total}*\n\nPosso avançar com a proforma?`,
-    basketConfirmButtons: ['✅ Sim, confirmar', '❌ Não, cancelar'],
-    basketCancelled: () => `Sem problema, cancelei este pedido. 👍 Diz-me quando quiseres procurar outra peça.`,
+      `\n\n*Total: ${total}*`,
     basketPartialAvailability: (availableNames, unavailableNames) =>
       `Boas notícias — ${availableNames.join(', ')} ${availableNames.length > 1 ? 'estão' : 'está'} disponíve${availableNames.length > 1 ? 'is' : 'l'}! ✅\n\n` +
       `⚠️ Infelizmente ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? 'não estão' : 'não está'} disponíve${unavailableNames.length > 1 ? 'is' : 'l'} no momento. Vou procurar alternativas para ti.`,
@@ -1070,9 +1066,7 @@ const en: Messages = {
     basketSummaryBody: (items, name, total) =>
       `Here's what you've selected, ${name}: 🛒\n\n` +
       items.map((i, idx) => `${idx + 1}. ${i.description} — ${i.price}`).join('\n') +
-      `\n\n*Total: ${total}*\n\nShall I move forward with the proforma?`,
-    basketConfirmButtons: ['✅ Yes, confirm', '❌ No, cancel'],
-    basketCancelled: () => `No problem, I've cancelled this order. 👍 Let me know whenever you'd like to search for something else.`,
+      `\n\n*Total: ${total}*`,
     basketPartialAvailability: (availableNames, unavailableNames) =>
       `Good news — ${availableNames.join(', ')} ${availableNames.length > 1 ? 'are' : 'is'} available! ✅\n\n` +
       `⚠️ Unfortunately ${unavailableNames.join(', ')} ${unavailableNames.length > 1 ? "aren't" : "isn't"} available right now. Let me find some alternatives for you.`,
