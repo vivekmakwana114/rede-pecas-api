@@ -136,7 +136,6 @@ interface Messages {
     askIndividualNifNumberBody: () => string;
     addressSaved: () => string;
     nifSaved: () => string;
-    allSet: () => string;
     savedProfileSummary: (name: string, address: string, customerType: 'individual' | 'company', nif: string | null) => string;
     savedProfileUseButton: () => string;
     savedProfileEditButton: () => string;
@@ -299,7 +298,7 @@ const pt: Messages = {
    */
   onboarding: {
     welcome: () =>
-      `Olá! Bem-vindo à Rede Peças, o teu marketplace automóvel angolano!\n\n` +
+      `Olá! Bem-vindo à Rede Peças, a tua plataforma automóvel angolana!\n\n` +
       `Eu sou o Xico Peças, o teu assistente.\n\n` +
       `Nos nossos fornecedores vou encontrar as melhores opções para ti — rápido.\n\n` +
       `Peças  •  Lubrificantes  •  Acessórios  •  Serviços\n\n` +
@@ -435,10 +434,10 @@ const pt: Messages = {
     chooseVehiclePrompt: (vehicles, greetingName) =>
       (greetingName ? `Olá de novo, ${greetingName}! 👋 Bom ter-te de volta.\n\n` : '') +
       `Para qual dos teus veículos é isto? 👇\n\n` +
-      vehicles.map((v, i) => `${i + 1}️⃣ ${v.make} ${v.model} ${v.year}`).join('\n') +
-      `\n\nResponde com o número. 👇`,
+      vehicles.map((v, i) => `${i + 1}. ${v.make} ${v.model} ${v.year}`).join('\n') +
+      `\n\nResponde com o *número*. 👇`,
     vehicleChoiceNotFound: () =>
-      `Não percebi. Responde só com o número do veículo. 👆`,
+      `Não percebi. Responde só com o *número do veículo*. 👆`,
   },
   /**
    * Product search and stock/order lifecycle messages — search results,
@@ -590,8 +589,6 @@ const pt: Messages = {
       `Óptimo! Escreve o teu *número de NIF* abaixo. 👇`,
     addressSaved: () => `Endereço guardado ✅`,
     nifSaved: () => `NIF guardado ✅`,
-    allSet: () =>
-      `Perfeito, está tudo pronto! ✅\n\nVou confirmar a disponibilidade com os fornecedores agora... ⏳`,
     savedProfileSummary: (name, address, customerType, nif) =>
       `Entregar no teu endereço habitual, ${name}?\n\n` +
       `📍 ${address}\n` +
@@ -683,7 +680,7 @@ const pt: Messages = {
   pdf: {
     proforma: {
       companyName: 'REDE PEÇAS',
-      tagline: 'Marketplace Automotivo de Angola',
+      tagline: 'Plataforma Automotiva de Angola',
       phone: 'Tel: +244 900 000 000',
       email: 'Email: info@redepecas.ao',
       title: 'FACTURA PROFORMA',
@@ -710,7 +707,7 @@ const pt: Messages = {
       termsNote:
         'Esta proforma tem validade de 48 horas. O stock é reservado apenas após confirmação do pagamento. ' +
         'A Rede Peças actua como intermediário entre o cliente e o fornecedor.',
-      footer: 'Rede Peças — Marketplace Automotivo de Angola  |  NIF: 5XXXXXXXXX  |  info@redepecas.ao',
+      footer: 'Rede Peças — Plataforma Automotiva de Angola  |  NIF: 5XXXXXXXXX  |  info@redepecas.ao',
     },
     sendMessage: {
       documentCaption: (orderNumber) => `Factura Proforma Nº ${orderNumber} — Rede Peças`,
@@ -726,7 +723,7 @@ const pt: Messages = {
     },
     invoice: {
       headerTitle: 'REDE PEÇAS - FACTURA',
-      tagline: 'Marketplace Automotivo de Angola',
+      tagline: 'Plataforma Automotiva de Angola',
       nifLine: 'NIF: 5001234567 (Certificado AGT)',
       title: 'FACTURA COMERCIAL',
       numberLabel: (num) => `Factura Nº: ${num}`,
@@ -860,7 +857,7 @@ const en: Messages = {
    */
   onboarding: {
     welcome: () =>
-      `Hi! Welcome to Rede Peças, your Angolan automotive marketplace!\n\n` +
+      `Hi! Welcome to Rede Peças, your Angolan automotive platform!\n\n` +
       `I'm Xico Peças, your assistant.\n\n` +
       `In our suppliers I will find you the best options — fast.\n\n` +
       `Parts  •  Lubricants  •  Accessories  •  Services\n\n` +
@@ -882,7 +879,7 @@ const en: Messages = {
     onboardingComplete: (name, vehicleSummary) =>
       `You're officially on Rede Peças, ${name}! 🎉\n\n` +
       `${vehicleSummary}\n\n` +
-      `What part do you need today?\n\n` +
+      `What product do you need today?\n\n` +
       `Just tell me naturally — I'll handle the rest. 👇`,
   },
   /**
@@ -987,10 +984,10 @@ const en: Messages = {
     confirmedAskPart: (make, model, year, greetingName) =>
       greetingName
         ? `Hey ${greetingName}! 👋 Good to have you back.\n\n` +
-          `What part do you need for your *${make} ${model} ${year}* today?`
+          `What product do you need for your *${make} ${model} ${year}* today?`
         : `Perfect! 🙌\n\n` +
-          `Now tell me which part you need for your *${make} ${model} ${year}*.\n\n` +
-          `Example: _"oil filter"_, _"brake pads"_, _"timing belt"_...`,
+          `Now tell me which product you need for your *${make} ${model} ${year}*.\n\n` +
+          `It Could be Parts, Accessories or Lubricants, Just tell me what you are after.`,
     addVehicleButton: () => '➕ Add vehicle',
     addVehicleBody: () =>
       `Sure! Let's add another vehicle to your profile. 🚗\n\n` +
@@ -998,10 +995,10 @@ const en: Messages = {
     chooseVehiclePrompt: (vehicles, greetingName) =>
       (greetingName ? `Hey ${greetingName}! 👋 Good to have you back.\n\n` : '') +
       `Which of your vehicles is this for? 👇\n\n` +
-      vehicles.map((v, i) => `${i + 1}️⃣ ${v.make} ${v.model} ${v.year}`).join('\n') +
-      `\n\nReply with the number. 👇`,
+      vehicles.map((v, i) => `${i + 1}. ${v.make} ${v.model} ${v.year}`).join('\n') +
+      `\n\nReply with the *number*. 👇`,
     vehicleChoiceNotFound: () =>
-      `I didn't get that. Reply with just the vehicle's number. 👆`,
+      `I didn't get that. Reply with just the *number*. 👆`,
   },
   /**
    * Product search and stock/order lifecycle messages — search results,
@@ -1153,8 +1150,6 @@ const en: Messages = {
       `Great! Type your *NIF number* below. 👇`,
     addressSaved: () => `Address saved ✅`,
     nifSaved: () => `NIF saved ✅`,
-    allSet: () =>
-      `Perfect, you're all set! ✅\n\nLet me confirm availability with the suppliers now... ⏳`,
     savedProfileSummary: (name, address, customerType, nif) =>
       `Delivering to your saved address, ${name}?\n\n` +
       `📍 ${address}\n` +
@@ -1246,7 +1241,7 @@ const en: Messages = {
   pdf: {
     proforma: {
       companyName: 'REDE PEÇAS',
-      tagline: "Angola's Auto Parts Marketplace",
+      tagline: "Angola's Auto Parts Platform",
       phone: 'Tel: +244 900 000 000',
       email: 'Email: info@redepecas.ao',
       title: 'PROFORMA INVOICE',
@@ -1273,7 +1268,7 @@ const en: Messages = {
       termsNote:
         'This proforma is valid for 48 hours. Stock is only reserved after payment is confirmed. ' +
         'Rede Peças acts as an intermediary between the customer and the supplier.',
-      footer: "Rede Peças — Angola's Auto Parts Marketplace  |  NIF: 5XXXXXXXXX  |  info@redepecas.ao",
+      footer: "Rede Peças — Angola's Auto Parts Platform  |  NIF: 5XXXXXXXXX  |  info@redepecas.ao",
     },
     sendMessage: {
       documentCaption: (orderNumber) => `Proforma Invoice No. ${orderNumber} — Rede Peças`,
@@ -1284,12 +1279,12 @@ const en: Messages = {
         `Your official invoice is attached — keep it for your records.\n\n` +
         `Thank you for choosing Rede Peças.\n` +
         `We hope to see you again soon! 🙏 🚗`,
-      documentCaption: (orderNumber) => `Commercial Invoice No. ${orderNumber} — Rede Peças`,
+      documentCaption: (orderNumber) => `Commercial Invoice No. ${orderNumber} — Rede Peças \n\nAtt. Your AGT credited invoice will be sent at the time of the delivery.`,
       orderStatusButtonLabel: () => '📦 Order status',
     },
     invoice: {
       headerTitle: 'REDE PEÇAS - INVOICE',
-      tagline: "Angola's Auto Parts Marketplace",
+      tagline: "Angola's Auto Parts Platform",
       nifLine: 'NIF: 5001234567 (AGT Certified)',
       title: 'COMMERCIAL INVOICE',
       numberLabel: (num) => `Invoice No.: ${num}`,

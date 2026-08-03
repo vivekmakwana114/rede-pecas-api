@@ -107,8 +107,6 @@ async function finalizeOrderProfile(
 ): Promise<void> {
   await clearOrderProfileStage(phone);
   await updateCustomer(phone, { customer_type: customerType, nif, address });
-  const messages = await resolveMessages(phone);
-  await sendReply(phone, messages.orderProfile.allSet());
   await requestStockConfirmation(phone, orderNumber);
 }
 

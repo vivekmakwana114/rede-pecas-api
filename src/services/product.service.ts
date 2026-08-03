@@ -427,14 +427,21 @@ function truncate(text: string, max: number): string {
  * each carrying a selectable option id, truncated title, and reference/price/supplier description.
  */
 function buildProductListRows(options: Product[]): { id: string; title: string; description: string }[] {
-  return options.map((item, i) => ({
-    id: `option_${i + 1}`,
-    title: truncate(item.name, 24),
-    description: truncate(
-      `Ref: ${item.reference} • ${formatPrice(item.price)}${item.supplier ? ` • ${item.supplier}` : ''}`,
-      72
-    ),
-  }));
+  return options.map((item, i) => {
+    const parts = [
+      item.reference ? `Ref: ${item.reference}` : null,
+      item.brand ? `Brand: ${item.brand}` : null,
+      formatPrice(item.price),
+      item.delivery_time ? `Delivery: ${item.delivery_time}` : null,
+      item.supplier || null,
+    ].filter(Boolean);
+
+    return {
+      id: `option_${i + 1}`,
+      title: truncate(item.name, 24),
+      description: truncate(parts.join(' • '), 72),
+    };
+  });
 }
 
 /**

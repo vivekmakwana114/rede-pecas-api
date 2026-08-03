@@ -72,7 +72,7 @@ export async function sendAskPartPrompt(phone: string, greeting?: { name: string
 
   await savePendingVehicleChoice(phone, vehicles.map(v => ({ id: v.id, make: v.make, model: v.model, year: v.year })));
   const chooseBody = messages.vehicleConfirm.chooseVehiclePrompt(vehicles, greeting?.name);
-  await sendReply(phone, chooseBody);
+  await sendReply(phone, chooseBody, { preserve: extractBoldTerms(chooseBody) });
   return true;
 }
 
@@ -88,7 +88,8 @@ export async function resolvePendingVehicleChoice(phone: string, reply: string):
   const idx = parseInt(reply.trim(), 10) - 1;
   const chosen = pending[idx];
   if (!chosen) {
-    await sendReply(phone, messages.vehicleConfirm.vehicleChoiceNotFound());
+    const notFoundBody = messages.vehicleConfirm.vehicleChoiceNotFound();
+    await sendReply(phone, notFoundBody, { preserve: extractBoldTerms(notFoundBody) });
     return true;
   }
 

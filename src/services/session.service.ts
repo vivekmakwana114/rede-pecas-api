@@ -1601,6 +1601,23 @@ export async function saveHumanized(key: string, value: string): Promise<void> {
   }
 }
 
+/**
+ * Clears all cached humanized rewrites from the in-memory map and Redis.
+ */
+export async function clearHumanizeCache(): Promise<void> {
+  humanizeCache.clear();
+  if (!useMemoryFallback && redisClient?.isOpen) {
+    try {
+      const keys = await redisClient.keys('humanized:*');
+      if (keys.length > 0) {
+        await redisClient.del(keys);
+      }
+    } catch (err) {
+      logger.error('Error clearing humanized cache in Redis', err);
+    }
+  }
+}
+
 const revokedTokens = new Map<string, number>();
 
 /**
