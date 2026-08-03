@@ -147,9 +147,11 @@ export async function searchProductsInInventory({
     SELECT
       ps.id,
       p.name,
+      p.brand,
       p.reference,
       ps.price,
       ps.quantity,
+      ps.delivery_time,
       p.service_category,
       p.product_type,
       ps.supplier_id,

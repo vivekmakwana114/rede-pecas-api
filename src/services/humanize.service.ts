@@ -189,6 +189,21 @@ function validate(original: string, candidate: string, opts: HumanizeOptions): V
     }
   }
 
+  const listMarkers = original.match(/^\d+[\.\)]\s/gm) ?? [];
+  for (const marker of listMarkers) {
+    if (!out.includes(marker.trim())) {
+      return { ok: false, reason: `list-marker-dropped ("${marker.trim()}")` };
+    }
+  }
+
+  if (!/\b(plate|matr[íi]cula)\b/i.test(original) && /\b(number plate|plate number|matr[íi]cula)\b/i.test(out)) {
+    return { ok: false, reason: 'hallucinated-number-plate' };
+  }
+
+  if (!/\b(cash|levantamento|entrega)\b/i.test(original) && /\b(cash on pickup|cash on delivery|pagamento no levantamento|pagamento na entrega)\b/i.test(out)) {
+    return { ok: false, reason: 'hallucinated-cash-on-pickup' };
+  }
+
   for (const token of numericTokens(original)) {
     if (!out.includes(token)) {
       return { ok: false, reason: `numeric-dropped ("${token}")` };
