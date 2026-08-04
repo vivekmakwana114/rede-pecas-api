@@ -1,55 +1,29 @@
 import { Request, Response } from 'express';
-import Anthropic from '@anthropic-ai/sdk';
-import { config } from '../config/config.js';
 import { logger } from '../config/logger.js';
-import {
-  getAndUpdateCustomer,
-  createCustomerPreRegistration,
-  updateCustomer,
-  getCustomerByPhone,
-  Customer
-} from '../models/customer.model.js';
-import {
-  getCustomerVehicle,
-  saveVehicleSession,
-  clearVehicleSession,
-  getActiveManualCollection,
-  updateManualCollection,
-  startManualCollection,
-} from '../models/vehicle.model.js';
-import {
-  createOrder,
-  getLatestOrderByStatus,
-  generateOrderNumber,
-} from '../models/order.model.js';
-import {
-  searchProductsInInventory,
-  Product
-} from '../models/product.model.js';
-import fs from 'fs';
-import { isVIN, decodeVIN } from '../services/vin.service.js';
-import { extractDataWithClaudeVision, VisionData } from '../services/ai.service.js';
-import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../services/whatsapp.service.js';
-import {
-  askPaymentMethod,
-  processMethodChoice,
-  processMethodSubtype,
-  processPaymentProof
-} from '../services/payment.service.js';
-import {
-  getHistory,
-  saveHistory,
-  savePendingOptions,
-  getPendingOptions,
-  clearPendingOptions
-} from '../services/session.service.js';
-import { generateProformaPDF, sendProformaWhatsApp } from '../services/pdf.service.js';
-import { formatPrice, capitalize } from '../utils/helpers.js';
-import { t } from '../i18n/messages.js';
+import * as customerService from '../services/customer.service.js';
+import * as vehicleService from '../services/vehicle.service.js';
+import * as productService from '../services/product.service.js';
+import * as orderProfileService from '../services/orderProfile.service.js';
+import * as orderStatusService from '../services/orderStatus.service.js';
+import * as paymentService from '../services/payment.service.js';
+import * as sessionService from '../services/session.service.js';
+import { extractProductNames } from '../services/ai.service.js';
+import { sendReply, sendReplyButtons } from '../services/reply.service.js';
+import { sendWhatsAppButtons, sendTypingIndicator } from '../services/whatsapp.service.js';
+import { getAdminByPhone } from '../models/adminUser.model.js';
+import { config } from '../config/config.js';
+import { GREETING_PATTERN, detectMessageLocale } from '../utils/greeting.js';
 
-const anthropic = new Anthropic({ apiKey: config.anthropic.apiKey });
+const HUMAN_HANDOFF_PATTERN = /\b(atendente|humano|falar com (algu[eé]m|pessoa)|operador|suporte humano|human|agent|representative)\b/i;
 
-// Meta Webhook Verification
+const ACKNOWLEDGMENT_PATTERN = /^(ok(ay)?|k+|t[áa]\s*bem|obrigad[oa]s?|valeu|thanks?|thank\s*you|cool|perfeito|beleza|👍+|🙏+|✅+)[.!?\s]*$/i;
+
+const ORDER_STATUS_PATTERN = /\b(estado do (meu )?pedido|onde est[áa] (o meu )?pedido|order status|where('?s| is) my order)\b/i;
+
+/**
+ * Backs the GET webhook verification handshake required by Meta — echoes back
+ * the challenge string if the request's verify token matches the configured one, otherwise responds 403.
+ */
 export async function verifyWebhook(req: Request, res: Response): Promise<void> {
   const verifyToken = config.whatsapp.verifyToken;
   if (
@@ -62,9 +36,11 @@ export async function verifyWebhook(req: Request, res: Response): Promise<void> 
   }
 }
 
-// Meta Webhook Main Handler
+/**
+ * Backs the POST webhook message intake — responds 200 to Meta immediately
+ * (its 5-second rule), then extracts the inbound message's text/media/button/list-reply fields and hands them off to `processMessageFlow` asynchronously.
+ */
 export async function receiveWebhookMessage(req: Request, res: Response): Promise<void> {
-  // Respond immediately to Meta (must return 200 within 5 seconds)
   res.sendStatus(200);
 
   try {
@@ -73,565 +49,314 @@ export async function receiveWebhookMessage(req: Request, res: Response): Promis
     const msg = change?.value?.messages?.[0];
     if (!msg) return;
 
+    await sendTypingIndicator(msg.id);
+
     const phone = msg.from;
-    const customerText = msg.type === 'text' ? msg.text?.body : null;
-    const mediaType = msg.type; // "image" | "document" | "text" etc.
+    const customerText =
+      msg.type === 'text' ? msg.text?.body :
+      msg.type === 'interactive' ? (msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title) :
+      msg.type === 'button' ? msg.button?.text :
+      null;
+    const listReplyId: string | null = msg.type === 'interactive' ? (msg.interactive?.list_reply?.id || null) : null;
+    const buttonReplyId: string | null = msg.type === 'interactive' ? (msg.interactive?.button_reply?.id || null) : null;
+    const contextMessageId: string | null = msg.context?.id || null;
+    const mediaType = msg.type;
     const mediaId = msg.image?.id || msg.document?.id || null;
 
     logger.debug(`[${phone}] Webhook type: ${mediaType}, text: ${customerText}`);
 
-    // TEMPORARY: confirms end-to-end delivery (Meta -> webhook -> WhatsApp send) while
-    // debugging real-number message delivery. Remove once that's confirmed working —
-    // fires on every inbound message, stacking on top of the normal flow's own reply.
-    await sendWhatsAppMessage(phone, t.botCheck.activeReply());
-
-    await processMessageFlow(phone, customerText, mediaType, mediaId);
+    await processMessageFlow(phone, customerText, mediaType, mediaId, listReplyId, buttonReplyId, contextMessageId);
   } catch (error: any) {
     logger.error('Error in WhatsApp webhook processing', error);
   }
 }
 
 /**
- * Coordinates routing of incoming user events.
+ * Routes a single inbound WhatsApp message through the full conversation pipeline
+ * — admin short-circuit, locale detection, registration/vehicle-ID state machines, payment flow, product search,
+ * and human handoff — in strict priority order, stopping at whichever stage handles the message first.
  */
 async function processMessageFlow(
   phone: string,
   customerText: string | null,
   mediaType: string,
-  mediaId: string | null
+  mediaId: string | null,
+  listReplyId: string | null = null,
+  buttonReplyId: string | null = null,
+  contextMessageId: string | null = null
 ): Promise<void> {
-  // 1. Check or start CRM customer registration flow
-  const customer = await getAndUpdateCustomer(phone);
+  const admin = await getAdminByPhone(phone);
+  if (admin) {
+    logger.debug(`[ADMIN] Inbound message from admin ${phone} (${admin.name}) routed to admin handler, buttonReplyId=${buttonReplyId}`);
+    // The entire admin reply surface is button-driven (stock confirm/
+    // unavailable, payment approve/reject, item stock) — there's no
+    // free-text admin flow. Without this guard, any plain message an admin
+    // sends (e.g. testing with "hi", no pending order at all) fell through
+    // to processAdminStockReply's default branch and got the confusing
+    // "use the buttons on the stock-confirmation message" nudge regardless
+    // of whether one was ever sent.
+    if (!buttonReplyId) return;
 
-  if (!customer) {
-    await createCustomerPreRegistration(phone, 'awaiting_name');
-    await sendWhatsAppMessage(phone, t.onboarding.welcome());
+    if (buttonReplyId.startsWith('admin_approve_payment_') || buttonReplyId.startsWith('admin_reject_payment_')) {
+      await paymentService.processAdminPaymentReply(phone, buttonReplyId);
+    } else if (buttonReplyId.startsWith('admin_item_')) {
+      await productService.processAdminItemStockReply(phone, buttonReplyId);
+    } else {
+      await productService.processAdminStockReply(phone, buttonReplyId);
+    }
     return;
   }
 
-  // If CRM registration (name/NIF/address) is incomplete, process it. Once the customer
-  // reaches 'awaiting_vehicle_id', onboarding continues below via the normal vehicle-ID
-  // stages (manual collection / VIN / document / confirmation) instead of being
-  // re-intercepted here — those stages already implement this logic, don't duplicate it.
-  if (customer.registration_status !== 'complete' && customer.registration_status !== 'awaiting_vehicle_id') {
+  if (customerText) {
+    const detected = detectMessageLocale(customerText);
+    if (detected) await sessionService.saveLocale(phone, detected);
+    await sessionService.saveLastMessage(phone, customerText);
+  }
+
+  const chatLogText = customerText || (mediaId ? `[${mediaType}]` : null);
+  if (chatLogText) {
+    await sessionService.appendChatMessage(phone, 'in', chatLogText);
+  }
+
+  const customer = await customerService.getOrCreateCustomer(phone);
+  if (!customer) return;
+
+  const firstName = customer.name?.split(' ')[0] || 'Cliente';
+  const messages = await customerService.resolveMessages(phone);
+
+  const freshSession = await sessionService.isNewSession(phone);
+  await sessionService.markSessionActive(phone);
+
+  const activeCollection = await vehicleService.getActiveManualCollection(phone);
+  const needsVehicleId = customer.registration_status === 'complete' && !activeCollection
+    ? !(await vehicleService.hasVehicleOnFile(phone))
+    : false;
+
+  if (freshSession && customer.registration_status === 'complete' && !needsVehicleId) {
+    const firstName = customer.name?.split(' ')[0] || 'Cliente';
+    await sendReply(phone, messages.onboarding.welcomeBack(firstName), { contextual: true });
+    if (!mediaId) {
+      const askedPart = await vehicleService.sendAskPartPrompt(phone);
+      if (askedPart) return;
+    }
+  }
+
+  if (freshSession && needsVehicleId) {
+    const firstName = customer.name?.split(' ')[0] || 'Cliente';
+    await sendReplyButtons(phone, messages.onboarding.resumeVehicleIdBody(firstName), messages.onboarding.askVehicleIdButtons);
+    return;
+  }
+
+  if (freshSession && customer.registration_status !== 'complete') {
+    await customerService.sendResumeRegistrationPrompt(phone, customer);
+    return;
+  }
+
+  if (mediaType === 'interactive' && contextMessageId) {
+    const activePromptId = await sessionService.getActivePromptId(phone);
+    if (activePromptId && activePromptId !== contextMessageId) {
+      await sendReply(phone, messages.common.alreadyAnswered());
+      return;
+    }
+  }
+
+  if (buttonReplyId?.startsWith('order_status_')) {
+    await orderStatusService.processOrderStatusButton(phone, buttonReplyId);
+    return;
+  }
+
+  if (customer.registration_status !== 'complete') {
     if (!customerText) return;
-    const handled = await processCRMRegistration(phone, customer.registration_status, customerText);
+    const handled = await customerService.processCustomerRegistration(phone, customer, customerText, buttonReplyId);
     if (handled) return;
   }
 
-  // 2. PRIORITY: state-aware image routing. While a vehicle ID is pending (onboarding,
-  // or an in-progress manual collection), an image is a vehicle document, not a payment
-  // proof — must be checked before the payment-proof handler below.
-  const activeCollection = await getActiveManualCollection(phone);
-  const awaitingVehicleId = customer.registration_status === 'awaiting_vehicle_id' || !!activeCollection;
-
-  if (mediaType === 'image' && mediaId && awaitingVehicleId) {
-    await processVehicleDocument(phone, mediaId);
+  if (!needsVehicleId && customerText && vehicleService.isAddVehicleRequest(customerText)) {
+    await vehicleService.startAddVehicleFlow(phone);
     return;
   }
 
-  // 3. PRIORITY: Customer sent payment proof media (image/document)
+  const documentRetryChoiceShown = await sessionService.wasDocumentRetryChoiceShown(phone);
+  if (documentRetryChoiceShown && customerText) {
+    const handled = await vehicleService.processDocumentRetryChoice(phone, customerText);
+    if (handled) return;
+  }
+
+  const vinDecodeFailedChoiceShown = await sessionService.wasVinDecodeFailedShown(phone);
+  if (vinDecodeFailedChoiceShown && customerText) {
+    const handled = await vehicleService.processVinDecodeFailedChoice(phone, customerText);
+    if (handled) return;
+  }
+
+  const vehicleIdChoiceShown = await sessionService.wasVehicleIdChoiceShown(phone);
+
+  if ((needsVehicleId || vehicleIdChoiceShown) && customerText) {
+    const handled = await vehicleService.processVehicleIdOptionChoice(phone, customerText);
+    if (handled) return;
+  }
+
+  const awaitingVehicleId = needsVehicleId || !!activeCollection || vehicleIdChoiceShown;
+
+  if (mediaType === 'image' && mediaId && awaitingVehicleId) {
+    await vehicleService.processVehicleDocument(phone, mediaId);
+    return;
+  }
+
   if (mediaType === 'image' || mediaType === 'document') {
     if (mediaId) {
-      const handled = await processPaymentProof(phone, mediaId, mediaType);
+      const proofFirstName = customer.name?.split(' ')[0] || 'Cliente';
+      const handled = await paymentService.processPaymentProof(phone, mediaId, mediaType, proofFirstName);
       if (handled) return;
     }
   }
 
   if (!customerText) return;
 
-  // 4. PRIORITY: Customer is in active manual vehicle collection flow
   if (activeCollection) {
-    const handled = await processManualCollectionStep(phone, activeCollection, customerText, customer);
+    const handled = await vehicleService.processManualCollectionStep(phone, activeCollection, customerText, customer);
     if (handled) return;
   }
 
-  // 5. PRIORITY: Alphanumeric 17-char VIN detected
-  if (isVIN(customerText)) {
-    await processVIN(phone, customerText);
+  if (vehicleService.isVIN(customerText)) {
+    await vehicleService.processVIN(phone, customerText);
     return;
   }
 
-  // 6. PRIORITY: Customer is confirming/rejecting decoded VIN car
-  const confirmedVehicle = await processVehicleConfirmation(phone, customerText, customer);
+  const vehicleChoiceHandled = await vehicleService.resolvePendingVehicleChoice(phone, customerText);
+  if (vehicleChoiceHandled) return;
+
+  const vinDuplicateChoiceShown = await sessionService.wasVinDuplicateChoiceShown(phone);
+  if (vinDuplicateChoiceShown) {
+    const handled = await vehicleService.processVinDuplicateChoice(phone, customerText);
+    if (handled) return;
+  }
+
+  const pendingPartTypeChoice = await sessionService.getPendingPartTypeChoice(phone);
+  if (pendingPartTypeChoice) {
+    const handled = await productService.processPartTypeChoice(phone, listReplyId, pendingPartTypeChoice);
+    if (handled) return;
+  }
+
+  const pendingWaitlistOffer = await sessionService.getPendingWaitlistOffer(phone);
+  if (pendingWaitlistOffer) {
+    const handled = await productService.processWaitlistOptIn(phone, customerText, pendingWaitlistOffer);
+    if (handled) return;
+  }
+
+  const pendingBasketWaitlistOffer = await sessionService.getPendingBasketWaitlistOffer(phone);
+  if (pendingBasketWaitlistOffer) {
+    const handled = await productService.processBasketWaitlistOptIn(phone, customerText, pendingBasketWaitlistOffer);
+    if (handled) return;
+  }
+
+  const pendingServiceOffer = await sessionService.getPendingServiceOffer(phone);
+  if (pendingServiceOffer) {
+    const handled = await productService.processServiceSelection(phone, customerText, listReplyId, pendingServiceOffer);
+    if (handled) return;
+  }
+
+  const pendingStockUnavailableOffer = await sessionService.getPendingStockUnavailableOffer(phone);
+  if (pendingStockUnavailableOffer) {
+    const stockUnavailableFirstName = customer.name?.split(' ')[0] || 'Cliente';
+    const handled = await productService.processStockUnavailableChoice(phone, customerText, pendingStockUnavailableOffer, stockUnavailableFirstName);
+    if (handled) return;
+  }
+
+  const pendingOrderProfileShortcut = await sessionService.getPendingOrderProfileShortcut(phone);
+  if (pendingOrderProfileShortcut) {
+    const handled = await orderProfileService.processProfileShortcutReply(phone, buttonReplyId, pendingOrderProfileShortcut);
+    if (handled) return;
+  }
+
+  const orderProfileStage = await sessionService.getOrderProfileStage(phone);
+  if (orderProfileStage) {
+    const handled = await orderProfileService.processOrderProfileStep(phone, customerText, buttonReplyId, orderProfileStage);
+    if (handled) return;
+  }
+
+  const pendingRestockOrderOffer = await sessionService.getPendingRestockOrderOffer(phone);
+  if (pendingRestockOrderOffer) {
+    const handled = await productService.processRestockOrderChoice(phone, customerText, pendingRestockOrderOffer);
+    if (handled) return;
+  }
+
+  const confirmedVehicle = await vehicleService.processVehicleConfirmation(phone, customerText, customer);
   if (confirmedVehicle) return;
 
-  // 7. PRIORITY: still onboarding and nothing above matched — treat as "no VIN available",
-  // start the deterministic manual collection instead of falling through to the AI agent.
-  if (customer.registration_status === 'awaiting_vehicle_id') {
-    await startManualCollection(phone, 'awaiting_make');
-    await sendWhatsAppMessage(phone, t.manual.askMakePrompt());
-    return;
+  if (needsVehicleId || vehicleIdChoiceShown) {
+    if (GREETING_PATTERN.test(customerText.trim())) {
+      if (needsVehicleId) {
+        const firstName = customer.name?.split(' ')[0] || 'Cliente';
+        await sendReplyButtons(phone, messages.onboarding.resumeVehicleIdBody(firstName), messages.onboarding.askVehicleIdButtons);
+        return;
+      }
+      await sessionService.clearVehicleIdChoiceShown(phone);
+    } else {
+      const trimmed = customerText.trim();
+      if (vehicleService.looksLikeVinAttempt(trimmed)) {
+        await sendReplyButtons(phone, messages.vin.invalidLength(trimmed.length), messages.onboarding.askVehicleIdButtons);
+      } else {
+        const notUnderstoodRes = await sendWhatsAppButtons(phone, messages.common.notUnderstood(), messages.onboarding.askVehicleIdButtons);
+        await sessionService.saveActivePromptId(phone, notUnderstoodRes?.messages?.[0]?.id);
+      }
+      await sessionService.markVehicleIdChoiceShown(phone);
+      return;
+    }
   }
 
-  // 8. PRIORITY: Active payment status waiting for inputs
-  const latestOrder = await getLatestOrderByStatus(phone, [
-    'awaiting_payment_method',
-    'awaiting_bank_subtype',
-    'awaiting_in_person_subtype'
-  ]);
+  const latestOrder = await paymentService.getPendingPaymentOrder(phone);
 
   if (latestOrder) {
     const handled = latestOrder.status === 'awaiting_payment_method'
-      ? await processMethodChoice(phone, customerText)
-      : await processMethodSubtype(phone, customerText);
+      ? await paymentService.processMethodChoice(phone, customerText)
+      : await paymentService.processMethodSubtype(phone, customerText);
     if (handled) return;
   }
 
-  // 9. Conversational AI agent pipeline
-  await processAIConversation(phone, customerText);
-}
-
-/**
- * Handles CRM registration states.
- */
-async function processCRMRegistration(phone: string, status: string, reply: string): Promise<boolean> {
-  const r = reply.trim();
-
-  if (status === 'awaiting_name') {
-    const name = capitalize(r);
-    await updateCustomer(phone, { name, registration_status: 'awaiting_nif' });
-    await sendWhatsAppButtons(phone, t.onboarding.askNifBody(name), t.onboarding.askNifButtons);
-    return true;
+  const invitedToAskForPart = await sessionService.wasPartPromptSent(phone);
+  const isGreeting = GREETING_PATTERN.test(customerText.trim());
+  if (!invitedToAskForPart || isGreeting) {
+    const greeting = isGreeting ? { name: customer.name?.split(' ')[0] || 'Cliente' } : undefined;
+    const asked = await vehicleService.sendAskPartPrompt(phone, greeting);
+    if (asked) return;
   }
 
-  if (status === 'awaiting_nif') {
-    const rLower = r.toLowerCase();
-    const noNif = rLower.includes('não') || rLower.includes('nao') || rLower.includes('❌') || rLower.includes('nao obrigado') || r === '2';
-    const nif = noNif ? null : r.replace(/\s/g, '').toUpperCase();
-
-    await updateCustomer(phone, { nif, registration_status: 'awaiting_address' });
-    await sendWhatsAppMessage(phone, t.onboarding.askAddress());
-    return true;
-  }
-
-  if (status === 'awaiting_address') {
-    const rLower = r.toLowerCase();
-    const address = (rLower === 'saltar' || rLower === 'skip') ? null : r;
-
-    await updateCustomer(phone, {
-      address,
-      registration_status: 'awaiting_vehicle_id',
-    });
-
-    const cust = await getCustomerByPhone(phone);
-    const name = cust?.name?.split(' ')[0] || 'Cliente';
-
-    await sendWhatsAppMessage(phone, t.onboarding.profileCreatedAskVehicle(name));
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * If the customer reached this vehicle-ID step as part of onboarding (registration
- * was pending on the vehicle, not yet 'complete'), finalizes registration and sends
- * the combined "profile complete" message. Returns true if it did so, so the caller
- * can skip its own lighter-weight "tell me what part you need" message.
- */
-async function completeOnboardingIfNeeded(
-  phone: string,
-  customer: Customer,
-  vehicleSummary: string
-): Promise<boolean> {
-  if (customer.registration_status !== 'awaiting_vehicle_id') return false;
-
-  await updateCustomer(phone, { registration_status: 'complete', registered_at: new Date() });
-
-  const name = customer.name?.split(' ')[0] || 'Cliente';
-  await sendWhatsAppMessage(phone, t.onboarding.onboardingComplete(name, vehicleSummary));
-  return true;
-}
-
-/**
- * Handles manual vehicle information inputs.
- */
-async function processManualCollectionStep(
-  phone: string,
-  collection: any,
-  reply: string,
-  customer: Customer
-): Promise<boolean> {
-  const r = reply.trim();
-
-  if (collection.status === 'awaiting_make') {
-    const make = capitalize(r);
-    await updateManualCollection(phone, { make, status: 'awaiting_model' });
-    await sendWhatsAppMessage(phone, t.manual.askModel(make));
-    return true;
-  }
-
-  if (collection.status === 'awaiting_model') {
-    const model = capitalize(r);
-    await updateManualCollection(phone, { model, status: 'awaiting_year' });
-    await sendWhatsAppMessage(phone, t.manual.askYear(collection.make, model));
-    return true;
-  }
-
-  if (collection.status === 'awaiting_year') {
-    const yearClean = r.replace(/\D/g, '');
-    const yearInt = parseInt(yearClean, 10);
-    const currentYear = new Date().getFullYear();
-
-    if (!yearClean || yearClean.length !== 4 || yearInt < 1980 || yearInt > currentYear + 1) {
-      await sendWhatsAppMessage(phone, t.manual.invalidYear());
-      return true;
-    }
-
-    await updateManualCollection(phone, { year: yearClean, status: 'awaiting_engine_number' });
-    await sendWhatsAppMessage(phone, t.manual.askEngineNumber(collection.make, collection.model, yearClean));
-    return true;
-  }
-
-  if (collection.status === 'awaiting_engine_number') {
-    const rLower = r.toLowerCase();
-    const engineNumber = (rLower === 'não sei' || rLower === 'nao sei' || rLower === 'n' || rLower === 'skip' || rLower === 'não')
-      ? null
-      : r.toUpperCase();
-
-    // Complete vehicle session
-    await saveVehicleSession(phone, {
-      make: collection.make,
-      model: collection.model,
-      year: collection.year,
-      engine_number: engineNumber,
-    });
-
-    // Mark manual collection as complete
-    await updateManualCollection(phone, { status: 'complete' });
-
-    const summary = [
-      `🚗 *${collection.make} ${collection.model} ${collection.year}*`,
-      engineNumber ? t.manual.engineLabel(engineNumber) : null,
-    ].filter(Boolean).join('\n');
-
-    const completedOnboarding = await completeOnboardingIfNeeded(phone, customer, summary);
-    if (!completedOnboarding) {
-      await sendWhatsAppMessage(phone, t.manual.collectionComplete(summary));
-    }
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Handles incoming VIN number parsing.
- */
-async function processVIN(phone: string, vin: string): Promise<void> {
-  const vinClean = vin.trim().toUpperCase();
-
-  await sendWhatsAppMessage(phone, t.vin.identifying());
-
-  const vehicle = await decodeVIN(vinClean);
-
-  if (!vehicle) {
-    // If API lookup fails, fallback to step-by-step manual inputs
-    await startManualCollection(phone, 'awaiting_make', vinClean);
-    await sendWhatsAppMessage(phone, t.vin.decodeFailed());
-    return;
-  }
-
-  // Save parsed chassis data in database cache and session
-  await saveVehicleSession(phone, {
-    vin: vinClean,
-    make: vehicle.make,
-    model: vehicle.model,
-    year: vehicle.year,
-    fuel_type: vehicle.fuel_type,
-    engine_size: vehicle.engine,
-  });
-
-  const description = [
-    `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
-    vehicle.engine ? `${vehicle.engine}` : null,
-    vehicle.fuel_type ? `${vehicle.fuel_type}` : null,
-    vehicle.vehicle_type ? `${vehicle.vehicle_type}` : null,
-  ].filter(Boolean).join(' · ');
-
-  await sendWhatsAppButtons(phone, t.vin.confirmBody(description), t.vin.confirmButtons);
-}
-
-/**
- * Handles a photo of the vehicle's registration document (livrete / Título do Veículo)
- * sent while a vehicle ID is pending. Extracts data via Claude Vision, cross-checks any
- * legible VIN against the free NHTSA API (more authoritative than OCR when available),
- * and hands off to the same Sim/Não confirmation flow processVIN uses.
- */
-async function processVehicleDocument(phone: string, mediaId: string): Promise<void> {
-  await sendWhatsAppMessage(phone, t.document.received());
-
-  const imageBase64 = await downloadWhatsAppMedia(mediaId);
-  if (!imageBase64) {
-    await sendWhatsAppMessage(phone, t.document.downloadFailed());
-    return;
-  }
-
-  let extracted: VisionData | null;
-  try {
-    extracted = await extractDataWithClaudeVision(imageBase64);
-  } catch (error: any) {
-    logger.error(`[VISION] Error processing document for ${phone}: ${error.message}`);
-    await sendWhatsAppMessage(phone, t.document.processingError());
-    return;
-  }
-
-  if (!extracted) {
-    await sendWhatsAppMessage(phone, t.document.notRecognized());
-    return;
-  }
-
-  if (!extracted.valid) {
-    await sendWhatsAppMessage(phone, t.document.invalid(extracted.reason || t.document.defaultInvalidReason));
-    return;
-  }
-
-  // Prefer the authoritative NHTSA decode over OCR when a legible VIN was read
-  let make = extracted.make || null;
-  let model = extracted.model || null;
-  let year = extracted.year || null;
-  let fuelType = extracted.fuel_type || null;
-  let engineSize = extracted.engine_size || null;
-
-  if (extracted.chassis_number && isVIN(extracted.chassis_number)) {
-    const decoded = await decodeVIN(extracted.chassis_number.toUpperCase());
-    if (decoded) {
-      make = decoded.make;
-      model = decoded.model;
-      year = decoded.year;
-      fuelType = decoded.fuel_type;
-      engineSize = decoded.engine;
-    }
-  }
-
-  if (!make || !model) {
-    await sendWhatsAppMessage(phone, t.document.missingEssentialData());
-    return;
-  }
-
-  await saveVehicleSession(phone, {
-    vin: extracted.chassis_number || null,
-    make,
-    model,
-    year: year || null,
-    fuel_type: fuelType,
-    engine_size: engineSize,
-    engine_number: extracted.engine_number || null,
-    license_plate: extracted.license_plate || null,
-  });
-
-  const description = [
-    `${make} ${model}${year ? ` ${year}` : ''}`,
-    engineSize || null,
-    fuelType || null,
-    extracted.license_plate ? t.document.licensePlateLabel(extracted.license_plate) : null,
-  ].filter(Boolean).join(' · ');
-
-  await sendWhatsAppButtons(phone, t.document.confirmBody(description), t.vin.confirmButtons);
-}
-
-/**
- * Processes vehicle quick confirmation buttons.
- */
-async function processVehicleConfirmation(phone: string, reply: string, customer: Customer): Promise<boolean> {
-  const r = reply.toLowerCase();
-
-  if (r.includes('sim') || r.includes('yes') || r.includes('✅') || r === '1' || r.includes('btn_0')) {
-    const v = await getCustomerVehicle(phone);
-    if (!v) return false;
-
-    const summary = `🚗 *${v.make} ${v.model} ${v.year}*`;
-    const completedOnboarding = await completeOnboardingIfNeeded(phone, customer, summary);
-    if (!completedOnboarding) {
-      await sendWhatsAppMessage(phone, t.vehicleConfirm.confirmedAskPart(v.make, v.model, v.year));
-    }
-    return true;
-  }
-
-  if (r.includes('não') || r.includes('nao') || r.includes('❌') || r === '2' || r.includes('btn_1')) {
-    await clearVehicleSession(phone);
-
-    if (customer.registration_status === 'awaiting_vehicle_id') {
-      await startManualCollection(phone, 'awaiting_make');
-      await sendWhatsAppMessage(phone, t.manual.askMakePrompt());
+  const pendingProductOptions = await sessionService.getPendingOptions(phone);
+  if (pendingProductOptions) {
+    const alternativeOffer = await sessionService.getPendingAlternativeOffer(phone);
+    if (alternativeOffer) {
+      const handled = await productService.processAlternativeSelection(phone, customerText, listReplyId, pendingProductOptions, alternativeOffer);
+      if (handled) return;
     } else {
-      await sendWhatsAppMessage(phone, t.vehicleConfirm.rejectedFreeText());
-    }
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Conversation flow processing using Anthropic API.
- */
-async function processAIConversation(phone: string, customerText: string): Promise<void> {
-  const history = await getHistory(phone);
-  const vehicle = await getCustomerVehicle(phone);
-
-  let enrichedText = customerText;
-  // Enrich query context with session vehicle metadata if the customer doesn't type it
-  if (vehicle && !customerText.toLowerCase().includes(vehicle.make.toLowerCase())) {
-    enrichedText =
-      `[Viatura do cliente: ${vehicle.make} ${vehicle.model} ${vehicle.year}] ` +
-      customerText;
-  }
-
-  history.push({ role: 'user', content: enrichedText });
-
-  const aiReply = await callAnthropic(history);
-  const action = tryParseJSON(aiReply);
-
-  if (!action) {
-    await sendWhatsAppMessage(phone, aiReply);
-    // Push the clean agent text response to session history
-    history.push({ role: 'assistant', content: aiReply });
-  } else {
-    // If agent requested search, inject vehicle parameters from session cache if missing
-    if (action.action === 'search' && vehicle) {
-      action.vehicle_make = action.vehicle_make || vehicle.make;
-      action.model = action.model || vehicle.model;
-      action.year = action.year || vehicle.year;
-    }
-    await executeStructuredAction(phone, action, history);
-  }
-
-  await saveHistory(phone, history);
-}
-
-async function callAnthropic(history: any[]): Promise<string> {
-  // Strip temporary fields from history before sending to Anthropic SDK
-  const cleanMessages = history.map((h) => ({
-    role: h.role,
-    content: h.content,
-  }));
-
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 1024,
-    system: t.systemPrompt,
-    messages: cleanMessages,
-  });
-
-  // Extract response text
-  const textContent = response.content.find(c => c.type === 'text');
-  return textContent?.type === 'text' ? textContent.text : '';
-}
-
-/**
- * Orchestrates backend JSON actions returned by the AI agent.
- */
-async function executeStructuredAction(phone: string, action: any, history: any): Promise<void> {
-  switch (action.action) {
-    case 'search': {
-      await sendWhatsAppMessage(phone, t.agent.checkingStock());
-
-      const options = await searchProductsInInventory({
-        part: action.part,
-        vehicle_make: action.vehicle_make,
-        model: action.model,
-        year: action.year,
-      });
-
-      if (!options || options.length === 0) {
-        const msg = t.agent.noStockFound();
-        await sendWhatsAppMessage(phone, msg);
-        history.push({ role: 'assistant', content: msg });
-        return;
+      const basket = await sessionService.getPendingBasket(phone);
+      if (basket) {
+        const handled = await productService.processBasketProductSelection(phone, customerText, listReplyId, pendingProductOptions, basket);
+        if (handled) return;
       }
-
-      // Persist results so the customer's numeric choice in the next message can resolve them
-      await savePendingOptions(phone, options);
-
-      const optionsMessage = formatSearchOptions(options, action);
-      await sendWhatsAppMessage(phone, optionsMessage);
-      history.push({ role: 'assistant', content: optionsMessage });
-      break;
     }
-
-    case 'confirm_order': {
-      const options = await getPendingOptions(phone);
-      const idx = (action.chosen_option || 1) - 1;
-      const choice = options?.[idx];
-
-      if (!choice) {
-        await sendWhatsAppMessage(phone, t.agent.optionNotFound());
-        return;
-      }
-
-      const orderNumber = await generateOrderNumber();
-
-      // Save order record
-      await createOrder(orderNumber, phone, choice);
-
-      // Generate invoice proforma PDF
-      const proformaPath = await generateProformaPDF(orderNumber, phone, choice);
-
-      // Send confirmation text & PDF attachment
-      await sendProformaWhatsApp(phone, proformaPath, orderNumber, choice);
-
-      // Trigger payment selection prompt
-      await askPaymentMethod(phone, orderNumber, choice.price);
-
-      // Options consumed — prevent a stale numeric reply from creating a duplicate order
-      await clearPendingOptions(phone);
-
-      // Clean temp PDF asynchronously
-      setTimeout(() => {
-        try {
-          fs.unlinkSync(proformaPath);
-        } catch {
-          // best-effort cleanup, ignore if already removed
-        }
-      }, 60000);
-
-      const confirmation = t.agent.proformaSentChoosePayment();
-      history.push({ role: 'assistant', content: confirmation });
-      break;
-    }
-
-    case 'transfer_to_human': {
-      const msg = t.agent.transferToHuman();
-      await sendWhatsAppMessage(phone, msg);
-      logger.info(`[SUPPORT] Customer ${phone} requested human support. Reason: ${action.reason}`);
-      break;
-    }
-
-    default:
-      logger.warn('Unknown structured action from AI agent', action);
   }
-}
 
-function formatSearchOptions(options: Product[], action: any): string {
-  const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
-  const top5 = options.slice(0, 5);
+  if (HUMAN_HANDOFF_PATTERN.test(customerText)) {
+    await sendReply(phone, messages.agent.transferToHuman(), { contextual: true });
+    logger.info(`[SUPPORT] Customer ${phone} requested human support.`);
+    return;
+  }
 
-  let msg = t.agent.searchHeader(top5.length, action.part, action.vehicle_make, action.model, action.year);
+  if (ACKNOWLEDGMENT_PATTERN.test(customerText.trim())) {
+    logger.debug(`[PRODUCT SEARCH] ${phone} sent a filler acknowledgment ("${customerText}") — not treating it as a search.`);
+    return;
+  }
 
-  top5.forEach((item, i) => {
-    msg += t.agent.searchItem({
-      emoji: numberEmojis[i],
-      name: item.name,
-      reference: item.reference,
-      price: formatPrice(item.price),
-      quantity: item.quantity,
-      deliveryTime: item.delivery_time,
-      supplier: item.supplier,
-    });
+  if (ORDER_STATUS_PATTERN.test(customerText.trim())) {
+    await orderStatusService.handleOrderStatusRequest(phone, customer);
+    return;
+  }
+
+  const productNames = await extractProductNames(customerText);
+  await sessionService.savePendingPartTypeChoice(phone, {
+    productNames: productNames && productNames.length > 1 ? productNames : null,
+    customerText,
+    customerName: firstName,
   });
-
-  msg += t.agent.searchFooter();
-  return msg;
-}
-
-function tryParseJSON(text: string): any | null {
-  try {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    return JSON.parse(match[0]);
-  } catch {
-    return null;
-  }
+  await productService.sendPartTypePrompt(phone, productNames);
 }

@@ -5,6 +5,9 @@ export interface Customer {
   name: string | null;
   nif: string | null;
   address: string | null;
+  // Last known values, captured per-order via the orderProfile flow (not at
+  // registration) — see the customers table comment in db/schema.sql.
+  customer_type: string | null;
   email: string | null;
   registration_status: string;
   first_contact_at: Date;
@@ -12,19 +15,13 @@ export interface Customer {
   registered_at: Date | null;
   contact_count: number;
   active: boolean;
-}
-
-export interface CRMStats {
-  total_customers: number;
-  registered: number;
-  active_30_days: number;
-  new_this_week: number;
-  with_nif: number;
-  with_address: number;
+  needs_review: boolean;
+  needs_review_reason: string | null;
 }
 
 /**
- * Retrieves a customer by phone number and updates their last contact date & total contact count.
+ * Fetches the `customers` row for a phone, then bumps `last_contact_at` and
+ * increments `contact_count` on it — called whenever an inbound WhatsApp message arrives from a known customer.
  */
 export async function getAndUpdateCustomer(phone: string): Promise<Customer | null> {
   const { rows } = await db.query(
@@ -33,7 +30,6 @@ export async function getAndUpdateCustomer(phone: string): Promise<Customer | nu
   );
   if (!rows.length) return null;
 
-  // Update last contact timestamp and increment contact count
   await db.query(
     `UPDATE customers
      SET last_contact_at = NOW(),
@@ -46,7 +42,8 @@ export async function getAndUpdateCustomer(phone: string): Promise<Customer | nu
 }
 
 /**
- * Retrieves a customer by phone number without updating metadata.
+ * Plain lookup of the `customers` row for a phone, with no side effects
+ * (unlike `getAndUpdateCustomer`).
  */
 export async function getCustomerByPhone(phone: string): Promise<Customer | null> {
   const { rows } = await db.query(
@@ -57,7 +54,8 @@ export async function getCustomerByPhone(phone: string): Promise<Customer | null
 }
 
 /**
- * Creates a pre-registration entry for a new customer.
+ * Inserts a new `customers` row for a first-time phone with the given starting
+ * registration status, doing nothing if the phone already has a row.
  */
 export async function createCustomerPreRegistration(phone: string, registrationStatus: string): Promise<void> {
   await db.query(
@@ -69,7 +67,8 @@ export async function createCustomerPreRegistration(phone: string, registrationS
 }
 
 /**
- * Updates columns for a customer record.
+ * Dynamically updates whichever `Customer` fields are present in `fields` on
+ * the `customers` row for the given phone. No-ops if `fields` is empty.
  */
 export async function updateCustomer(phone: string, fields: Partial<Customer>): Promise<void> {
   const keys = Object.keys(fields);
@@ -84,78 +83,114 @@ export async function updateCustomer(phone: string, fields: Partial<Customer>): 
   );
 }
 
-/**
- * Retrieves customers based on segment rules.
- */
-export async function getCustomersBySegment(segment: string, limit: number): Promise<{ phone: string; name: string | null }[]> {
-  const queries: { [key: string]: { sql: string; hasParams: boolean } } = {
-    all: {
-      sql: `SELECT phone, name FROM customers WHERE registration_status = 'complete' AND active = true ORDER BY last_contact_at DESC LIMIT $1`,
-      hasParams: true
-    },
-    inactive_30_days: {
-      sql: `SELECT phone, name FROM customers WHERE registration_status = 'complete' AND active = true AND last_contact_at < NOW() - INTERVAL '30 days' LIMIT $1`,
-      hasParams: true
-    },
-    diesel: {
-      sql: `SELECT DISTINCT c.phone, c.name FROM customers c JOIN vehicle_sessions vs ON vs.phone = c.phone WHERE c.registration_status = 'complete' AND vs.fuel_type ILIKE '%diesel%' LIMIT $1`,
-      hasParams: true
-    },
-    luanda: {
-      sql: `SELECT phone, name FROM customers WHERE registration_status = 'complete' AND active = true AND address ILIKE '%luanda%' LIMIT $1`,
-      hasParams: true
-    },
-    frequent_buyers: {
-      sql: `SELECT c.phone, c.name, COUNT(o.id) AS total_orders FROM customers c JOIN orders o ON o.customer_phone = c.phone WHERE c.registration_status = 'complete' GROUP BY c.phone, c.name HAVING COUNT(o.id) >= 3 ORDER BY total_orders DESC LIMIT $1`,
-      hasParams: true
-    },
-    no_orders: {
-      sql: `SELECT c.phone, c.name FROM customers c WHERE c.registration_status = 'complete' AND c.active = true AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_phone = c.phone) LIMIT $1`,
-      hasParams: true
-    },
-    toyota: {
-      sql: `SELECT DISTINCT c.phone, c.name FROM customers c JOIN vehicle_sessions vs ON vs.phone = c.phone WHERE c.registration_status = 'complete' AND vs.make ILIKE '%toyota%' LIMIT $1`,
-      hasParams: true
-    },
-    new_7_days: {
-      sql: `SELECT phone, name FROM customers WHERE registration_status = 'complete' AND registered_at > NOW() - INTERVAL '7 days' LIMIT $1`,
-      hasParams: true
-    }
-  };
-
-  const queryObj = queries[segment] || queries.all;
-  const { rows } = await db.query(queryObj.sql, [limit]);
-  return rows;
+export interface CustomerListParams {
+  page: number;
+  limit: number;
+  q?: string;
 }
 
-/**
- * Registers an outbound campaign message send record.
- */
-export async function logCampaignSend(phone: string, segment: string): Promise<void> {
-  await db.query(
-    `INSERT INTO campaign_sends (phone, segment, sent_at)
-     VALUES ($1, $2, NOW())`,
-    [phone, segment]
-  );
+export interface CustomerVehicleSummary {
+  make: string | null;
+  model: string | null;
+  year: string | null;
+  plate: string | null;
 }
 
-/**
- * Aggregates analytical statistics for CRM dashboard.
- */
-export async function getCRMStats(): Promise<CRMStats> {
-  const { rows } = await db.query(`
+export interface CustomerWithStats extends Customer {
+  orders_count: number;
+  total_spent: string;
+  vehicles: CustomerVehicleSummary[];
+}
+
+const CUSTOMER_STATS_JOIN = `
+  LEFT JOIN LATERAL (
     SELECT
-      COUNT(*)::int                                                     AS total_customers,
-      COUNT(*) FILTER (WHERE registration_status = 'complete')::int     AS registered,
-      COUNT(*) FILTER (
-        WHERE last_contact_at > NOW() - INTERVAL '30 days'
-      )::int                                                            AS active_30_days,
-      COUNT(*) FILTER (
-        WHERE registered_at > NOW() - INTERVAL '7 days'
-      )::int                                                            AS new_this_week,
-      COUNT(*) FILTER (WHERE nif IS NOT NULL)::int                      AS with_nif,
-      COUNT(*) FILTER (WHERE address IS NOT NULL)::int                  AS with_address
-    FROM customers
-  `);
-  return rows[0];
+      COUNT(*)::int AS orders_count,
+      -- Multi-item "basket" orders keep unit_price/service_price NULL and
+      -- store their line items in items instead (see order.model.ts's
+      -- ITEMS_PRICE_CASE_SQL) — summing the raw columns directly here would
+      -- silently contribute $0 for every approved basket order, undercounting
+      -- a customer whose orders are entirely basket-type.
+      COALESCE(SUM(
+        CASE
+          WHEN o.items IS NOT NULL THEN (
+            SELECT COALESCE(SUM((elem->>'unitPrice')::numeric + COALESCE((elem->>'servicePrice')::numeric, 0)), 0)
+            FROM jsonb_array_elements(o.items) elem
+            WHERE elem->>'availabilityStatus' = 'available'
+          )
+          ELSE (o.unit_price + COALESCE(o.service_price, 0))
+        END
+      ) FILTER (WHERE o.status = 'approved'), 0) AS total_spent
+    FROM orders o
+    WHERE o.customer_phone = c.phone
+  ) order_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT json_agg(
+      json_build_object('make', v.make, 'model', v.model, 'year', v.year, 'plate', v.license_plate)
+      ORDER BY v.created_at
+    ) AS vehicles
+    FROM vehicles v
+    WHERE v.phone = c.phone AND (v.status IS NULL OR v.status = 'complete')
+  ) vehicle_stats ON true
+`;
+const CUSTOMER_STATS_COLUMNS = `c.*, order_stats.orders_count, order_stats.total_spent, COALESCE(vehicle_stats.vehicles, '[]'::json) AS vehicles`;
+
+/**
+ * Returns a paginated page of active `customers` rows (optionally filtered by
+ * name/phone/NIF via `q`), each joined with its order stats and confirmed vehicles from `orders`/`vehicles`,
+ * plus the total matching row count.
+ */
+export async function getAllCustomers({ page, limit, q }: CustomerListParams): Promise<{ customers: CustomerWithStats[]; total: number }> {
+  const offset = (page - 1) * limit;
+  const filters = ['c.active = true'];
+  const values: unknown[] = [];
+
+  if (q) {
+    values.push(`%${q}%`);
+    filters.push(`(c.name ILIKE $${values.length} OR c.phone ILIKE $${values.length} OR c.nif ILIKE $${values.length})`);
+  }
+
+  const where = `WHERE ${filters.join(' AND ')}`;
+
+  const [{ rows: customers }, { rows: countRows }] = await Promise.all([
+    db.query(
+      `SELECT ${CUSTOMER_STATS_COLUMNS}
+       FROM customers c
+       ${CUSTOMER_STATS_JOIN}
+       ${where}
+       ORDER BY c.last_contact_at DESC
+       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+      [...values, limit, offset]
+    ),
+    db.query(`SELECT COUNT(*)::int AS count FROM customers c ${where}`, values),
+  ]);
+
+  return { customers, total: countRows[0].count };
+}
+
+/**
+ * Looks up one active `customers` row by phone, joined with its order stats
+ * and confirmed vehicles the same way `getAllCustomers` does.
+ */
+export async function getActiveCustomerByPhone(phone: string): Promise<CustomerWithStats | null> {
+  const { rows } = await db.query(
+    `SELECT ${CUSTOMER_STATS_COLUMNS}
+     FROM customers c
+     ${CUSTOMER_STATS_JOIN}
+     WHERE c.phone = $1 AND c.active = true`,
+    [phone]
+  );
+  return rows.length ? rows[0] : null;
+}
+
+/**
+ * Soft-deletes a customer by flipping `customers.active` to false for the given
+ * phone. Returns whether a row was actually changed (false if already inactive or missing).
+ */
+export async function deactivateCustomer(phone: string): Promise<boolean> {
+  const { rowCount } = await db.query(
+    `UPDATE customers SET active = false WHERE phone = $1 AND active = true`,
+    [phone]
+  );
+  return (rowCount ?? 0) > 0;
 }

@@ -1,5 +1,5 @@
 {
-  "name": "rede-pecas-backend",
+  "name": "rede-pecas-api",
   "version": "1.0.0",
   "description": "Rede Peças - Central API Backend for WhatsApp AI Agent and Admin Panel",
   "type": "module",
@@ -10,7 +10,11 @@
     "build": "tsc",
     "lint": "eslint src",
     "db:migrate": "node db/migrate.js",
-    "db:seed": "node db/migrate.js --seed"
+    "db:seed": "node db/migrate.js --seed",
+    "db:clear": "node db/clear.js",
+    "docs:flow": "node scripts/generate-flow-doc.js",
+    "admin:cli": "node scripts/admin-cli.js",
+    "vin:compare": "node scripts/vin-decode-compare.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",
@@ -21,6 +25,7 @@
     "express": "^4.18.2",
     "joi": "^17.13.4",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
     "pdfkit": "^0.15.0",
     "pg": "^8.11.3",
     "redis": "^4.6.12",
@@ -33,9 +38,11 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^20.11.24",
     "@types/pdfkit": "^0.13.4",
     "@types/pg": "^8.11.2",
+    "docx": "^9.7.1",
     "eslint": "^10.6.0",
     "tsx": "^4.22.4",
     "typescript": "^5.3.3",

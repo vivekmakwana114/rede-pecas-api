@@ -2,6 +2,10 @@ export class ApiError extends Error {
   statusCode: number;
   isOperational: boolean;
 
+  /**
+   * Creates an operational or programmer error carrying an HTTP status code,
+   * capturing the provided stack trace or generating a fresh one.
+   */
   constructor(statusCode: number, message: string, isOperational = true, stack = '') {
     super(message);
     this.statusCode = statusCode;

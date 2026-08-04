@@ -20,61 +20,123 @@ Table suppliers {
   created_at timestamptz [default: `NOW()`]
 }
 
-Table categories {
-  id serial [pk]
-  name text [not null]
-  parent_id int [ref: > categories.id, note: 'subcategories']
-}
-
-Table vehicles {
-  id serial [pk]
-  make text [not null]
-  model text [not null]
-  generation text
-  year_from int [not null]
-  year_to int [not null]
-  engine text
-  fuel_type text
-
-  indexes {
-    (make, model)
-    (year_from, year_to)
-  }
-}
-
+// Products (2026-07-28): split into three tables — a products row is the
+// part's IDENTITY only. Price/quantity/delivery_time (per supplier) live in
+// product_suppliers; vehicle fit (a part can fit several vehicles) lives in
+// product_vehicles. `Product.id` as used throughout search/orders/waitlist
+// means product_suppliers.id (a specific offer), not products.id — see the
+// note on orders.product_id/waitlist_requests.product_id below.
 Table products {
   id serial [pk]
-  supplier_id int [not null, ref: > suppliers.id]
-  category_id int [ref: > categories.id]
   name text [not null]
-  brand text
-  reference text [not null]
+  brand text [note: 'also holds the catalog CSV part_brand']
+  reference text [not null, unique, note: 'identifies the physical part, consistent across suppliers']
   oem_reference text
-  synonyms text
+  synonyms text [not null]
   category_keywords text [note: 'free text for search']
-  description text
-  price numeric(12,2) [not null, note: 'Kwanzas (AOA)']
-  quantity int [not null, default: 0]
-  unit text [default: 'unidade']
-  delivery_time text [default: 'Em stock']
+  description text [not null]
+  category text [not null, note: 'part | lubricant']
+  subcategory text [not null, note: 'Brakes, Engine, Filtration, Mechanical, Steering, Suspension, Transmission, Engine Oil — free text, no allow-list']
+  service_category text [not null, note: 'same vocabulary as subcategory (set equal to it) — join key against services.service_category']
+  product_type text [note: 'OEM | Aftermarket | New | Second Hand — free text, no allow-list; nullable — NULL treated as wildcard by search']
+  viscosity text [note: 'lubricant-only']
+  engine_type text [note: 'lubricant-only']
+  volume_liters numeric(5,2) [note: 'lubricant-only']
+  specification text
+  interval_km int
+  image_url text
   active boolean [default: true]
   created_at timestamptz [default: `NOW()`]
   updated_at timestamptz [default: `NOW()`]
-  search_vector tsvector [note: 'GENERATED: portuguese FTS over name/brand/reference/oem_reference/synonyms/category_keywords; GIN indexed']
+  search_vector tsvector [note: 'GENERATED: english FTS (was portuguese, switched 2026-07-14 while catalog data is English) over name/brand/reference/oem_reference/synonyms/category_keywords; GIN indexed']
 
   indexes {
-    (supplier_id, reference) [unique, note: 'batch-import upsert target']
+    service_category
+  }
+}
+
+Table product_suppliers {
+  id serial [pk]
+  product_id int [not null, ref: > products.id]
+  supplier_id int [not null, ref: > suppliers.id]
+  price numeric(12,2) [not null, note: 'Kwanzas (AOA)']
+  quantity int [not null, default: 0]
+  delivery_time text [not null]
+  active boolean [default: true]
+  created_at timestamptz [default: `NOW()`]
+  updated_at timestamptz [default: `NOW()`]
+
+  Note: 'One row per (product, supplier) — that supplier price/qty/delivery for this part. This is what orders/waitlist actually reference as product_id.'
+
+  indexes {
+    (product_id, supplier_id) [unique, note: 'batch-import upsert target']
     price
   }
 }
 
-Table compatibilities {
+Table product_vehicles {
   id serial [pk]
-  product_id int [not null, ref: > products.id, note: 'ON DELETE CASCADE']
-  vehicle_id int [not null, ref: > vehicles.id, note: 'ON DELETE CASCADE']
+  product_id int [not null, ref: > products.id]
+  vehicle_make text [not null]
+  vehicle_model text
+  year_start int
+  year_end int
+  engine text [note: 'engine this part fits, not the customer vehicle (see vehicles.engine_number)']
+  engine_number text
+  created_at timestamptz [default: `NOW()`]
+
+  Note: 'One row per (product, compatible vehicle) — a part fitting 4 cars has 4 rows here.'
+}
+
+Table service_providers {
+  id serial [pk]
+  name text [not null]
+  address text
+  province text
+  phone text
+  specialties text
+  rating numeric(2,1) [default: 5.0]
+  response_time text
+  active boolean [default: true]
+  created_at timestamptz [default: `NOW()`]
+
+  Note: 'Separate from suppliers (parts suppliers) — home-visit service providers'
+}
+
+Table services {
+  id serial [pk]
+  provider_id int [not null, ref: > service_providers.id]
+  service_name text [not null]
+  service_category text [not null, note: 'same vocabulary as products.subcategory (e.g. Brakes, Engine) — direct join, no 3-bucket grouping']
+  service_base_price numeric(12,2) [not null]
+  service_duration_h numeric(4,2) [not null]
+  available_at_home boolean [not null, default: false]
+  base_travel_fee numeric(12,2)
+  logistics_fee_notes text
+  active boolean [default: true]
+  created_at timestamptz [default: `NOW()`]
+  updated_at timestamptz [default: `NOW()`]
 
   indexes {
-    (product_id, vehicle_id) [unique]
+    provider_id
+    service_category
+    (provider_id, service_name) [unique, note: 'upsert target']
+  }
+
+  Note: 'service_category is the join key against products.service_category'
+}
+
+Table waitlist_requests {
+  id serial [pk]
+  product_id int [not null, ref: > product_suppliers.id, note: 'references product_suppliers.id (a specific offer), not products.id']
+  customer_phone text [not null]
+  created_at timestamptz [default: `NOW()`]
+  notified_at timestamptz [note: 'set once the restock notification for this request has gone out']
+
+  indexes {
+    product_id
+    notified_at
+    (product_id, customer_phone) [unique]
   }
 }
 
@@ -82,17 +144,24 @@ Table orders {
   id serial [pk]
   number text [unique, not null, note: 'RP-YYYY-XXXXX']
   customer_phone text [not null, ref: > customers.phone]
-  product_id int [ref: > products.id]
+  product_id int [ref: > product_suppliers.id, note: 'references product_suppliers.id (a specific offer), not products.id']
   supplier_id int [ref: > suppliers.id]
   quantity int [default: 1]
   unit_price numeric(12,2)
-  status text [default: 'awaiting_payment', note: 'awaiting_payment → awaiting_payment_method → awaiting_bank_subtype | awaiting_in_person_subtype → awaiting_payment_proof | awaiting_agent_confirmation → payment_proof_received → approved | rejected']
-  payment_method text [note: 'bank_transfer | bank_deposit | multicaixa_express | mobile_pos | cash']
+  status text [default: 'awaiting_payment', note: 'awaiting_payment (placeholder while service decision pending) → awaiting_stock_confirmation (admin panel) → stock_unavailable (terminal) | awaiting_alternative_resolution (basket orders only — every known item decided, waiting on customer to pick a substitute for whatever was unavailable; still shown in the admin stock-confirmation view, just non-actionable; returns to awaiting_stock_confirmation once a swap needs admin confirmation) | awaiting_payment_method → awaiting_bank_subtype (transfer/deposit only) → awaiting_payment_proof | awaiting_agent_confirmation → payment_proof_received → approved | rejected. cancelled: legacy value, no longer set by any code path — see admin_hidden']
+  payment_method text [note: 'bank_transfer | bank_deposit | multicaixa_express | mobile_pos']
   approved_by text
   approved_at timestamptz
   customer_engine_number text
   payment_proof_media_id text [note: 'WhatsApp media id; folded in from the former payment_proofs table (strict 1:1 with the order)']
   payment_proof_media_type text
+  service_name text [note: 'snapshot of the accepted matched service (from services table, chosen via product.service_category), if any — copied at accept-time like unit_price']
+  service_price numeric(12,2)
+  stock_confirmation_courtesy_sent boolean [default: false, note: '20-min "still confirming" courtesy message sent once']
+  stock_confirmation_admin_reminder_sent boolean [default: false, note: '15-min admin-reminder WhatsApp nudge sent once']
+  admin_hidden boolean [default: false, note: 'admin-grid-only soft delete, approved orders only (DELETE /admin/orders/:number) — never touches the real order/customer, no notification sent']
+  items jsonb [note: 'multi-product "basket" orders only (2026-07-27) — NULL for legacy single-product orders. Array of {itemId, productId, productName, reference, supplierId, supplierName, quantity, unitPrice, serviceName, servicePrice, availabilityStatus}, one entry per product; product_id/unit_price/service_name/service_price above stay NULL when this is set']
+  part_type text [note: 'OEM | Aftermarket | New | Second Hand — one choice per order, asked once before search, applies to every item']
   created_at timestamptz [default: `NOW()`]
   updated_at timestamptz [default: `NOW()`]
 
@@ -102,21 +171,7 @@ Table orders {
   }
 }
 
-Table waitlist_requests {
-  id serial [pk]
-  phone text [not null]
-  product_name text [not null]
-  vehicle_make text
-  vehicle_model text
-  vehicle_year text
-  engine_number text
-  notified boolean [default: false]
-  created_at timestamptz [default: `NOW()`]
-
-  Note: 'Products not found in stock — notify customer when available'
-}
-
-Table vin_cache {
+Table nhtsa_vehicles {
   vin char(17) [pk]
   make text [not null]
   model text [not null]
@@ -127,31 +182,7 @@ Table vin_cache {
   manufacture_country text
   created_at timestamptz [default: `NOW()`]
 
-  Note: 'Avoids repeated NHTSA API calls'
-}
-
-Table vehicle_sessions {
-  phone text [pk]
-  vin char(17)
-  make text
-  model text
-  year text
-  engine_number text
-  license_plate text
-  engine_size text
-  fuel_type text
-  updated_at timestamptz [default: `NOW()`, note: '4-hour working context']
-}
-
-Table manual_vehicle_collections {
-  phone text [pk]
-  status text [not null, note: 'awaiting_make → awaiting_model → awaiting_year → awaiting_engine_number → complete']
-  attempted_vin char(17)
-  make text
-  model text
-  year text
-  engine_number text
-  created_at timestamptz [default: `NOW()`, note: '30-minute TTL enforced in queries']
+  Note: 'Avoids repeated NHTSA API calls for the same VIN'
 }
 
 Table order_counters {
@@ -159,6 +190,22 @@ Table order_counters {
   last_number int [not null, default: 0]
 
   Note: 'Atomic per-year sequence for order numbers'
+}
+
+Table admin_alerts {
+  id serial [pk]
+  type text [not null, note: 'payment_proof | in_person_payment | order_status_request']
+  order_number text [ref: > orders.number]
+  message text [not null]
+  read_at timestamptz
+  created_at timestamptz [default: `NOW()`]
+
+  indexes {
+    read_at
+    created_at
+  }
+
+  Note: 'Admin-panel notification queue — replaces WhatsApp pushes to the admin phone'
 }
 
 Table sync_logs {
@@ -173,15 +220,18 @@ Table sync_logs {
 Table customers {
   phone text [pk, note: 'WhatsApp number']
   name text
-  nif text [note: 'Angolan tax ID']
-  address text
+  nif text [note: 'Angolan tax ID — last known value, captured per-order via orderProfile flow, not at registration']
+  address text [note: 'last known value, captured per-order via orderProfile flow, not at registration']
+  customer_type text [note: 'individual | company — last known value, captured per-order via orderProfile flow']
   email text
-  registration_status text [default: 'new', note: 'new → awaiting_name → awaiting_nif → awaiting_address → complete']
+  registration_status text [default: 'new', note: 'new → awaiting_name → complete (NIF/address/customer_type moved out of registration entirely — see orderProfile flow; vehicle ID tracked independently via vehicles table)']
   first_contact_at timestamptz [default: `NOW()`]
   last_contact_at timestamptz [default: `NOW()`]
   registered_at timestamptz
   contact_count int [default: 1]
   active boolean [default: true]
+  needs_review boolean [default: false, note: 'set when a profile field was accepted after exhausting validation retries']
+  needs_review_reason text [note: 'which field(s) failed validation and why, for admin follow-up']
 
   indexes {
     registration_status
@@ -190,9 +240,46 @@ Table customers {
   }
 }
 
-Table campaign_sends {
+Table vehicles {
+  phone text [pk, ref: > customers.phone]
+  vin char(17)
+  make text
+  model text
+  year text
+  engine_number text
+  license_plate text
+  engine_size text
+  fuel_type text
+  source text [note: 'vin | manual | document']
+  status text [note: 'NULL/complete = confirmed vehicle (4h TTL via updated_at); other = in-progress manual wizard step (30-min TTL via created_at)']
+  attempted_vin char(17) [note: 'VIN that failed NHTSA decode before falling back to manual entry']
+  needs_review boolean [default: false, note: 'set when a vehicle field was accepted after exhausting validation retries']
+  needs_review_reason text [note: 'which field(s) failed validation and why, for admin follow-up']
+  created_at timestamptz [default: `NOW()`]
+  updated_at timestamptz [default: `NOW()`]
+
+  indexes {
+    updated_at
+    (status, created_at)
+  }
+
+  Note: 'Per-customer identified vehicle — merged from the former vehicle_sessions + manual_vehicle_collections'
+}
+
+Table customer_documents {
   id serial [pk]
-  phone text [ref: > customers.phone]
-  segment text [note: 'all | inactive_30_days | diesel | luanda | frequent_buyers | no_orders | toyota | new_7_days']
-  sent_at timestamptz [default: `NOW()`]
+  phone text [not null, ref: > customers.phone]
+  kind text [not null, note: 'vehicle_photo | payment_proof | proforma_pdf | invoice_pdf']
+  order_number text [ref: > orders.number, note: 'NULL for vehicle_photo']
+  media_id text [note: 'originating WhatsApp media id, when the file came from an inbound message']
+  file_path text [not null, note: 'local path, e.g. storage/<phone>/<kind>-<timestamp>.<ext>']
+  mime_type text
+  created_at timestamptz [default: `NOW()`]
+
+  indexes {
+    phone
+    order_number
+  }
+
+  Note: 'Durable local copy of every customer-submitted or generated file, so the app never has to re-hit Meta Graph API (whose media URLs expire after ~30 days) to re-read a file it already has'
 }

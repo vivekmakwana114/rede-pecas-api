@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from project root
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const requiredEnvVars = [
@@ -17,7 +16,6 @@ const requiredEnvVars = [
   'JWT_SECRET'
 ];
 
-// Simple validation
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     throw new Error(`Config validation error: environment variable ${envVar} is missing.`);
@@ -28,10 +26,6 @@ export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '4000', 10),
   appUrl: process.env.APP_URL || 'http://localhost:4000',
-  // Customer-facing WhatsApp/PDF copy language. Defaults to 'pt' (production
-  // Angolan Portuguese) so nothing ships in English by accident — set
-  // MESSAGE_LOCALE=en locally to read messages while developing/testing.
-  messageLocale: (process.env.MESSAGE_LOCALE === 'en' ? 'en' : 'pt') as 'pt' | 'en',
   db: {
     url: process.env.DATABASE_URL
   },
@@ -41,21 +35,21 @@ export const config = {
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY
   },
+  claudeMessage: {
+    enabled: process.env.CLAUDE_MESSAGE_ENABLED === 'true'
+  },
   whatsapp: {
     token: process.env.WHATSAPP_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
-    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN
+    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN,
+    graphApiUrl: process.env.WHATSAPP_GRAPH_API_URL || 'https://graph.facebook.com/v19.0'
   },
   jwt: {
     secret: process.env.JWT_SECRET,
-    accessExpirationMinutes: parseInt(process.env.JWT_ACCESS_EXPIRATION_MINUTES || '60', 10)
+    accessExpirationMinutes: parseInt(process.env.JWT_ACCESS_EXPIRATION_MINUTES || '60', 10),
+    refreshExpirationDays: parseInt(process.env.JWT_REFRESH_EXPIRATION_DAYS || '30', 10)
   },
-  admin: {
-    password: process.env.ADMIN_PASSWORD || 'redepecas2025',
-    staffPhone: process.env.STAFF_PHONE_NUMBER || ''
-  },
-  primavera: {
-    apiUrl: process.env.PRIMAVERA_API_URL || 'https://api.primavera-angola.ao',
-    token: process.env.PRIMAVERA_API_TOKEN || ''
+  nhtsa: {
+    apiUrl: process.env.NHTSA_API_URL || 'https://vpic.nhtsa.dot.gov/api/vehicles/decodevin'
   }
 };

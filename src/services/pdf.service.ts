@@ -5,17 +5,25 @@ import { fileURLToPath } from 'url';
 import { config } from '../config/config.js';
 import { logger } from '../config/logger.js';
 import { formatPrice } from '../utils/helpers.js';
-import { t } from '../i18n/messages.js';
+import { getMessages, DEFAULT_LOCALE } from '../i18n/messages.js';
+import { sendWhatsAppMessage } from './whatsapp.service.js';
+import { sendReplyButtons } from './reply.service.js';
+import { db } from '../config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper for dates
+/**
+ * Formats a Date as a DD/MM/YYYY string for display on generated PDFs.
+ */
 function formatDate(date: Date): string {
   const d = new Date(date);
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
+/**
+ * Returns a new Date offset by the given number of days from the input date.
+ */
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
@@ -23,28 +31,59 @@ function addDays(date: Date, days: number): Date {
 }
 
 /**
- * Generates an A4 PDF Proforma invoice for the customer.
- * Document text is Portuguese (customer-facing).
+ * Tracks a generated PDF's durable on-disk location in `customer_documents`
+ * (see storage.service.ts) so it never needs to be re-rendered or
+ * re-fetched from Meta once already generated.
+ */
+async function recordGeneratedDocument(
+  phone: string,
+  kind: 'proforma_pdf' | 'invoice_pdf',
+  filePath: string,
+  orderNumber: string
+): Promise<void> {
+  await db.query(
+    `INSERT INTO customer_documents (phone, kind, order_number, file_path, mime_type) VALUES ($1, $2, $3, $4, 'application/pdf')`,
+    [phone, kind, orderNumber, filePath]
+  );
+}
+
+export interface ProformaLineItem {
+  description: string;
+  reference: string;
+  price: number;
+  supplierNote?: string | null;
+  // True for an attached installation-style service line (see
+  // orders.service_name/items[].serviceName) — rendered in a distinct
+  // "Services" section below the products table, not interleaved with them.
+  isService?: boolean;
+}
+
+/**
+ * Renders a locale-aware proforma invoice PDF for an order (one row per
+ * line item, totals, and payment instructions) to a temp file and resolves
+ * with its path once the write stream finishes. Takes the line items
+ * directly — one product line (+ an optional following service line) for a
+ * single-product order, or one line per available product/service for a
+ * multi-item "basket" order — so this is the one PDF renderer for both.
  */
 export async function generateProformaPDF(
   orderNumber: string,
   phone: string,
-  item: any
+  lineItems: ProformaLineItem[],
+  locale: 'pt' | 'en' = DEFAULT_LOCALE
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    // Use system temp dir or local temp dir
-    const tempDir = path.join(__dirname, '../../temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    const customerDir = path.join(__dirname, '../../storage', phone);
+    if (!fs.existsSync(customerDir)) {
+      fs.mkdirSync(customerDir, { recursive: true });
     }
-    const filePath = path.join(tempDir, `${orderNumber}.pdf`);
+    const filePath = path.join(customerDir, `proforma-${orderNumber}.pdf`);
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
-    const pc = t.pdf.proforma;
+    const pc = getMessages(locale).pdf.proforma;
 
-    // Header
     doc.fontSize(22).fillColor('#1A3A5C').font('Helvetica-Bold').text(pc.companyName, 50, 50);
     doc.fontSize(10).fillColor('#555555').font('Helvetica')
       .text(pc.tagline, 50, 78)
@@ -60,14 +99,16 @@ export async function generateProformaPDF(
 
     doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#2E6DA4').lineWidth(2).stroke();
 
-    // Client Info
     doc.fontSize(11).fillColor('#1A3A5C').font('Helvetica-Bold').text(pc.clientHeader, 50, 160);
     doc.fontSize(10).fillColor('#333333').font('Helvetica')
       .text(pc.whatsappLabel(phone), 50, 178)
       .text(pc.clientDataNote, 50, 193);
 
-    // Table Header
+    const products = lineItems.filter((line) => !line.isService);
+    const services = lineItems.filter((line) => line.isService);
+
     const tY = 240;
+    const ROW_HEIGHT = 36;
     doc.rect(50, tY, 495, 28).fillColor('#1A3A5C').fill();
     doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(pc.tableDescription, 60, tY + 9)
@@ -76,27 +117,63 @@ export async function generateProformaPDF(
       .text(pc.tableUnitPrice, 420, tY + 9, { width: 80, align: 'right' })
       .text(pc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
 
-    // Table Row
-    const iY = tY + 28;
-    doc.rect(50, iY, 495, 36).fillColor('#F5F7FA').fill();
-    doc.fontSize(10).fillColor('#333333').font('Helvetica')
-      .text(item.name, 60, iY + 6, { width: 210 })
-      .text(item.reference, 280, iY + 12)
-      .text('1', 380, iY + 12, { width: 40, align: 'center' })
-      .text(formatPrice(item.price), 420, iY + 12, { width: 80, align: 'right' })
-      .text(formatPrice(item.price), 480, iY + 12, { width: 60, align: 'right' });
-    doc.fontSize(8).fillColor('#777777')
-      .text(pc.supplierLabel(item.supplier || 'Rede Peças'), 60, iY + 22);
-    doc.rect(50, tY, 495, 64).strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+    products.forEach((line, i) => {
+      const iY = tY + 28 + i * ROW_HEIGHT;
+      doc.rect(50, iY, 495, ROW_HEIGHT).fillColor('#F5F7FA').fill();
+      doc.fontSize(10).fillColor('#333333').font('Helvetica')
+        .text(line.description, 60, iY + 6, { width: 210 })
+        .text(line.reference, 280, iY + 12)
+        .text('1', 380, iY + 12, { width: 40, align: 'center' })
+        .text(formatPrice(line.price), 420, iY + 12, { width: 80, align: 'right' })
+        .text(formatPrice(line.price), 480, iY + 12, { width: 60, align: 'right' });
+      if (line.supplierNote) {
+        doc.fontSize(8).fillColor('#777777').text(line.supplierNote, 60, iY + 22);
+      }
+    });
 
-    // Total Area
-    const totalY = tY + 100;
+    const tableBodyHeight = products.length * ROW_HEIGHT;
+    doc.rect(50, tY, 495, 28 + tableBodyHeight).strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+
+    let contentEndY = tY + 28 + tableBodyHeight;
+
+    if (services.length > 0) {
+      const SERVICE_ROW_HEIGHT = 28;
+      const svcHeaderLabelY = contentEndY + 20;
+      doc.fontSize(11).fillColor('#1A3A5C').font('Helvetica-Bold').text(pc.servicesHeader(), 50, svcHeaderLabelY);
+
+      const svcHeaderY = svcHeaderLabelY + 18;
+      doc.rect(50, svcHeaderY, 495, 24).fillColor('#2E6DA4').fill();
+      doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
+        .text(pc.tableDescription, 60, svcHeaderY + 7)
+        .text(pc.tableTotal, 480, svcHeaderY + 7, { width: 60, align: 'right' });
+
+      services.forEach((line, i) => {
+        const iY = svcHeaderY + 24 + i * SERVICE_ROW_HEIGHT;
+        doc.rect(50, iY, 495, SERVICE_ROW_HEIGHT).fillColor('#EAF1F8').fill();
+        doc.fontSize(10).fillColor('#333333').font('Helvetica')
+          .text(line.description, 60, iY + 8, { width: 350 })
+          .text(formatPrice(line.price), 480, iY + 8, { width: 60, align: 'right' });
+      });
+
+      const svcBodyHeight = services.length * SERVICE_ROW_HEIGHT;
+      doc.rect(50, svcHeaderY, 495, 24 + svcBodyHeight).strokeColor('#CCCCCC').lineWidth(0.5).stroke();
+
+      const servicesTotal = services.reduce((sum, line) => sum + line.price, 0);
+      const svcTotalY = svcHeaderY + 24 + svcBodyHeight + 6;
+      doc.fontSize(9).fillColor('#1A3A5C').font('Helvetica-Bold')
+        .text(`${pc.servicesTotal()}: ${formatPrice(servicesTotal)}`, 50, svcTotalY, { width: 495, align: 'right' });
+
+      contentEndY = svcTotalY + 14;
+    }
+
+    const total = lineItems.reduce((sum, line) => sum + line.price, 0);
+
+    const totalY = contentEndY + 36;
     doc.rect(350, totalY, 195, 28).fillColor('#1A3A5C').fill();
     doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(pc.totalDue, 360, totalY + 8)
-      .text(formatPrice(item.price), 480, totalY + 8, { width: 60, align: 'right' });
+      .text(formatPrice(total), 480, totalY + 8, { width: 60, align: 'right' });
 
-    // Payment Instructions
     const payY = totalY + 60;
     doc.fontSize(11).fillColor('#1A3A5C').font('Helvetica-Bold')
       .text(pc.paymentInstructionsHeader, 50, payY);
@@ -107,40 +184,44 @@ export async function generateProformaPDF(
       .text(pc.referenceLine(orderNumber), 60, payY + 60)
       .text(pc.afterPaymentLine, 60, payY + 76);
 
-    // Terms Note
     doc.fontSize(9).fillColor('#777777').font('Helvetica')
       .text(pc.termsNote, 50, payY + 120, { width: 495 });
 
-    // Footer
     doc.moveTo(50, 760).lineTo(545, 760).strokeColor('#2E6DA4').lineWidth(1).stroke();
     doc.fontSize(8).fillColor('#999999')
       .text(pc.footer, 50, 768, { align: 'center', width: 495 });
 
     doc.end();
-    stream.on('finish', () => resolve(filePath));
+    stream.on('finish', async () => {
+      try {
+        await recordGeneratedDocument(phone, 'proforma_pdf', filePath, orderNumber);
+      } catch (err) {
+        logger.error(`Error recording generated proforma PDF for order ${orderNumber}`, err);
+      }
+      resolve(filePath);
+    });
     stream.on('error', (err) => reject(err));
   });
 }
 
 /**
- * Sends the generated proforma PDF to the customer via Meta WhatsApp Business API.
+ * Uploads a generated proforma PDF to the WhatsApp Cloud API and sends it
+ * to the customer as a document message with a locale-aware caption.
  */
 export async function sendProformaWhatsApp(
   phone: string,
   pdfPath: string,
   orderNumber: string,
-  item: any
+  locale: 'pt' | 'en' = DEFAULT_LOCALE
 ): Promise<void> {
-  const API_URL = `https://graph.facebook.com/v19.0/${config.whatsapp.phoneNumberId}`;
+  const API_URL = `${config.whatsapp.graphApiUrl}/${config.whatsapp.phoneNumberId}`;
   const token = config.whatsapp.token;
 
   try {
-    // 1. Upload the PDF file as media to WhatsApp
     const fileBuffer = fs.readFileSync(pdfPath);
     const formData = new FormData();
     formData.append('messaging_product', 'whatsapp');
     formData.append('type', 'application/pdf');
-    // We construct a Blob out of the file buffer to send it correctly in FormData
     formData.append('file', new Blob([fileBuffer], { type: 'application/pdf' }), `${orderNumber}.pdf`);
 
     const uploadRes = await fetch(`${API_URL}/media`, {
@@ -157,24 +238,6 @@ export async function sendProformaWhatsApp(
 
     const { id: mediaId } = await uploadRes.json() as any;
 
-    // 2. Send the textual confirmation message
-    await fetch(`${API_URL}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'text',
-        text: {
-          body: t.pdf.sendMessage.orderConfirmed(item.name, orderNumber, formatPrice(item.price)),
-        },
-      }),
-    });
-
-    // 3. Send the actual PDF document
     await fetch(`${API_URL}/messages`, {
       method: 'POST',
       headers: {
@@ -188,7 +251,7 @@ export async function sendProformaWhatsApp(
         document: {
           id: mediaId,
           filename: `Proforma_${orderNumber}.pdf`,
-          caption: t.pdf.sendMessage.documentCaption(orderNumber),
+          caption: getMessages(locale).pdf.sendMessage.documentCaption(orderNumber),
         },
       }),
     });
@@ -201,81 +264,17 @@ export async function sendProformaWhatsApp(
 }
 
 /**
- * Generates the official tax invoice via Primavera API (certified by AGT Angola).
- */
-export async function generatePrimaveraInvoice(order: any): Promise<string> {
-  const primaveraUrl = config.primavera.apiUrl;
-  const primaveraToken = config.primavera.token;
-
-  // Mock implementation if token is missing
-  if (!primaveraToken || primaveraToken === 'TOKEN_DO_PRIMAVERA_AQUI') {
-    logger.warn('PRIMAVERA_API_TOKEN is missing or is placeholder. Generating mock invoice PDF.');
-    return generateMockInvoicePDF(order);
-  }
-
-  try {
-    const res = await fetch(`${primaveraUrl}/api/facturas`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${primaveraToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        // Payload field names are defined by the Primavera API (Portuguese)
-        tipoDocumento: 'FA', // Factura
-        serie: 'A',
-        cliente: order.customer_phone,
-        linhas: [{
-          artigo: order.reference || 'PEC-GEN',
-          descricao: order.product_name || 'Peça Automóvel',
-          quantidade: order.quantity || 1,
-          precoUnitario: order.unit_price,
-          iva: 14, // VAT in Angola (14%)
-        }],
-        referencia: order.number,
-      }),
-    });
-
-    if (!res.ok) {
-      const errDetail = await res.json();
-      logger.error('Primavera invoice generation API error', errDetail);
-      throw new Error(`Primavera invoice creation failed with status ${res.status}`);
-    }
-
-    const invoice = await res.json() as any;
-
-    // Fetch the invoice PDF binary from Primavera
-    const pdfRes = await fetch(`${primaveraUrl}/api/facturas/${invoice.id}/pdf`, {
-      headers: { Authorization: `Bearer ${primaveraToken}` },
-    });
-
-    if (!pdfRes.ok) {
-      throw new Error(`Failed to retrieve invoice PDF from Primavera: ${pdfRes.status}`);
-    }
-
-    const tempDir = path.join(__dirname, '../../temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-    const pdfPath = path.join(tempDir, `FACTURA_${order.number}.pdf`);
-    fs.writeFileSync(pdfPath, Buffer.from(await pdfRes.arrayBuffer()));
-
-    return pdfPath;
-  } catch (error: any) {
-    logger.error(`Error generating Primavera invoice, falling back to mock: ${error.message}`);
-    return generateMockInvoicePDF(order);
-  }
-}
-
-/**
- * Sends the finalized official tax invoice PDF via WhatsApp.
+ * Uploads a generated final invoice PDF to the WhatsApp Cloud API and
+ * sends the customer a locale-aware notification text followed by the invoice document.
  */
 export async function sendFinalInvoiceWhatsApp(
   phone: string,
   pdfPath: string,
-  orderNumber: string
+  orderNumber: string,
+  customerName: string,
+  locale: 'pt' | 'en' = DEFAULT_LOCALE
 ): Promise<void> {
-  const API_URL = `https://graph.facebook.com/v19.0/${config.whatsapp.phoneNumberId}`;
+  const API_URL = `${config.whatsapp.graphApiUrl}/${config.whatsapp.phoneNumberId}`;
   const token = config.whatsapp.token;
 
   try {
@@ -297,41 +296,19 @@ export async function sendFinalInvoiceWhatsApp(
 
     const { id: mediaId } = await uploadRes.json() as any;
 
-    // Send text notification
-    await fetch(`${API_URL}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'text',
-        text: {
-          body: t.pdf.finalInvoice.notification(),
-        },
-      }),
-    });
+    const mc = getMessages(locale).pdf.finalInvoice;
+    await sendWhatsAppMessage(phone, mc.notification(customerName));
 
-    // Send PDF document
-    await fetch(`${API_URL}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'document',
-        document: {
-          id: mediaId,
-          filename: `Factura_${orderNumber}.pdf`,
-          caption: t.pdf.finalInvoice.documentCaption(orderNumber),
-        },
-      }),
-    });
+    // The invoice document and the Order Status button ride in the same
+    // interactive message — sendReplyButtons (not a raw whatsapp.service.ts
+    // call) so the button inherits the standard active-prompt dedupe.
+    await sendReplyButtons(
+      phone,
+      mc.documentCaption(orderNumber),
+      [mc.orderStatusButtonLabel()],
+      [`order_status_${orderNumber}`],
+      { type: 'document', id: mediaId, filename: `Factura_${orderNumber}.pdf` }
+    );
 
     logger.info(`Final invoice PDF sent successfully to ${phone}`);
   } catch (error: any) {
@@ -341,22 +318,29 @@ export async function sendFinalInvoiceWhatsApp(
 }
 
 /**
- * Generates a mock invoice PDF when Primavera ERP is not connected.
+ * Renders a locale-aware final invoice PDF for an approved order (one row
+ * per line item, total paid) to a temp file and resolves with its path once
+ * the write stream finishes. Takes the line items directly, same shape and
+ * same reasoning as `generateProformaPDF` — one renderer for both a
+ * single-product order and a multi-item "basket" order.
  */
-async function generateMockInvoicePDF(order: any): Promise<string> {
+export async function generateInvoicePDF(
+  order: any,
+  lineItems: ProformaLineItem[],
+  locale: 'pt' | 'en' = DEFAULT_LOCALE
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const tempDir = path.join(__dirname, '../../temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    const customerDir = path.join(__dirname, '../../storage', order.customer_phone);
+    if (!fs.existsSync(customerDir)) {
+      fs.mkdirSync(customerDir, { recursive: true });
     }
-    const filePath = path.join(tempDir, `FACTURA_${order.number}.pdf`);
+    const filePath = path.join(customerDir, `invoice-${order.number}.pdf`);
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
-    const mc = t.pdf.mockInvoice;
+    const mc = getMessages(locale).pdf.invoice;
 
-    // Header
     doc.fontSize(22).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.headerTitle, 50, 50);
     doc.fontSize(10).fillColor('#555555').font('Helvetica')
       .text(mc.tagline, 50, 78)
@@ -370,13 +354,11 @@ async function generateMockInvoicePDF(order: any): Promise<string> {
 
     doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#2E7D32').lineWidth(2).stroke();
 
-    // Client
     doc.fontSize(11).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.clientHeader, 50, 160);
     doc.fontSize(10).fillColor('#333333').font('Helvetica')
       .text(mc.nameLine, 50, 178)
       .text(mc.whatsappLabel(order.customer_phone), 50, 193);
 
-    // Table
     const tY = 240;
     doc.rect(50, tY, 495, 28).fillColor('#2E7D32').fill();
     doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
@@ -386,28 +368,72 @@ async function generateMockInvoicePDF(order: any): Promise<string> {
       .text(mc.tableUnitPrice, 420, tY + 9, { width: 80, align: 'right' })
       .text(mc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
 
-    const iY = tY + 28;
-    doc.rect(50, iY, 495, 36).fillColor('#F1F8E9').fill();
-    doc.fontSize(10).fillColor('#333333').font('Helvetica')
-      .text(order.product_name || mc.defaultProductName, 60, iY + 6, { width: 210 })
-      .text(order.reference || 'PEC-GEN', 280, iY + 12)
-      .text('1', 380, iY + 12, { width: 40, align: 'center' })
-      .text(formatPrice(order.unit_price), 420, iY + 12, { width: 80, align: 'right' })
-      .text(formatPrice(order.unit_price), 480, iY + 12, { width: 60, align: 'right' });
+    const ROW_HEIGHT = 36;
 
-    // Total
-    const totalY = tY + 100;
+    const products = lineItems.filter((line) => !line.isService);
+    const services = lineItems.filter((line) => line.isService);
+
+    products.forEach((line, i) => {
+      const iY = tY + 28 + i * ROW_HEIGHT;
+      doc.rect(50, iY, 495, ROW_HEIGHT).fillColor('#F1F8E9').fill();
+      doc.fontSize(10).fillColor('#333333').font('Helvetica')
+        .text(line.description, 60, iY + 6, { width: 210 })
+        .text(line.reference, 280, iY + 12)
+        .text('1', 380, iY + 12, { width: 40, align: 'center' })
+        .text(formatPrice(line.price), 420, iY + 12, { width: 80, align: 'right' })
+        .text(formatPrice(line.price), 480, iY + 12, { width: 60, align: 'right' });
+    });
+
+    let contentEndY = tY + 28 + products.length * ROW_HEIGHT;
+
+    if (services.length > 0) {
+      const SERVICE_ROW_HEIGHT = 28;
+      const svcHeaderLabelY = contentEndY + 20;
+      doc.fontSize(11).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.servicesHeader(), 50, svcHeaderLabelY);
+
+      const svcHeaderY = svcHeaderLabelY + 18;
+      doc.rect(50, svcHeaderY, 495, 24).fillColor('#2E7D32').fill();
+      doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
+        .text(mc.tableDescription, 60, svcHeaderY + 7)
+        .text(mc.tableTotal, 480, svcHeaderY + 7, { width: 60, align: 'right' });
+
+      services.forEach((line, i) => {
+        const iY = svcHeaderY + 24 + i * SERVICE_ROW_HEIGHT;
+        doc.rect(50, iY, 495, SERVICE_ROW_HEIGHT).fillColor('#F1F8E9').fill();
+        doc.fontSize(10).fillColor('#333333').font('Helvetica')
+          .text(line.description, 60, iY + 8, { width: 350 })
+          .text(formatPrice(line.price), 480, iY + 8, { width: 60, align: 'right' });
+      });
+
+      const svcBodyHeight = services.length * SERVICE_ROW_HEIGHT;
+      const servicesTotal = services.reduce((sum, line) => sum + line.price, 0);
+      const svcTotalY = svcHeaderY + 24 + svcBodyHeight + 6;
+      doc.fontSize(9).fillColor('#2E7D32').font('Helvetica-Bold')
+        .text(`${mc.servicesTotal()}: ${formatPrice(servicesTotal)}`, 50, svcTotalY, { width: 495, align: 'right' });
+
+      contentEndY = svcTotalY + 14;
+    }
+
+    const total = lineItems.reduce((sum, line) => sum + line.price, 0);
+
+    const totalY = contentEndY + 36;
     doc.rect(350, totalY, 195, 28).fillColor('#2E7D32').fill();
     doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(mc.totalPaid, 360, totalY + 8)
-      .text(formatPrice(order.unit_price), 480, totalY + 8, { width: 60, align: 'right' });
+      .text(formatPrice(total), 480, totalY + 8, { width: 60, align: 'right' });
 
-    // AGT Stamp
     doc.fontSize(8).fillColor('#555555').font('Helvetica-Oblique')
       .text(mc.agtStamp, 50, totalY + 120);
 
     doc.end();
-    stream.on('finish', () => resolve(filePath));
+    stream.on('finish', async () => {
+      try {
+        await recordGeneratedDocument(order.customer_phone, 'invoice_pdf', filePath, order.number);
+      } catch (err) {
+        logger.error(`Error recording generated invoice PDF for order ${order.number}`, err);
+      }
+      resolve(filePath);
+    });
     stream.on('error', (err) => reject(err));
   });
 }
