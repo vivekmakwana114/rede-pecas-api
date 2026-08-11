@@ -8,6 +8,7 @@ interface Messages {
   common: {
     notUnderstood: () => string;
     alreadyAnswered: () => string;
+    accountInactive: () => string;
   };
   onboarding: {
     welcome: () => string;
@@ -167,6 +168,7 @@ interface Messages {
       dateLabel: (date: string) => string;
       validityLabel: (date: string) => string;
       clientHeader: string;
+      nameLabel: (name: string) => string;
       whatsappLabel: (phone: string) => string;
       clientDataNote: string;
       tableDescription: string;
@@ -202,7 +204,7 @@ interface Messages {
       numberLabel: (num: string) => string;
       dateLabel: (date: string) => string;
       clientHeader: string;
-      nameLine: string;
+      nameLabel: (name: string) => string;
       whatsappLabel: (phone: string) => string;
       tableDescription: string;
       tableReference: string;
@@ -222,6 +224,7 @@ interface Messages {
     invalidNif: () => string;
     invalidMake: () => string;
     invalidModel: () => string;
+    invalidYear: () => string;
     invalidEngineNumber: () => string;
   };
   adminAuth: {
@@ -276,6 +279,7 @@ interface Messages {
       customerPhone: string,
       address: string
     ) => string;
+    inactiveCustomerAttempt: (name: string, phone: string) => string;
   };
 }
 
@@ -290,6 +294,8 @@ const pt: Messages = {
       `🤔 Não percebi essa resposta. Escolhe uma das opções abaixo:`,
     alreadyAnswered: () =>
       `🤔 Essa já foi respondida! Vê a última mensagem para continuares.`,
+    accountInactive: () =>
+      `⚠️ A sua conta está inactiva. A nossa equipa de suporte entrará em contacto consigo em breve.`,
   },
   /**
    * Customer profile registration flow — welcome/greeting, name/NIF/address
@@ -688,6 +694,7 @@ const pt: Messages = {
       dateLabel: (date) => `Data: ${date}`,
       validityLabel: (date) => `Validade: ${date}`,
       clientHeader: 'CLIENTE',
+      nameLabel: (name) => `Nome: ${name}`,
       whatsappLabel: (phone) => `WhatsApp: ${phone}`,
       clientDataNote: '(Dados completos a fornecer no momento do pagamento)',
       tableDescription: 'Descrição',
@@ -707,7 +714,7 @@ const pt: Messages = {
       termsNote:
         'Esta proforma tem validade de 48 horas. O stock é reservado apenas após confirmação do pagamento. ' +
         'A Rede Peças actua como intermediário entre o cliente e o fornecedor.',
-      footer: 'Rede Peças — Plataforma Automotiva de Angola  |  NIF: 5XXXXXXXXX  |  info@redepecas.ao',
+      footer: 'Rede Peças — Plataforma Automotiva de Angola  |  info@redepecas.ao',
     },
     sendMessage: {
       documentCaption: (orderNumber) => `Factura Proforma Nº ${orderNumber} — Rede Peças`,
@@ -729,7 +736,7 @@ const pt: Messages = {
       numberLabel: (num) => `Factura Nº: ${num}`,
       dateLabel: (date) => `Data Emissão: ${date}`,
       clientHeader: 'CLIENTE',
-      nameLine: 'Nome: Cliente Rede Peças',
+      nameLabel: (name) => `Nome: ${name}`,
       whatsappLabel: (phone) => `WhatsApp: ${phone}`,
       tableDescription: 'Descrição',
       tableReference: 'Referência',
@@ -759,6 +766,8 @@ const pt: Messages = {
       `⚠️ Isso não parece uma marca de veículo válida. Por favor indica a marca.\n\nExemplo: _Toyota, Mercedes, Volvo..._`,
     invalidModel: () =>
       `⚠️ Isso não parece um modelo de veículo válido. Por favor indica o modelo.\n\nExemplo: _Hilux, L200, Actros..._`,
+    invalidYear: () =>
+      `⚠️ Esse ano de fabrico não parece válido para este veículo. Por favor indica o ano correto (4 dígitos).\n\nExemplo: _2015, 2018, 2020..._`,
     invalidEngineNumber: () =>
       `⚠️ Esse número de motor não parece válido. Confere e envia novamente, ou responde *"não sei"* para continuar.`,
   },
@@ -826,15 +835,18 @@ const pt: Messages = {
       `✅ Aprovar e Emitir Fatura\n` +
       `❌ Rejeitar — Pagamento Inválido`,
     orderStatusRequested: (orderNumber, placedDate, status, partsSummary, amountPaid, customerName, customerPhone, address) =>
-      `📦 *PEDIDO DE ESTADO DO PEDIDO*\n\n` +
-      `Por favor contacta este cliente — quer uma actualização sobre o pedido.\n\n` +
-      `Pedido: *${orderNumber}*\n` +
-      `Efectuado: ${placedDate}\n` +
-      `Estado: ${status}\n\n` +
-      `Peças:\n${partsSummary}\n\n` +
-      `Valor pago: ${amountPaid}\n` +
-      `Cliente: ${customerName} · ${customerPhone}\n` +
+      `📦 *PEDIDO DE ESTADO DE ENCOMENDA*\n\n` +
+      `Nº Pedido: *${orderNumber}*\n` +
+      `Data: ${placedDate}\n` +
+      `Estado: *${status}*\n` +
+      `Artigo(s): ${partsSummary}\n` +
+      `Valor: *${amountPaid}*\n` +
+      `Cliente: *${customerName}* (${customerPhone})\n` +
       `Endereço: ${address}`,
+    inactiveCustomerAttempt: (name, phone) =>
+      `⚠️ *SOLICITAÇÃO DE REATIVAÇÃO DE CONTA*\n\n` +
+      `O cliente *${name}* (${phone}) enviou uma mensagem, mas a sua conta encontra-se inactiva.\n\n` +
+      `Por favor entre em contacto com o cliente para reativar a conta se apropriado.`,
   },
 };
 
@@ -849,6 +861,8 @@ const en: Messages = {
       `🤔 I didn't quite catch that. Please choose one of the options below:`,
     alreadyAnswered: () =>
       `🤔 Already answered that one! Check my latest message to continue.`,
+    accountInactive: () =>
+      `⚠️ Your account is currently inactive. Our support team will reach out to you shortly.`,
   },
   /**
    * Customer profile registration flow — welcome/greeting, name/NIF/address
@@ -1249,6 +1263,7 @@ const en: Messages = {
       dateLabel: (date) => `Date: ${date}`,
       validityLabel: (date) => `Valid until: ${date}`,
       clientHeader: 'CLIENT',
+      nameLabel: (name) => `Name: ${name}`,
       whatsappLabel: (phone) => `WhatsApp: ${phone}`,
       clientDataNote: '(Full details to be provided at time of payment)',
       tableDescription: 'Description',
@@ -1268,7 +1283,7 @@ const en: Messages = {
       termsNote:
         'This proforma is valid for 48 hours. Stock is only reserved after payment is confirmed. ' +
         'Rede Peças acts as an intermediary between the customer and the supplier.',
-      footer: "Rede Peças — Angola's Auto Parts Platform  |  NIF: 5XXXXXXXXX  |  info@redepecas.ao",
+      footer: "Rede Peças — Angola's Auto Parts Platform  |  info@redepecas.ao",
     },
     sendMessage: {
       documentCaption: (orderNumber) => `Proforma Invoice No. ${orderNumber} — Rede Peças`,
@@ -1290,7 +1305,7 @@ const en: Messages = {
       numberLabel: (num) => `Invoice No.: ${num}`,
       dateLabel: (date) => `Issue Date: ${date}`,
       clientHeader: 'CLIENT',
-      nameLine: 'Name: Rede Peças Customer',
+      nameLabel: (name) => `Name: ${name}`,
       whatsappLabel: (phone) => `WhatsApp: ${phone}`,
       tableDescription: 'Description',
       tableReference: 'Reference',
@@ -1320,6 +1335,8 @@ const en: Messages = {
       `⚠️ That doesn't look like a valid vehicle make. Please enter the make.\n\nExample: _Toyota, Mercedes, Volvo..._`,
     invalidModel: () =>
       `⚠️ That doesn't look like a valid vehicle model. Please enter the model.\n\nExample: _Hilux, L200, Actros..._`,
+    invalidYear: () =>
+      `⚠️ That doesn't look like a valid year for this vehicle. Please enter a valid manufacturing year (4 digits).\n\nExample: _2015, 2018, 2020..._`,
     invalidEngineNumber: () =>
       `⚠️ That engine number doesn't look valid. Please check it and send it again, or reply *"don't know"* to continue.`,
   },
@@ -1396,6 +1413,10 @@ const en: Messages = {
       `Amount paid: ${amountPaid}\n` +
       `Customer: ${customerName} · ${customerPhone}\n` +
       `Address: ${address}`,
+    inactiveCustomerAttempt: (name, phone) =>
+      `⚠️ *ACCOUNT REACTIVATION REQUEST*\n\n` +
+      `Customer *${name}* (${phone}) sent a message, but their account is currently inactive.\n\n` +
+      `Please contact the customer to reactivate their account if appropriate.`,
   },
 };
 

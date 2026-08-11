@@ -375,6 +375,20 @@ export async function processManualCollectionStep(
       return true;
     }
 
+    const vehicleContext = `${collection.make} ${collection.model}`;
+    const result = await validateFreeText('vehicleYear', yearClean, vehicleContext);
+
+    if (!result.valid) {
+      const attempts = await incrementValidationAttempts(phone, 'vehicleYear');
+      if (attempts < MAX_VALIDATION_ATTEMPTS) {
+        await sendReply(phone, messages.validation.invalidYear());
+        return true;
+      }
+      await flagForReview('vehicle', collection.id, 'year', result.reason || `Failed plausibility check after ${MAX_VALIDATION_ATTEMPTS} attempts: "${yearClean}"`);
+    } else {
+      await clearValidationAttempts(phone, 'vehicleYear');
+    }
+
     await updateManualCollection(collection.id, { year: yearClean, status: 'awaiting_engine_number' });
     const askEngine = messages.manual.askEngineNumber(collection.make, collection.model, yearClean);
     await sendReply(phone, askEngine, { preserve: extractBoldTerms(askEngine) });
