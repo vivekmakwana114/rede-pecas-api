@@ -624,7 +624,7 @@ export async function getOrderAnalytics(period: AnalyticsPeriod): Promise<Analyt
        to_char(b.bucket_start, $2) AS label,
        COALESCE(SUM(o.total_price) FILTER (WHERE o.status = 'approved'), 0) AS revenue,
        COUNT(*) FILTER (WHERE o.status = 'approved')::int AS approved,
-       COUNT(*) FILTER (WHERE o.status = 'rejected')::int AS rejected,
+       COUNT(*) FILTER (WHERE o.status IN ('rejected', 'stock_unavailable'))::int AS rejected,
        COUNT(*) FILTER (WHERE o.status = 'awaiting_stock_confirmation')::int AS "stockConfirmation",
        COUNT(*) FILTER (
          WHERE o.status NOT IN ('approved', 'rejected', 'awaiting_stock_confirmation', 'cancelled', 'stock_unavailable')
