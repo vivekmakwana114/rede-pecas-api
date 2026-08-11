@@ -2,12 +2,16 @@
  * Formats a numeric value as an Angolan Kwanza currency string with no
  * decimal places.
  */
-export function formatPrice(value: number): string {
+export function formatPrice(value: number | string | null | undefined): string {
+  const num = typeof value === 'number' ? value : Number(value);
+  if (value === null || value === undefined || isNaN(num)) {
+    return '0 AOA';
+  }
   return new Intl.NumberFormat("pt-AO", {
     style: "currency",
     currency: "AOA",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(num);
 }
 
 /**

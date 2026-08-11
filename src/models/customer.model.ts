@@ -142,7 +142,7 @@ const CUSTOMER_STATS_COLUMNS = `c.*, order_stats.orders_count, order_stats.total
  */
 export async function getAllCustomers({ page, limit, q }: CustomerListParams): Promise<{ customers: CustomerWithStats[]; total: number }> {
   const offset = (page - 1) * limit;
-  const filters = ['c.active = true'];
+  const filters: string[] = [];
   const values: unknown[] = [];
 
   if (q) {
@@ -150,7 +150,7 @@ export async function getAllCustomers({ page, limit, q }: CustomerListParams): P
     filters.push(`(c.name ILIKE $${values.length} OR c.phone ILIKE $${values.length} OR c.nif ILIKE $${values.length})`);
   }
 
-  const where = `WHERE ${filters.join(' AND ')}`;
+  const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
   const [{ rows: customers }, { rows: countRows }] = await Promise.all([
     db.query(
@@ -169,7 +169,7 @@ export async function getAllCustomers({ page, limit, q }: CustomerListParams): P
 }
 
 /**
- * Looks up one active `customers` row by phone, joined with its order stats
+ * Looks up a `customers` row by phone, joined with its order stats
  * and confirmed vehicles the same way `getAllCustomers` does.
  */
 export async function getActiveCustomerByPhone(phone: string): Promise<CustomerWithStats | null> {
@@ -177,10 +177,21 @@ export async function getActiveCustomerByPhone(phone: string): Promise<CustomerW
     `SELECT ${CUSTOMER_STATS_COLUMNS}
      FROM customers c
      ${CUSTOMER_STATS_JOIN}
-     WHERE c.phone = $1 AND c.active = true`,
+     WHERE c.phone = $1`,
     [phone]
   );
   return rows.length ? rows[0] : null;
+}
+
+/**
+ * Updates a customer's `active` status flag to true or false.
+ */
+export async function setCustomerActiveStatus(phone: string, active: boolean): Promise<boolean> {
+  const { rowCount } = await db.query(
+    `UPDATE customers SET active = $2 WHERE phone = $1`,
+    [phone, active]
+  );
+  return (rowCount ?? 0) > 0;
 }
 
 /**
@@ -188,9 +199,5 @@ export async function getActiveCustomerByPhone(phone: string): Promise<CustomerW
  * phone. Returns whether a row was actually changed (false if already inactive or missing).
  */
 export async function deactivateCustomer(phone: string): Promise<boolean> {
-  const { rowCount } = await db.query(
-    `UPDATE customers SET active = false WHERE phone = $1 AND active = true`,
-    [phone]
-  );
-  return (rowCount ?? 0) > 0;
+  return setCustomerActiveStatus(phone, false);
 }

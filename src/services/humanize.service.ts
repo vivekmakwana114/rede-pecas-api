@@ -189,7 +189,7 @@ function validate(original: string, candidate: string, opts: HumanizeOptions): V
     }
   }
 
-  const listMarkers = original.match(/^\d+[\.\)]\s/gm) ?? [];
+  const listMarkers = original.match(/^\d+[.)]\s/gm) ?? [];
   for (const marker of listMarkers) {
     if (!out.includes(marker.trim())) {
       return { ok: false, reason: `list-marker-dropped ("${marker.trim()}")` };

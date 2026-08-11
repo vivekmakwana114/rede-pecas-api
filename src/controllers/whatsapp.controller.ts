@@ -9,8 +9,8 @@ import * as paymentService from '../services/payment.service.js';
 import * as sessionService from '../services/session.service.js';
 import { extractProductNames } from '../services/ai.service.js';
 import { sendReply, sendReplyButtons } from '../services/reply.service.js';
-import { sendWhatsAppButtons, sendTypingIndicator } from '../services/whatsapp.service.js';
-import { getAdminByPhone } from '../models/adminUser.model.js';
+import { sendWhatsAppButtons, sendTypingIndicator, sendWhatsAppMessage } from '../services/whatsapp.service.js';
+import { getAdminByPhone, getAllAdmins } from '../models/adminUser.model.js';
 import { config } from '../config/config.js';
 import { GREETING_PATTERN, detectMessageLocale } from '../utils/greeting.js';
 
@@ -63,7 +63,7 @@ export async function receiveWebhookMessage(req: Request, res: Response): Promis
     const mediaType = msg.type;
     const mediaId = msg.image?.id || msg.document?.id || null;
 
-    logger.debug(`[${phone}] Webhook type: ${mediaType}, text: ${customerText}`);
+    logger.info(`[${phone}] Webhook type: ${mediaType}, text: ${customerText}`);
 
     await processMessageFlow(phone, customerText, mediaType, mediaId, listReplyId, buttonReplyId, contextMessageId);
   } catch (error: any) {
@@ -87,7 +87,7 @@ async function processMessageFlow(
 ): Promise<void> {
   const admin = await getAdminByPhone(phone);
   if (admin) {
-    logger.debug(`[ADMIN] Inbound message from admin ${phone} (${admin.name}) routed to admin handler, buttonReplyId=${buttonReplyId}`);
+    logger.info(`[ADMIN] Inbound message from admin ${phone} (${admin.name}) routed to admin handler, buttonReplyId=${buttonReplyId}`);
     // The entire admin reply surface is button-driven (stock confirm/
     // unavailable, payment approve/reject, item stock) — there's no
     // free-text admin flow. Without this guard, any plain message an admin
@@ -121,8 +121,19 @@ async function processMessageFlow(
   const customer = await customerService.getOrCreateCustomer(phone);
   if (!customer) return;
 
-  const firstName = customer.name?.split(' ')[0] || 'Cliente';
   const messages = await customerService.resolveMessages(phone);
+
+  if (customer.active === false) {
+    await sendReply(phone, messages.common.accountInactive());
+    const admins = await getAllAdmins();
+    const custName = customer.name || 'Cliente';
+    for (const admin of admins) {
+      await sendWhatsAppMessage(admin.phone, messages.admin.inactiveCustomerAttempt(custName, phone));
+    }
+    return;
+  }
+
+  const firstName = customer.name?.split(' ')[0] || 'Cliente';
 
   const freshSession = await sessionService.isNewSession(phone);
   await sessionService.markSessionActive(phone);
@@ -343,7 +354,7 @@ async function processMessageFlow(
   }
 
   if (ACKNOWLEDGMENT_PATTERN.test(customerText.trim())) {
-    logger.debug(`[PRODUCT SEARCH] ${phone} sent a filler acknowledgment ("${customerText}") — not treating it as a search.`);
+    logger.info(`[PRODUCT SEARCH] ${phone} sent a filler acknowledgment ("${customerText}") — not treating it as a search.`);
     return;
   }
 

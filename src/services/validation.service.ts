@@ -10,7 +10,7 @@ const VALIDATION_MODEL = "claude-haiku-4-5-20251001";
 
 export const MAX_VALIDATION_ATTEMPTS = 3;
 
-export type FreeTextFieldKind = 'address' | 'vehicleMake' | 'vehicleModel';
+export type FreeTextFieldKind = 'address' | 'vehicleMake' | 'vehicleModel' | 'vehicleYear';
 
 export interface PlausibilityResult {
   valid: boolean;
@@ -35,6 +35,10 @@ const FIELD_PROMPTS: Record<FreeTextFieldKind, (value: string, context?: string)
     `pattern (e.g. an invented combination like "M3200i" that resembles real model-naming conventions ` +
     `but isn't an actual model this manufacturer makes), plus single letters, digits-only text, or ` +
     `keyboard mashing.`,
+  vehicleYear: (value, context) =>
+    `Is "${value}" a REAL, plausible 4-digit manufacturing/production year for "${context ?? 'the given vehicle'}"? ` +
+    `Use your actual knowledge of car production years — reject years in which this specific vehicle model was ` +
+    `never manufactured or sold, future years, or 4-digit numbers outside realistic production runs for this vehicle.`,
 };
 
 /**

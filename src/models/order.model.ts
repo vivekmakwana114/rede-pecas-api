@@ -655,7 +655,7 @@ export async function getOrderStats(): Promise<OrderStats> {
     SELECT
       COUNT(*)::int AS "totalOrders",
       COUNT(*) FILTER (WHERE status = 'approved')::int AS "approvedOrders",
-      COUNT(*) FILTER (WHERE status = 'rejected')::int AS "rejectedOrders",
+      COUNT(*) FILTER (WHERE status IN ('rejected', 'stock_unavailable'))::int AS "rejectedOrders",
       COALESCE(SUM(
         CASE
           WHEN items IS NOT NULL THEN (
@@ -677,11 +677,12 @@ export async function getOrderStats(): Promise<OrderStats> {
  */
 export async function getOrderByNumber(number: string): Promise<any | null> {
   const { rows } = await db.query(
-    `SELECT o.*, p.name AS product_name, p.reference, s.name AS supplier_name
+    `SELECT o.*, p.name AS product_name, p.reference, s.name AS supplier_name, c.name AS customer_name
      FROM orders o
      LEFT JOIN product_suppliers ps ON ps.id = o.product_id
      LEFT JOIN products p ON p.id = ps.product_id
      LEFT JOIN suppliers s ON s.id = o.supplier_id
+     LEFT JOIN customers c ON c.phone = o.customer_phone
      WHERE o.number = $1`,
     [number]
   );
