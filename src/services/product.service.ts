@@ -782,7 +782,7 @@ async function finalizeMultiItemOrder(orderNumber: string, items: OrderItemEntry
   const proformaLineItems: { description: string; reference: string; price: number; supplierNote?: string | null; isService?: boolean }[] = [];
   for (const item of available) {
     await decrementOfferStock(item.productId, item.quantity || 1);
-    const itemUnitPrice = Number(item.unitPrice ?? item.price ?? (item as any).unit_price ?? 0);
+    const itemUnitPrice = Number(item.unitPrice ?? (item as any).price ?? (item as any).unit_price ?? 0);
     proformaLineItems.push({
       description: item.productName,
       reference: item.reference || '—',
