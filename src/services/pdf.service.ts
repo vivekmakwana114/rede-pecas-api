@@ -84,18 +84,18 @@ export async function generateProformaPDF(
 
     const pc = getMessages(locale).pdf.proforma;
 
-    doc.fontSize(22).fillColor('#1A3A5C').font('Helvetica-Bold').text(pc.companyName, 50, 50);
+    doc.fontSize(20).fillColor('#1A3A5C').font('Helvetica-Bold').text(pc.companyName, 50, 50);
     doc.fontSize(10).fillColor('#555555').font('Helvetica')
-      .text(pc.tagline, 50, 78)
-      .text(pc.phone, 50, 92)
-      .text(pc.email, 50, 106);
+      .text(pc.tagline, 50, 76)
+      .text(pc.phone, 50, 90)
+      .text(pc.email, 50, 104);
 
-    doc.fontSize(18).fillColor('#1A3A5C').font('Helvetica-Bold')
-      .text(pc.title, 350, 50, { align: 'right' });
+    doc.fontSize(16).fillColor('#1A3A5C').font('Helvetica-Bold')
+      .text(pc.title, 300, 50, { align: 'right', width: 245 });
     doc.fontSize(10).fillColor('#555555').font('Helvetica')
-      .text(pc.numberLabel(orderNumber), 350, 78, { align: 'right' })
-      .text(pc.dateLabel(formatDate(new Date())), 350, 92, { align: 'right' })
-      .text(pc.validityLabel(formatDate(addDays(new Date(), 2))), 350, 106, { align: 'right' });
+      .text(pc.numberLabel(orderNumber), 300, 74, { align: 'right', width: 245 })
+      .text(pc.dateLabel(formatDate(new Date())), 300, 88, { align: 'right', width: 245 })
+      .text(pc.validityLabel(formatDate(addDays(new Date(), 2))), 300, 102, { align: 'right', width: 245 });
 
     doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#2E6DA4').lineWidth(2).stroke();
 
@@ -112,20 +112,20 @@ export async function generateProformaPDF(
     doc.rect(50, tY, 495, 28).fillColor('#1A3A5C').fill();
     doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(pc.tableDescription, 60, tY + 9)
-      .text(pc.tableReference, 280, tY + 9)
-      .text(pc.tableQty, 380, tY + 9, { width: 40, align: 'center' })
-      .text(pc.tableUnitPrice, 420, tY + 9, { width: 80, align: 'right' })
-      .text(pc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
+      .text(pc.tableReference, 265, tY + 9)
+      .text(pc.tableQty, 360, tY + 9, { width: 30, align: 'center' })
+      .text(pc.tableUnitPrice, 395, tY + 9, { width: 75, align: 'right' })
+      .text(pc.tableTotal, 475, tY + 9, { width: 65, align: 'right' });
 
     products.forEach((line, i) => {
       const iY = tY + 28 + i * ROW_HEIGHT;
       doc.rect(50, iY, 495, ROW_HEIGHT).fillColor('#F5F7FA').fill();
       doc.fontSize(10).fillColor('#333333').font('Helvetica')
-        .text(line.description, 60, iY + 6, { width: 210 })
-        .text(line.reference, 280, iY + 12)
-        .text('1', 380, iY + 12, { width: 40, align: 'center' })
-        .text(formatPrice(line.price), 420, iY + 12, { width: 80, align: 'right' })
-        .text(formatPrice(line.price), 480, iY + 12, { width: 60, align: 'right' });
+        .text(line.description, 60, iY + 6, { width: 195 })
+        .text(line.reference, 265, iY + 12)
+        .text('1', 380, iY + 12, { width: 30, align: 'center' })
+        .text(formatPrice(line.price), 395, iY + 12, { width: 75, align: 'right' })
+        .text(formatPrice(line.price), 475, iY + 12, { width: 65, align: 'right' });
       if (line.supplierNote) {
         doc.fontSize(8).fillColor('#777777').text(line.supplierNote, 60, iY + 22);
       }
@@ -145,20 +145,20 @@ export async function generateProformaPDF(
       doc.rect(50, svcHeaderY, 495, 24).fillColor('#2E6DA4').fill();
       doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
         .text(pc.tableDescription, 60, svcHeaderY + 7)
-        .text(pc.tableTotal, 480, svcHeaderY + 7, { width: 60, align: 'right' });
+        .text(pc.tableTotal, 475, svcHeaderY + 7, { width: 65, align: 'right' });
 
       services.forEach((line, i) => {
         const iY = svcHeaderY + 24 + i * SERVICE_ROW_HEIGHT;
         doc.rect(50, iY, 495, SERVICE_ROW_HEIGHT).fillColor('#EAF1F8').fill();
         doc.fontSize(10).fillColor('#333333').font('Helvetica')
-          .text(line.description, 60, iY + 8, { width: 350 })
-          .text(formatPrice(line.price), 480, iY + 8, { width: 60, align: 'right' });
+          .text(line.description, 60, iY + 8, { width: 400 })
+          .text(formatPrice(line.price), 475, iY + 8, { width: 65, align: 'right' });
       });
 
       const svcBodyHeight = services.length * SERVICE_ROW_HEIGHT;
       doc.rect(50, svcHeaderY, 495, 24 + svcBodyHeight).strokeColor('#CCCCCC').lineWidth(0.5).stroke();
 
-      const servicesTotal = services.reduce((sum, line) => sum + line.price, 0);
+      const servicesTotal = services.reduce((sum, line) => sum + (Number(line.price) || 0), 0);
       const svcTotalY = svcHeaderY + 24 + svcBodyHeight + 6;
       doc.fontSize(9).fillColor('#1A3A5C').font('Helvetica-Bold')
         .text(`${pc.servicesTotal()}: ${formatPrice(servicesTotal)}`, 50, svcTotalY, { width: 495, align: 'right' });
@@ -166,13 +166,13 @@ export async function generateProformaPDF(
       contentEndY = svcTotalY + 14;
     }
 
-    const total = lineItems.reduce((sum, line) => sum + line.price, 0);
+    const total = lineItems.reduce((sum, line) => sum + (Number(line.price) || 0), 0);
 
     const totalY = contentEndY + 36;
     doc.rect(350, totalY, 195, 28).fillColor('#1A3A5C').fill();
     doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(pc.totalDue, 360, totalY + 8)
-      .text(formatPrice(total), 480, totalY + 8, { width: 60, align: 'right' });
+      .text(formatPrice(total), 455, totalY + 8, { width: 85, align: 'right' });
 
     const payY = totalY + 60;
     doc.fontSize(11).fillColor('#1A3A5C').font('Helvetica-Bold')
@@ -341,32 +341,33 @@ export async function generateInvoicePDF(
 
     const mc = getMessages(locale).pdf.invoice;
 
-    doc.fontSize(22).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.headerTitle, 50, 50);
+    doc.fontSize(20).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.headerTitle, 50, 50);
     doc.fontSize(10).fillColor('#555555').font('Helvetica')
-      .text(mc.tagline, 50, 78)
-      .text(mc.nifLine, 50, 92);
+      .text(mc.tagline, 50, 76);
 
-    doc.fontSize(18).fillColor('#2E7D32').font('Helvetica-Bold')
-      .text(mc.title, 350, 50, { align: 'right' });
+    doc.fontSize(16).fillColor('#2E7D32').font('Helvetica-Bold')
+      .text(mc.title, 300, 50, { align: 'right', width: 245 });
     doc.fontSize(10).fillColor('#555555').font('Helvetica')
-      .text(mc.numberLabel(`FA-${new Date().getFullYear()}/${order.number.split('-').pop()}`), 350, 78, { align: 'right' })
-      .text(mc.dateLabel(formatDate(new Date())), 350, 92, { align: 'right' });
+      .text(mc.numberLabel(`FA-${new Date().getFullYear()}/${order.number.split('-').pop()}`), 300, 74, { align: 'right', width: 245 })
+      .text(mc.dateLabel(formatDate(new Date())), 300, 88, { align: 'right', width: 245 });
 
     doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#2E7D32').lineWidth(2).stroke();
 
+    const clientName = order.customer_name || 'Cliente';
+
     doc.fontSize(11).fillColor('#2E7D32').font('Helvetica-Bold').text(mc.clientHeader, 50, 160);
     doc.fontSize(10).fillColor('#333333').font('Helvetica')
-      .text(mc.nameLine, 50, 178)
+      .text(mc.nameLabel(clientName), 50, 178)
       .text(mc.whatsappLabel(order.customer_phone), 50, 193);
 
     const tY = 240;
     doc.rect(50, tY, 495, 28).fillColor('#2E7D32').fill();
     doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(mc.tableDescription, 60, tY + 9)
-      .text(mc.tableReference, 280, tY + 9)
-      .text(mc.tableQty, 380, tY + 9, { width: 40, align: 'center' })
-      .text(mc.tableUnitPrice, 420, tY + 9, { width: 80, align: 'right' })
-      .text(mc.tableTotal, 480, tY + 9, { width: 60, align: 'right' });
+      .text(mc.tableReference, 265, tY + 9)
+      .text(mc.tableQty, 360, tY + 9, { width: 30, align: 'center' })
+      .text(mc.tableUnitPrice, 395, tY + 9, { width: 75, align: 'right' })
+      .text(mc.tableTotal, 475, tY + 9, { width: 65, align: 'right' });
 
     const ROW_HEIGHT = 36;
 
@@ -377,11 +378,11 @@ export async function generateInvoicePDF(
       const iY = tY + 28 + i * ROW_HEIGHT;
       doc.rect(50, iY, 495, ROW_HEIGHT).fillColor('#F1F8E9').fill();
       doc.fontSize(10).fillColor('#333333').font('Helvetica')
-        .text(line.description, 60, iY + 6, { width: 210 })
-        .text(line.reference, 280, iY + 12)
-        .text('1', 380, iY + 12, { width: 40, align: 'center' })
-        .text(formatPrice(line.price), 420, iY + 12, { width: 80, align: 'right' })
-        .text(formatPrice(line.price), 480, iY + 12, { width: 60, align: 'right' });
+        .text(line.description, 60, iY + 6, { width: 195 })
+        .text(line.reference, 265, iY + 12)
+        .text('1', 360, iY + 12, { width: 30, align: 'center' })
+        .text(formatPrice(line.price), 395, iY + 12, { width: 75, align: 'right' })
+        .text(formatPrice(line.price), 475, iY + 12, { width: 65, align: 'right' });
     });
 
     let contentEndY = tY + 28 + products.length * ROW_HEIGHT;
@@ -395,18 +396,18 @@ export async function generateInvoicePDF(
       doc.rect(50, svcHeaderY, 495, 24).fillColor('#2E7D32').fill();
       doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold')
         .text(mc.tableDescription, 60, svcHeaderY + 7)
-        .text(mc.tableTotal, 480, svcHeaderY + 7, { width: 60, align: 'right' });
+        .text(mc.tableTotal, 475, svcHeaderY + 7, { width: 65, align: 'right' });
 
       services.forEach((line, i) => {
         const iY = svcHeaderY + 24 + i * SERVICE_ROW_HEIGHT;
         doc.rect(50, iY, 495, SERVICE_ROW_HEIGHT).fillColor('#F1F8E9').fill();
         doc.fontSize(10).fillColor('#333333').font('Helvetica')
-          .text(line.description, 60, iY + 8, { width: 350 })
-          .text(formatPrice(line.price), 480, iY + 8, { width: 60, align: 'right' });
+          .text(line.description, 60, iY + 8, { width: 400 })
+          .text(formatPrice(line.price), 475, iY + 8, { width: 65, align: 'right' });
       });
 
       const svcBodyHeight = services.length * SERVICE_ROW_HEIGHT;
-      const servicesTotal = services.reduce((sum, line) => sum + line.price, 0);
+      const servicesTotal = services.reduce((sum, line) => sum + (Number(line.price) || 0), 0);
       const svcTotalY = svcHeaderY + 24 + svcBodyHeight + 6;
       doc.fontSize(9).fillColor('#2E7D32').font('Helvetica-Bold')
         .text(`${mc.servicesTotal()}: ${formatPrice(servicesTotal)}`, 50, svcTotalY, { width: 495, align: 'right' });
@@ -414,13 +415,13 @@ export async function generateInvoicePDF(
       contentEndY = svcTotalY + 14;
     }
 
-    const total = lineItems.reduce((sum, line) => sum + line.price, 0);
+    const total = lineItems.reduce((sum, line) => sum + (Number(line.price) || 0), 0);
 
     const totalY = contentEndY + 36;
     doc.rect(350, totalY, 195, 28).fillColor('#2E7D32').fill();
     doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold')
       .text(mc.totalPaid, 360, totalY + 8)
-      .text(formatPrice(total), 480, totalY + 8, { width: 60, align: 'right' });
+      .text(formatPrice(total), 455, totalY + 8, { width: 85, align: 'right' });
 
     doc.fontSize(8).fillColor('#555555').font('Helvetica-Oblique')
       .text(mc.agtStamp, 50, totalY + 120);

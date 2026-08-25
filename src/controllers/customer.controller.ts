@@ -7,6 +7,7 @@ import {
   getActiveCustomerByPhone,
   updateCustomer,
   deactivateCustomer,
+  setCustomerActiveStatus,
   Customer,
   CustomerWithStats,
 } from '../models/customer.model.js';
@@ -86,6 +87,24 @@ export const updateCustomerHandler = catchAsync(async (req: Request, res: Respon
     message: `Customer ${phone} updated.`,
     code: 200,
     data: updated ? serializeCustomer(updated) : null,
+    meta: { timestamp: new Date().toISOString() },
+  });
+});
+
+/**
+ * Backs the admin customer status-toggle endpoint — activates or deactivates a customer by setting `customers.active`.
+ */
+export const toggleCustomerStatusHandler = catchAsync(async (req: Request, res: Response) => {
+  const { phone } = req.params;
+  const { active } = req.body;
+  const updated = await setCustomerActiveStatus(phone, active !== undefined ? !!active : false);
+  if (!updated) throw new ApiError(404, `Customer ${phone} not found`);
+
+  res.status(200).json({
+    success: true,
+    message: `Customer ${phone} status updated to ${active ? 'active' : 'inactive'}.`,
+    code: 200,
+    data: null,
     meta: { timestamp: new Date().toISOString() },
   });
 });

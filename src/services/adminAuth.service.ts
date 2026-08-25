@@ -146,7 +146,13 @@ export async function changeProfile(
   if (!admin) throw new ApiError(404, 'Admin account not found.');
 
   const updates: { name?: string; email?: string } = {};
-  if (fields.name) updates.name = fields.name.trim();
+  if (fields.name) {
+    const cleanName = fields.name.trim();
+    if (/\d/.test(cleanName)) {
+      throw new ApiError(400, 'Name must not contain numbers.');
+    }
+    updates.name = cleanName;
+  }
   if (fields.email) {
     const email = fields.email.toLowerCase().trim();
     const existing = await getAdminByEmail(email);
@@ -224,6 +230,10 @@ export async function resetPassword(phone: string, code: string, newPassword: st
 
   if (!(await bcrypt.compare(code, admin.reset_code_hash))) {
     throw new ApiError(400, 'Invalid or expired reset code.');
+  }
+
+  if (await bcrypt.compare(newPassword, admin.password_hash)) {
+    throw new ApiError(400, 'New password must be different from your current password.');
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 10);

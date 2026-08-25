@@ -782,14 +782,22 @@ async function finalizeMultiItemOrder(orderNumber: string, items: OrderItemEntry
   const proformaLineItems: { description: string; reference: string; price: number; supplierNote?: string | null; isService?: boolean }[] = [];
   for (const item of available) {
     await decrementOfferStock(item.productId, item.quantity || 1);
+    const itemUnitPrice = Number(item.unitPrice ?? (item as any).price ?? (item as any).unit_price ?? 0);
     proformaLineItems.push({
       description: item.productName,
-      reference: item.reference,
-      price: item.unitPrice,
+      reference: item.reference || '—',
+      price: isNaN(itemUnitPrice) ? 0 : itemUnitPrice,
       supplierNote: messages.pdf.proforma.supplierLabel(item.supplierName || 'Rede Peças'),
     });
     if (item.serviceName) {
-      proformaLineItems.push({ description: item.serviceName, reference: '—', price: item.servicePrice || 0, supplierNote: null, isService: true });
+      const itemSvcPrice = Number(item.servicePrice ?? (item as any).service_price ?? 0);
+      proformaLineItems.push({
+        description: item.serviceName,
+        reference: '—',
+        price: isNaN(itemSvcPrice) ? 0 : itemSvcPrice,
+        supplierNote: null,
+        isService: true,
+      });
     }
   }
 
@@ -967,15 +975,17 @@ export async function confirmStockAndFinalizeOrder(orderNumber: string): Promise
   await decrementOfferStock(order.product_id, order.quantity || 1);
 
   const phone = order.customer_phone;
+  const rawProdPrice = Number(order.unit_price ?? (order as any).price ?? 0);
   const product: Product = {
     name: order.product_name,
-    reference: order.reference,
-    price: Number(order.unit_price),
-    quantity: order.quantity,
+    reference: order.reference || '—',
+    price: isNaN(rawProdPrice) ? 0 : rawProdPrice,
+    quantity: order.quantity || 1,
     supplier: order.supplier_name,
   };
+  const rawSvcPrice = order.service_price ? Number(order.service_price) : 0;
   const service = order.service_price
-    ? { name: order.service_name, price: Number(order.service_price) }
+    ? { name: order.service_name, price: isNaN(rawSvcPrice) ? 0 : rawSvcPrice }
     : null;
   const total = product.price + (service?.price ?? 0);
 
